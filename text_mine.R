@@ -53,16 +53,16 @@ inspect(tdm[1:10,1:10])
 ##Some basic analyses
 ################
 
-findFreqTerms(tdm,lowfreq = 500)
+findFreqTerms(tdm,lowfreq = 250)
 findAssocs(tdm,terms = c("human", "risk", "exposur"), corlimit = 0.25)
 
 tdm.m<-as.matrix(tdm)
 tdm.s<-sort(rowSums(tdm.m), decreasing = T)
 myNames<-names(tdm.s)
 
-term.freq<-subset(tdm.s, tdm.s>=50)
-freq.terms<-findFreqTerms(tdm, lowfreq=50)
-plot(tdm, term=freq.terms, cor)
+term.freq<-subset(tdm.s, tdm.s>=500)
+freq.terms<-findFreqTerms(tdm, lowfreq=500)
+plot(tdm, term=freq.terms, corThreshold = 0.1, weighting=T)
 ##Word cloud :-)
 
 tdm.df<-data.frame(word=myNames, freq=tdm.s)
