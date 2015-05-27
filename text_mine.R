@@ -42,6 +42,13 @@ dictCorpus<-abstrCorpus
 abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
 inspect(abstrCorpus[1:3])
 
+##stemCompletion breaks corpus...
+abstrCorpus<-tm_map(abstrCorpus, 
+                    content_transformer(function(x,d) paste(stemCompletion(strsplit(stemDocument(x), ' ')[[1]], d),
+                                                            collapse=' ')), dictCorpus)
+#inspect(abstrCorpus[1:3])
+
+
 tdm<-TermDocumentMatrix(abstrCorpus)
 inspect(tdm[1:10,1:10])
 
