@@ -62,7 +62,10 @@ myNames<-names(tdm.s)
 
 term.freq<-subset(tdm.s, tdm.s>=500)
 freq.terms<-findFreqTerms(tdm, lowfreq=500)
+png("Top25_word_graph.png", height=800, width=1200, units="px")
 plot(tdm, term=freq.terms, corThreshold = 0.1, weighting=T)
+dev.off()
+
 ##Word cloud :-)
 
 tdm.df<-data.frame(word=myNames, freq=tdm.s)
@@ -70,4 +73,10 @@ png("wordCloud.png", height=800, width=800, units="px")
 wordcloud(tdm.df$word, tdm.df$freq, min.freq = 250, colors=brewer.pal(9, "BuGn"), random.order=F)
 dev.off()
 
-
+tdm2<-removeSparseTerms(tdm, sparse = 0.9)
+tdm2.m<-as.matrix(tdm2)
+distMatrix<-dist(dist(scale(tdm2.m)))
+fit<-hclust(distMatrix,method = "ward.D")
+png("Word_dendrogram.png", height=800, width=1200, units="px")
+plot(fit, cex=0.75)
+dev.off()
