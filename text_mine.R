@@ -2,6 +2,19 @@ library(XML)
 library(tm)
 library(SnowballC)
 library(wordcloud)
+library(graph)
+library(Rgraphviz)
+
+##To Do:
+#1. Troubleshoot word stem completion
+#2. Create custom stopwords dictionary (common words that are not meaningful)
+#3. Test data scaling
+#4. Pair some metadata with abstracts; Authors, title, institution???
+#5. retain chemical names (should numbers be removed or kept?)
+#6. Run analysis on MeSH terms
+#7. Generate word association graphs
+#8. Use n-grams
+#9. Create dictionary of relevant terms
 
 setwd("~/workspace/Pubmed_mining/")
 pubmed<-xmlTreeParse("../../Downloads/pubmed_result.xml",useInternalNodes = T)
@@ -30,7 +43,7 @@ abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
 inspect(abstrCorpus[1:3])
 
 ##stemCompletion breaks corpus...
-#abstrCorpus<-tm_map(abstrCorpus, stemCompletion, dictionary=dictCorpus)
+abstrCorpus.comp<-tm_map(abstrCorpus, stemCompletion, dictionary=dictCorpus)
 #inspect(abstrCorpus[1:3])
 
 tdm<-TermDocumentMatrix(abstrCorpus)
@@ -47,9 +60,14 @@ tdm.m<-as.matrix(tdm)
 tdm.s<-sort(rowSums(tdm.m), decreasing = T)
 myNames<-names(tdm.s)
 
+term.freq<-subset(tdm.s, tdm.s>=50)
+freq.terms<-findFreqTerms(tdm, lowfreq=50)
+plot(tdm, term=freq.terms, cor)
 ##Word cloud :-)
 
 tdm.df<-data.frame(word=myNames, freq=tdm.s)
 png("wordCloud.png", height=800, width=800, units="px")
-wordcloud(tdm.df$word, tdm.df$freq, min.freq = 500)
+wordcloud(tdm.df$word, tdm.df$freq, min.freq = 250, colors=brewer.pal(9, "BuGn"), random.order=F)
 dev.off()
+
+
