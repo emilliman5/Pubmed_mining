@@ -9,7 +9,8 @@ My foray into text mining data downloaded from pubmed.
 5. retain chemical names? (should numbers be removed or kept?)
 6. Run analysis on MeSH terms
 7. Use n-grams (i.e. stem cell instead of cell and stem)
-8. Create dictionary of relevant terms 
+8. Create dictionary of relevant terms
+9. Fine tune stemming algorithm
 
 ##Usage:
 
