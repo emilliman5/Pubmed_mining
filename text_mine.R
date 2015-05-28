@@ -53,6 +53,7 @@ abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
 inspect(abstrCorpus[1:3])
 
 ##stemCompletion breaks corpus...
+makeCluster(4,"PVM")
 tmpCorpus<-parLapply(abstrCorpus, stemCompletion_mod)
 #inspect(abstrCorpus[1:3])
 
