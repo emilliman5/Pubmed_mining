@@ -47,19 +47,22 @@ myStopwords<-c(stopwords('english'), "available", "via")
 #myStopwords<-myStopwords[-which(myStopwords=="r")]
 
 abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
-abstrCorpus<-tm_map(abstrCorpus, stemDocument)
 dictCorpus<-abstrCorpus
+abstrCorpus<-tm_map(abstrCorpus, stemDocument)
 abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
 inspect(abstrCorpus[1:3])
 
 ##stemCompletion breaks corpus...
-makeCluster(4,"PVM")
-tmpCorpus<-parLapply(abstrCorpus, stemCompletion_mod)
+#tmpCorpus<-sapply(abstrCorpus, stemCompletion_mod,simplify = F)
+
+tmpCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus)
+tmpCorpus<-Corpus(VectorSource(tmpCorpus))
+abstrCorpus<-tmpCorpus
 #inspect(abstrCorpus[1:3])
 
 
 tdm<-TermDocumentMatrix(abstrCorpus)
-inspect(tdm[1:10,1:10])
+inspect(tdm[100:200,1:10])
 
 ################
 ##Some basic analyses
@@ -74,14 +77,14 @@ myNames<-names(tdm.s)
 
 term.freq<-subset(tdm.s, tdm.s>=500)
 freq.terms<-findFreqTerms(tdm, lowfreq=500)
-png(paste0(resultsPath,"Top25_word_graph.png"), height=800, width=1200, units="px")
+png(paste0(resultsPath,"/Top25_word_graph.png"), height=800, width=1200, units="px")
 plot(tdm, term=freq.terms, corThreshold = 0.1, weighting=T)
 dev.off()
 
 ##Word cloud :-)
 
 tdm.df<-data.frame(word=myNames, freq=tdm.s)
-png(paste0(resultsPath,"wordCloud.png"), height=800, width=800, units="px")
+png(paste0(resultsPath,"/wordCloud.png"), height=800, width=800, units="px")
 wordcloud(tdm.df$word, tdm.df$freq, min.freq = 250, colors=brewer.pal(9, "BuGn"), random.order=F)
 dev.off()
 
@@ -89,6 +92,6 @@ tdm2<-removeSparseTerms(tdm, sparse = 0.9)
 tdm2.m<-as.matrix(tdm2)
 distMatrix<-dist(dist(scale(tdm2.m)))
 fit<-hclust(distMatrix,method = "ward.D")
-png(paste0(resultsPath,"Word_dendrogram.png"), height=800, width=1200, units="px")
+png(paste0(resultsPath,"/Word_dendrogram.png"), height=800, width=1200, units="px")
 plot(fit, cex=0.75)
 dev.off()
