@@ -4,6 +4,7 @@ library(SnowballC)
 library(wordcloud)
 library(graph)
 library(Rgraphviz)
+library(parallel)
 
 ##To Do:
 #1. Troubleshoot word stem completion
@@ -17,6 +18,16 @@ library(Rgraphviz)
 #9. Create dictionary of relevant terms
 
 setwd("~/workspace/Pubmed_mining/")
+
+extraFunFile<-"textMine_funcs.R"
+if (file.exists(extraFunFile)) {
+  source(extraFunFile, keep.source=TRUE);
+}
+
+dir.create("results/")
+dir.create(paste0("results/",getDate()))
+resultsPath<-paste0("results/",getDate())
+
 pubmed<-xmlTreeParse("../../Downloads/pubmed_result.xml",useInternalNodes = T)
 top<-xmlRoot(pubmed)
 
@@ -37,20 +48,28 @@ myStopwords<-c(stopwords('english'), "available", "via")
 #myStopwords<-myStopwords[-which(myStopwords=="r")]
 
 abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
-abstrCorpus<-tm_map(abstrCorpus, stemDocument)
 dictCorpus<-abstrCorpus
+abstrCorpus<-tm_map(abstrCorpus, stemDocument)
 abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
 inspect(abstrCorpus[1:3])
 
+##stemCompletion breaks corpus...
+#tmpCorpus<-sapply(abstrCorpus, stemCompletion_mod,simplify = F)
+
+tmpCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=8)
+tmpCorpus<-Corpus(VectorSource(tmpCorpus))
+abstrCorpus<-tmpCorpus
+#inspect(abstrCorpus[1:3])
+
 tdm<-TermDocumentMatrix(abstrCorpus)
-inspect(tdm[1:10,1:10])
+inspect(tdm[100:200,1:10])
 
 ################
 ##Some basic analyses
 ################
 
 findFreqTerms(tdm,lowfreq = 250)
-findAssocs(tdm,terms = c("human", "risk", "exposur"), corlimit = 0.25)
+findAssocs(tdm,terms = c("human", "risk", "exposure"), corlimit = 0.25)
 
 tdm.m<-as.matrix(tdm)
 tdm.s<-sort(rowSums(tdm.m), decreasing = T)
@@ -58,14 +77,14 @@ myNames<-names(tdm.s)
 
 term.freq<-subset(tdm.s, tdm.s>=500)
 freq.terms<-findFreqTerms(tdm, lowfreq=500)
-png("Top25_word_graph.png", height=800, width=1200, units="px")
+png(paste0(resultsPath,"/Top25_word_graph.png"), height=800, width=1200, units="px")
 plot(tdm, term=freq.terms, corThreshold = 0.1, weighting=T)
 dev.off()
 
 ##Word cloud :-)
 
 tdm.df<-data.frame(word=myNames, freq=tdm.s)
-png("wordCloud.png", height=800, width=800, units="px")
+png(paste0(resultsPath,"/wordCloud.png"), height=800, width=800, units="px")
 wordcloud(tdm.df$word, tdm.df$freq, min.freq = 250, colors=brewer.pal(9, "BuGn"), random.order=F)
 dev.off()
 
@@ -73,6 +92,6 @@ tdm2<-removeSparseTerms(tdm, sparse = 0.9)
 tdm2.m<-as.matrix(tdm2)
 distMatrix<-dist(dist(scale(tdm2.m)))
 fit<-hclust(distMatrix,method = "ward.D")
-png("Word_dendrogram.png", height=800, width=1200, units="px")
+png(paste0(resultsPath,"/Word_dendrogram.png"), height=800, width=1200, units="px")
 plot(fit, cex=0.75)
 dev.off()
