@@ -80,7 +80,7 @@ dev.off()
 ##Word cloud :-)
 
 tdm.df<-data.frame(word=myNames, freq=tdm.s)
-png(paste0(resutlsPath,"wordCloud.png"), height=800, width=800, units="px")
+png(paste0(resultsPath,"wordCloud.png"), height=800, width=800, units="px")
 wordcloud(tdm.df$word, tdm.df$freq, min.freq = 250, colors=brewer.pal(9, "BuGn"), random.order=F)
 dev.off()
 
