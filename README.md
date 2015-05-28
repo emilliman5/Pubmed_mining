@@ -11,6 +11,8 @@ My foray into text mining data downloaded from pubmed.
 7. Use n-grams (i.e. stem cell instead of cell and stem)
 8. Create dictionary of relevant terms
 9. Fine tune stemming algorithm
+10. Add dynamic processor resource allocation
+11. Add functionality to set frequency thresholds based on number of returned words
 
 ##Usage:
 
