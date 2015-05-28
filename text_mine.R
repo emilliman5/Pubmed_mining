@@ -4,7 +4,7 @@ library(SnowballC)
 library(wordcloud)
 library(graph)
 library(Rgraphviz)
-library(snow)
+library(parallel)
 
 ##To Do:
 #1. Troubleshoot word stem completion
@@ -24,6 +24,7 @@ if (file.exists(extraFunFile)) {
   source(extraFunFile, keep.source=TRUE);
 }
 
+dir.create("results/")
 dir.create(paste0("results/",getDate()))
 resultsPath<-paste0("results/",getDate())
 
@@ -55,11 +56,10 @@ inspect(abstrCorpus[1:3])
 ##stemCompletion breaks corpus...
 #tmpCorpus<-sapply(abstrCorpus, stemCompletion_mod,simplify = F)
 
-tmpCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus)
+tmpCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=8)
 tmpCorpus<-Corpus(VectorSource(tmpCorpus))
 abstrCorpus<-tmpCorpus
 #inspect(abstrCorpus[1:3])
-
 
 tdm<-TermDocumentMatrix(abstrCorpus)
 inspect(tdm[100:200,1:10])
@@ -69,7 +69,7 @@ inspect(tdm[100:200,1:10])
 ################
 
 findFreqTerms(tdm,lowfreq = 250)
-findAssocs(tdm,terms = c("human", "risk", "exposur"), corlimit = 0.25)
+findAssocs(tdm,terms = c("human", "risk", "exposure"), corlimit = 0.25)
 
 tdm.m<-as.matrix(tdm)
 tdm.s<-sort(rowSums(tdm.m), decreasing = T)
