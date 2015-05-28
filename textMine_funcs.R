@@ -1,9 +1,3 @@
-stemCompletion_mod <- function(x,dict=dictCorpus) 
-{
-  PlainTextDocument(stripWhitespace(paste(stemCompletion(unlist(strsplit(as.character(x)," ")),
-                                                         dictionary=dict),sep="", collapse=" ")))
-}
-
 getDate<-function()
 {
   ## Purpose is to define a data in the format
