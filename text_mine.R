@@ -4,6 +4,7 @@ library(SnowballC)
 library(wordcloud)
 library(graph)
 library(Rgraphviz)
+library(snow)
 
 ##To Do:
 #1. Troubleshoot word stem completion
@@ -17,6 +18,15 @@ library(Rgraphviz)
 #9. Create dictionary of relevant terms
 
 setwd("~/workspace/Pubmed_mining/")
+
+extraFunFile<-"textMine_funcs.R"
+if (file.exists(extraFunFile)) {
+  source(extraFunFile, keep.source=TRUE);
+}
+
+dir.create(paste0("results/",getDate()))
+resultsPath<-paste0("results/",getDate())
+
 pubmed<-xmlTreeParse("../../Downloads/pubmed_result.xml",useInternalNodes = T)
 top<-xmlRoot(pubmed)
 
@@ -43,9 +53,7 @@ abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
 inspect(abstrCorpus[1:3])
 
 ##stemCompletion breaks corpus...
-abstrCorpus<-tm_map(abstrCorpus, 
-                    content_transformer(function(x,d) paste(stemCompletion(strsplit(stemDocument(x), ' ')[[1]], d),
-                                                            collapse=' ')), dictCorpus)
+tmpCorpus<-parLapply(abstrCorpus, stemCompletion_mod)
 #inspect(abstrCorpus[1:3])
 
 
@@ -65,14 +73,14 @@ myNames<-names(tdm.s)
 
 term.freq<-subset(tdm.s, tdm.s>=500)
 freq.terms<-findFreqTerms(tdm, lowfreq=500)
-png("Top25_word_graph.png", height=800, width=1200, units="px")
+png(paste0(resultsPath,"Top25_word_graph.png"), height=800, width=1200, units="px")
 plot(tdm, term=freq.terms, corThreshold = 0.1, weighting=T)
 dev.off()
 
 ##Word cloud :-)
 
 tdm.df<-data.frame(word=myNames, freq=tdm.s)
-png("wordCloud.png", height=800, width=800, units="px")
+png(paste0(resutlsPath,"wordCloud.png"), height=800, width=800, units="px")
 wordcloud(tdm.df$word, tdm.df$freq, min.freq = 250, colors=brewer.pal(9, "BuGn"), random.order=F)
 dev.off()
 
@@ -80,6 +88,6 @@ tdm2<-removeSparseTerms(tdm, sparse = 0.9)
 tdm2.m<-as.matrix(tdm2)
 distMatrix<-dist(dist(scale(tdm2.m)))
 fit<-hclust(distMatrix,method = "ward.D")
-png("Word_dendrogram.png", height=800, width=1200, units="px")
+png(paste0(resultsPath,"Word_dendrogram.png"), height=800, width=1200, units="px")
 plot(fit, cex=0.75)
 dev.off()
