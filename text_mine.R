@@ -6,17 +6,6 @@ library(graph)
 library(Rgraphviz)
 library(parallel)
 
-##To Do:
-#1. Troubleshoot word stem completion
-#2. Create custom stopwords dictionary (common words that are not meaningful)
-#3. Test data scaling
-#4. Pair some metadata with abstracts; Authors, title, institution???
-#5. retain chemical names (should numbers be removed or kept?)
-#6. Run analysis on MeSH terms
-#7. Generate word association graphs
-#8. Use n-grams
-#9. Create dictionary of relevant terms
-
 setwd("~/workspace/Pubmed_mining/")
 
 extraFunFile<-"textMine_funcs.R"
@@ -28,13 +17,19 @@ dir.create("results/")
 dir.create(paste0("results/",getDate()))
 resultsPath<-paste0("results/",getDate())
 
-pubmed<-xmlTreeParse("../../Downloads/pubmed_result.xml",useInternalNodes = T)
+pubmed<-xmlTreeParse("pubmed_result.xml",useInternalNodes = T)
 top<-xmlRoot(pubmed)
 
 abstr<-xpathApply(top, "//MedlineCitation/Article/Abstract", xmlValue)
 abstr.df<-do.call("rbind", abstr)
 
 abstrCorpus<-Corpus(DataframeSource(abstr.df))
+
+keywords<-xpathApply(top, "//KeywordList", xmlValue)
+mesh<-xpathApply(top, "//MeshHeadingList", xmlValue)
+
+mesh.df<-do.call("rbind",mesh)
+abstrCorpus<-Corpus(DataframeSource(mesh.df))
 
 abstrCorpus<-tm_map(abstrCorpus, content_transformer(tolower))
 abstrCorpus<-tm_map(abstrCorpus, removePunctuation)
@@ -44,19 +39,13 @@ myStopwords<-c(stopwords('english'), "available", "via")
 
 #a specific set of stopwords will need to be developed for this analysis
 
-##"r" does not exist in the stopwords vector...
-#myStopwords<-myStopwords[-which(myStopwords=="r")]
-
 abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
 dictCorpus<-abstrCorpus
 abstrCorpus<-tm_map(abstrCorpus, stemDocument)
 abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
 inspect(abstrCorpus[1:3])
 
-##stemCompletion breaks corpus...
-#tmpCorpus<-sapply(abstrCorpus, stemCompletion_mod,simplify = F)
-
-tmpCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=8)
+tmpCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=4)
 tmpCorpus<-Corpus(VectorSource(tmpCorpus))
 abstrCorpus<-tmpCorpus
 #inspect(abstrCorpus[1:3])
@@ -68,16 +57,16 @@ inspect(tdm[100:200,1:10])
 ##Some basic analyses
 ################
 
-findFreqTerms(tdm,lowfreq = 250)
-findAssocs(tdm,terms = c("human", "risk", "exposure"), corlimit = 0.25)
+findFreqTerms(tdm,lowfreq = 50)
+findAssocs(tdm,terms = c("tumorcell", "cell", "pollutants"), corlimit = 0.25)
 
 tdm.m<-as.matrix(tdm)
 tdm.s<-sort(rowSums(tdm.m), decreasing = T)
 myNames<-names(tdm.s)
 
-term.freq<-subset(tdm.s, tdm.s>=500)
-freq.terms<-findFreqTerms(tdm, lowfreq=500)
-png(paste0(resultsPath,"/Top25_word_graph.png"), height=800, width=1200, units="px")
+term.freq<-subset(tdm.s, tdm.s>=50)
+freq.terms<-findFreqTerms(tdm, lowfreq=50)
+png(paste0(resultsPath,"/Top25_word_graph.png"), height=1200, width=1600, units="px")
 plot(tdm, term=freq.terms, corThreshold = 0.1, weighting=T)
 dev.off()
 
@@ -85,10 +74,10 @@ dev.off()
 
 tdm.df<-data.frame(word=myNames, freq=tdm.s)
 png(paste0(resultsPath,"/wordCloud.png"), height=800, width=800, units="px")
-wordcloud(tdm.df$word, tdm.df$freq, min.freq = 250, colors=brewer.pal(9, "BuGn"), random.order=F)
+wordcloud(tdm.df$word, tdm.df$freq, min.freq = 20, colors=brewer.pal(9, "BuGn"), random.order=F)
 dev.off()
 
-tdm2<-removeSparseTerms(tdm, sparse = 0.9)
+tdm2<-removeSparseTerms(tdm, sparse = 0.99)
 tdm2.m<-as.matrix(tdm2)
 distMatrix<-dist(dist(scale(tdm2.m)))
 fit<-hclust(distMatrix,method = "ward.D")
