@@ -2,7 +2,7 @@ getDate<-function()
 {
   ## Purpose is to define a data in the format
   ## 2015may05 (YYYYmmDD)
-  tolower(format(Sys.time(), "%Y%b%d"));
+  tolower(format(Sys.time(), "%Y%b%d_%H%M"));
 }
 
 stemCompletion2 <- function(x, dictionary) 
