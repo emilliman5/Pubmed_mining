@@ -39,18 +39,14 @@ abstrCorpus<-tm_map(abstrCorpus, removeNumbers)
 
 myStopwords<-c(stopwords('english'), "available", "via")
 
-#a specific set of stopwords will need to be developed for this analysis
-
 abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
 dictCorpus<-abstrCorpus
 abstrCorpus<-tm_map(abstrCorpus, stemDocument)
 abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
 inspect(abstrCorpus[1:3])
 
-tmpCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=6)
-tmpCorpus<-Corpus(VectorSource(tmpCorpus))
-abstrCorpus<-tmpCorpus
-#inspect(abstrCorpus[1:3])
+abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=6)
+abstrCorpus<-Corpus(VectorSource(tmpCorpus))
 
 tdm<-TermDocumentMatrix(abstrCorpus)
 inspect(tdm[100:200,1:10])
