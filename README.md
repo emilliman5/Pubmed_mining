@@ -13,6 +13,7 @@ My foray into text mining data downloaded from pubmed.
 9. Fine tune stemming algorithm
 10. Add dynamic processor resource allocation
 11. Add functionality to set frequency thresholds based on number of returned words
+12. Mesh Headings and Keywords will need to be inspected for run on words
 
 ##Usage:
 
