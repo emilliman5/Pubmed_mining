@@ -1,19 +1,16 @@
 # Pubmed_mining
-My foray into text mining data downloaded from pubmed.
+My foray into text mining data from pubmed.
 
 ##To Do:
 1. Create custom stopwords dictionary (common words that are not meaningful (e.g. cell, gene, protein...))
-2. Test data scaling
+2. Mesh Headings and Keywords will need to be inspected for run-on words
 3. Pair some metadata with abstracts; Authors, title, institution???
-4. Implement parallelization of corpus transformations
+4. Fine tune stemming algorithm -- Science words may need special handling
 5. retain chemical names? (should numbers be removed or kept?)
-6. Run analysis on MeSH terms
-7. Use n-grams (i.e. stem cell instead of cell and stem)
-8. Create dictionary of relevant terms
-9. Fine tune stemming algorithm
-10. Add dynamic processor resource allocation
-11. Add functionality to set frequency thresholds based on number of returned words
-12. Mesh Headings and Keywords will need to be inspected for run on words
+6. Use n-grams (i.e. stem cell instead of cell and stem)
+7. Create dictionary of relevant terms
+8. Add dynamic processor resource allocation
+9. Add functionality to set frequency thresholds based on number of returned words
 
 ##Usage:
 
