@@ -6,7 +6,7 @@ library(graph)
 library(Rgraphviz)
 library(parallel)
 
-setwd("~/workspace/Pubmed_mining/")
+# setwd("~/workspace/Pubmed_mining/")
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
@@ -26,10 +26,11 @@ abstr.df<-do.call("rbind", abstr)
 abstrCorpus<-Corpus(DataframeSource(abstr.df))
 
 keywords<-xpathApply(top, "//KeywordList", xmlValue)
-mesh<-xpathApply(top, "//MeshHeadingList", xmlValue)
+keywords<-do.call("rbind",keywords)
 
+mesh<-xpathApply(top, "//MeshHeadingList", xmlValue)
 mesh.df<-do.call("rbind",mesh)
-abstrCorpus<-Corpus(DataframeSource(mesh.df))
+#abstrCorpus<-Corpus(DataframeSource(mesh.df))
 
 abstrCorpus<-tm_map(abstrCorpus, content_transformer(tolower))
 abstrCorpus<-tm_map(abstrCorpus, removePunctuation)
