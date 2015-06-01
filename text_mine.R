@@ -64,16 +64,16 @@ idf<-apply(tdm.m, 1, function(x) length(x)/sum(x>=1))
 png(file.path(resultsPath,"TermFreq_Distributions.png", fsep = "/"), height=4000, width=2400, units="px")
 par(mfrow=c(3,1), cex=4)
 hist(log2(rowSums(tdm.m)), breaks=100, col="blue4", main="Distribution of terms in Corpus")
-hist(log2(rowMeans(tdm.m)), breaks=100, col="blue4", main="Distribution of Avg. term usage per Document in Corpus")
+hist(log2(rowMeans(tdm.m)), breaks=100, col="red", main="Distribution of Avg. term usage per Document in Corpus")
 hist(idf, breaks=100, col="green",main="Distribution of idf Scores")
 dev.off()
 
 ################
 ##Some basic analyses
 ################
-low<-quantile(rowSums(tdm.m), probs = 0.9)
+low<-quantile(rowSums(tdm.m), probs = 0.99)
 
-findFreqTerms(tdm,lowfreq = low)
+(freq.terms<-findFreqTerms(tdm,lowfreq = low))
 keywords.SP<-read.csv("Keywords_by_SP_Goals.csv")
 findAssocs(tdm,terms = c("puberty", "pregnancy","lactation"), corlimit = 0.1)
 
@@ -82,17 +82,15 @@ findAssocs(tdm,terms = c("puberty", "pregnancy","lactation"), corlimit = 0.1)
 ##Network of word correlations
 #######
 
-term.freq<-subset(tdm.s, tdm.s>=245)
-freq.terms<-findFreqTerms(tdm, lowfreq=245)
 png(paste0(resultsPath,"/Word_graph.png"), height=2400, width=3200, units="px")
-plot(tdm, term=freq.terms, corThreshold = 0.1, weighting=T)
+plot(tdm, term=freq.terms, corThreshold = 0.2, weighting=T)
 dev.off()
 
 ##Word cloud :-)
 
 tdm.df<-data.frame(word=myNames, freq=tdm.s)
 png(paste0(resultsPath,"/wordCloud.png"), height=1600, width=1600, units="px")
-wordcloud(tdm.df$word, tdm.df$freq, min.freq = 245, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
+wordcloud(tdm.df$word, tdm.df$freq, scale=c(15,0.5),min.freq = low, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
 dev.off()
 
 ###########
