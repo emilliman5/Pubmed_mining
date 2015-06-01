@@ -15,3 +15,8 @@ stemCompletion2 <- function(x, dictionary)
   PlainTextDocument(stripWhitespace(x))
   
 }
+
+NgramTokenizer <-function(x,n)
+{
+  unlist(lapply(ngrams(words(x), n), paste, collapse = " "), use.names = FALSE)
+}
