@@ -115,3 +115,5 @@ for (i in 1:k) {
 #############
 dtm<-as.DocumentTermMatrix(tdm)
 lda<-LDA(dtm, 12)
+(topics<-terms(lda,6))
+
