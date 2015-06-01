@@ -18,7 +18,7 @@ dir.create("results/")
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
-pubmed<-xmlTreeParse("~/Downloads/pubmed_result.xml",useInternalNodes = T)
+pubmed<-xmlTreeParse("pubmed_result.xml",useInternalNodes = T)
 top<-xmlRoot(pubmed)
 
 abstr<-xpathApply(top, "//MedlineCitation/Article/Abstract", xmlValue)
@@ -38,7 +38,7 @@ abstrCorpus<-tm_map(abstrCorpus, removePunctuation)
 abstrCorpus<-tm_map(abstrCorpus, removeNumbers)
 
 stopWords<-read.table("stopwords.txt")
-myStopwords<-c(stopwords('english'), stopWords)
+myStopwords<-c(stopwords('english'), stopWords$V1)
 
 abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
 dictCorpus<-abstrCorpus
@@ -46,7 +46,7 @@ abstrCorpus<-tm_map(abstrCorpus, stemDocument)
 abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
 inspect(abstrCorpus[1:3])
 
-abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=24)
+abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=8)
 abstrCorpus<-Corpus(VectorSource(abstrCorpus))
 
 tdm<-TermDocumentMatrix(abstrCorpus)
