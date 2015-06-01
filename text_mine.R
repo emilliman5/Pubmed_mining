@@ -117,3 +117,10 @@ dtm<-as.DocumentTermMatrix(tdm)
 lda<-LDA(dtm, 12)
 (topics<-terms(lda,6))
 
+
+#################
+##Ngram Analysis
+#################
+
+tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer, 2))
+inspect(removeSparseTerms(tdm[, 1:10], 0.7))
