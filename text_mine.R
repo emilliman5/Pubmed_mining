@@ -14,14 +14,14 @@ if (file.exists(extraFunFile)) {
   source(extraFunFile, keep.source=TRUE);
 }
 
-dir.create("results/")
+dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
-pubmed<-xmlTreeParse("pubmed_result.xml",useInternalNodes = T)
+pubmed<-xmlTreeParse("~/Downloads/pubmed_result.xml",useInternalNodes = T)
 top<-xmlRoot(pubmed)
 
-abstr<-xpathApply(top, "//MedlineCitation/Article/Abstract", xmlValue)
+abstr<-xpathApply(top, "//MedlineCitation/Article/Abstract/AbstractText", xmlValue)
 abstr.df<-do.call("rbind", abstr)
 abstrCorpus<-Corpus(DataframeSource(abstr.df))
 
@@ -46,22 +46,37 @@ abstrCorpus<-tm_map(abstrCorpus, stemDocument)
 abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
 inspect(abstrCorpus[1:3])
 
-abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=8)
+abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=24)
 abstrCorpus<-Corpus(VectorSource(abstrCorpus))
 
 tdm<-TermDocumentMatrix(abstrCorpus)
 inspect(tdm[100:200,1:10])
 
+###########
+##TermFreq exploration
+###########
+tdm.m<-as.matrix(tdm)
+tdm.m.s<-tdm.m[sort(rowSums(tdm.m), decreasing = T),]
+tdm.s<-sort(rowSums(tdm.m), decreasing = T)
+myNames<-names(tdm.s)
+idf<-apply(tdm.m, 1, function(x) length(x)/sum(x>=1))
+
+png(file.path(resultsPath,"TermFreq_Distributions.png", fsep = "/"), height=4000, width=2400, units="px")
+par(mfrow=c(3,1), cex=4)
+hist(log2(rowSums(tdm.m)), breaks=100, col="blue4", main="Distribution of terms in Corpus")
+hist(log2(rowMeans(tdm.m)), breaks=100, col="blue4", main="Distribution of Avg. term usage per Document in Corpus")
+hist(idf, breaks=100, col="green",main="Distribution of idf Scores")
+dev.off()
+
 ################
 ##Some basic analyses
 ################
+low<-quantile(rowSums(tdm.m), probs = 0.9)
 
-findFreqTerms(tdm,lowfreq = 10)
-findAssocs(tdm,terms = c("particulate", "toxic", "air"), corlimit = 0.25)
+findFreqTerms(tdm,lowfreq = low)
+keywords.SP<-read.csv("Keywords_by_SP_Goals.csv")
+findAssocs(tdm,terms = c("puberty", "pregnancy","lactation"), corlimit = 0.1)
 
-tdm.m<-as.matrix(tdm)
-tdm.s<-sort(rowSums(tdm.m), decreasing = T)
-myNames<-names(tdm.s)
 
 #######
 ##Network of word correlations
@@ -122,5 +137,6 @@ lda<-LDA(dtm, 12)
 ##Ngram Analysis
 #################
 
-tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer, 2))
-inspect(removeSparseTerms(tdm[, 1:10], 0.7))
+tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
+inspect(removeSparseTerms(tdm.bigram[, 1:10], 0.9))
+inspect(tdm.bigram)
