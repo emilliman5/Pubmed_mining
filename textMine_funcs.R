@@ -16,7 +16,7 @@ stemCompletion2 <- function(x, dictionary)
   
 }
 
-NgramTokenizer <-function(x,n)
+NgramTokenizer <-function(x,n=2)
 {
   unlist(lapply(ngrams(words(x), n), paste, collapse = " "), use.names = FALSE)
 }
