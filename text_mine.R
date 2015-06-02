@@ -14,6 +14,9 @@ if (file.exists(extraFunFile)) {
   source(extraFunFile, keep.source=TRUE);
 }
 
+fiscalYear.start<-10
+fiscalYear.end<-9
+
 dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
@@ -22,13 +25,13 @@ pubmed<-xmlTreeParse("~/Downloads/pubmed_result.xml",useInternalNodes = T)
 top<-xmlRoot(pubmed)
 
 abstr<-xpathApply(top, "//MedlineCitation/Article/Abstract/AbstractText", xmlValue)
-title<-xpathApply(top, "//MedlineCitation/Article/ArticleText", xmlValue)
+titles<-xpathApply(top, "//MedlineCitation/Article/ArticleTitle", xmlValue)
 pubdate<-xpathApply(top, "//PubmedData/History/PubMedPubDate[@PubStatus='pubmed']", xmlValue)
+pubdate.df<-do.call("rbind", lapply(pubdate, function(x)  paste(xmlSApply(x, xmlValue)[1:3], sep = "-")))
 grantID<-xpathApply(top, "//MedlineCitation/Article/GrantList/Grant/GrantID", xmlValue)
 
 abstr.df<-do.call("rbind", abstr)
 abstrCorpus<-Corpus(DataframeSource(abstr.df))
-
 
 keywords<-xpathApply(top, "//KeywordList", xmlValue)
 keywords.df<-do.call("rbind",keywords)
