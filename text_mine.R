@@ -22,8 +22,13 @@ pubmed<-xmlTreeParse("~/Downloads/pubmed_result.xml",useInternalNodes = T)
 top<-xmlRoot(pubmed)
 
 abstr<-xpathApply(top, "//MedlineCitation/Article/Abstract/AbstractText", xmlValue)
+title<-xpathApply(top, "//MedlineCitation/Article/ArticleText", xmlValue)
+pubdate<-xpathApply(top, "//PubmedData/History/PubMedPubDate[@PubStatus='pubmed']", xmlValue)
+grantID<-xpathApply(top, "//MedlineCitation/Article/GrantList/Grant/GrantID", xmlValue)
+
 abstr.df<-do.call("rbind", abstr)
 abstrCorpus<-Corpus(DataframeSource(abstr.df))
+
 
 keywords<-xpathApply(top, "//KeywordList", xmlValue)
 keywords.df<-do.call("rbind",keywords)
