@@ -1,0 +1,3 @@
+Use knowledge management techniques to create a collaborative environment for the EHS community, to encourage an interdisciplinary approach to investigate, analyze, and disseminate findings.
+a.	Develop bioinformatics, biostatistics, and data integration tools to conduct interdisciplinary research for application to environmental health science.
+b.	Develop and invest in publicly available resources and computational tools, for integrating and analyzing environmental health data.
