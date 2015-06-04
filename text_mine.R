@@ -21,7 +21,7 @@ dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
-pubmed<-xmlTreeParse("pubmed_result.xml",useInternalNodes = T)
+pubmed<-xmlTreeParse("~/Downloads/pubmed_result.xml",useInternalNodes = T)
 top<-xmlRoot(pubmed)
 
 abstr<-xpathApply(top, "//MedlineCitation/Article/Abstract/AbstractText", xmlValue)
@@ -29,7 +29,7 @@ titles<-xpathApply(top, "//MedlineCitation/Article/ArticleTitle", xmlValue)
 
 nodes<-getNodeSet(top,"//PubmedData/History/PubMedPubDate[@PubStatus='pubmed']")
 pubdate<-lapply(nodes, function(x) xmlSApply(x, xmlValue))
-pubdate.df<-do.call("rbind", lapply(pubdate, function(x)  paste(xmlSApply(x, xmlValue)[1:3], sep = "-")))
+pubdate.df<-do.call("rbind", lapply(pubdate, function(x)  paste(xmlSApply(x, xmlValue)[1:3], collapse = "-")))
 
 abstr.df<-do.call("rbind", xpathApply(top, "//PubmedArticle", function(node)
 {
@@ -37,9 +37,9 @@ abstr.df<-do.call("rbind", xpathApply(top, "//PubmedArticle", function(node)
   title<-xmlValue(node[['MedlineCitation']][['Article']][['ArticleTitle']])
   abstr<-xmlValue(node[['MedlineCitation']][['Article']][['Abstract']][['AbstractText']])
   nodes<-getNodeSet(top,"//PubmedData/History/PubMedPubDate[@PubStatus='pubmed']")
-  d<-xmlSApply(nodes, xmlValue)
-  #date<-paste(d[1:3], collapse="-")
-  data.frame("Year"=d[1], "Month"=d[2], "Day"=d[3],"GrantID"=grantID, "Title"=title, "Abstract"=abstr, stringsAsFactors=F)
+  d<-lapply(nodes, function(x) xmlSApply(x, xmlValue))
+  date<-lapply(d, function(x) paste(x[1:3], collapse="-"))
+  data.frame("Date"=date,"GrantID"=grantID, "Title"=title, "Abstract"=abstr, stringsAsFactors=F)
 } ))
 
 abstrCorpus<-Corpus(DataframeSource(abstr.df))
