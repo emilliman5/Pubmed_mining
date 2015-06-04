@@ -13,6 +13,10 @@ if (file.exists(extraFunFile)) {
 }
 
 files<-list.files(pattern = "SP_")
-files<-files[-grep(".csv", files)]
+files<-files[grep(".txt", files)]
 
-SP<-do.call(rbind, lapply(files, function(x) read.table(x, header=F, quote="", sep="")))
+docs<-do.call("rbind", lapply(files, function(x) paste(readLines(file(x)), collapse=" ")))
+
+docs<-cbind(gsub(".txt", "",files), docs)
+
+SP<-VCorpus(VectorSource(docs[,2]))
