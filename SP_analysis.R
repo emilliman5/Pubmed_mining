@@ -40,12 +40,10 @@ colnames(tdm)<-docs[,1]
 inspect(tdm[1:20,])
 
 
-png(paste0(resultsPath,"/StrategicPlan_wordcloud.png"), height=4000, width=6000, units="px")
+png(paste0(resultsPath,"/StrategicPlan_wordcloud.png"), height=4500, width=6500, units="px")
 par(mfrow=c(3,4))
-par()
-apply(as.matrix(tdm), 2, function(x) plot.new(); 
-      text(0.5, 0.5, colnames(x)); 
-      wordcloud(row.names(as.matrix(tdm)), x, min.freq = 1, 
+apply(as.matrix(tdm), 2, function(x) 
+      wordcloud(row.names(as.matrix(tdm)), x, min.freq = 1, scale=c(20,0.5), 
                 colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
       )
 dev.off()
