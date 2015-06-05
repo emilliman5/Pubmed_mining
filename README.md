@@ -2,15 +2,16 @@
 My foray into text mining data from pubmed.
 
 ##To Do:
-1. Create custom stopwords dictionary (common words that are not meaningful (e.g. cell, gene, protein...))
+1. Create custom stopwords dictionary (common words that are not meaningful (e.g. cell, gene, protein...)) -- remove words with an idf of 1.
 2. Mesh Headings and Keywords will need to be inspected for run-on words
-3. Pair some metadata with abstracts; Authors, title, institution???
-4. Fine tune stemming algorithm -- Science words may need special handling
-5. retain chemical names? (should numbers be removed or kept?)
-6. Use n-grams (i.e. stem cell instead of cell and stem)
-7. Create dictionary of relevant terms
-8. Add dynamic processor resource allocation
-9. Add functionality to set frequency thresholds based on number of returned words
+3. Pair some metadata with abstracts: Date and Grant Number -- very close
+4. Use n-grams (i.e. stem cell instead of cell and stem) -- bigram tokenizer initated
+5. Create dictionary of relevant terms
+6. Add dynamic processor resource allocation
+7. Add functionality to set frequency thresholds based on number of returned words
+8. Clean up and finsih code to generate corpus.
+9. Finish Strategic Plan corpus and EDA
+10. Fix stemCompletion2 code -- package update may have broken the code.
 
 ##Usage:
 
