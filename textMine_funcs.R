@@ -10,7 +10,7 @@ stemCompletion2 <- function(x, dictionary)
   
   x <- unlist(strsplit(as.character(x), " "))  
   x <- x[x != ""]  
-  x <- stemCompletionF(x, dictionary=dictionary)
+  x <- stemCompletion(x, dictionary=dictionary)
   x <- paste(x, sep="", collapse=" ") 
   PlainTextDocument(stripWhitespace(x))
   
