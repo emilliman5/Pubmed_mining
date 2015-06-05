@@ -21,47 +21,40 @@ dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
-pubmed<-xmlTreeParse("very_small_pubmed.xml",useInternalNodes = T)
-top<-xmlRoot(pubmed)
+stopWords<-read.table("stopwords.txt")
+myStopwords<-c(stopwords('english'), stopWords$V1)
 
-abstr<-xpathApply(top, "//MedlineCitation/Article/Abstract/AbstractText", xmlValue)
-titles<-xpathApply(top, "//MedlineCitation/Article/ArticleTitle", xmlValue)
+pubmed<-xmlParse("very_small_pubmed.xml",useInternalNodes = T)
+top<-xmlRoot(pubmed)
 
 nodes<-getNodeSet(top,"//PubmedData/History/PubMedPubDate[@PubStatus='pubmed']")
 pubdate.df<-sapply(nodes, function(x)  paste(xmlSApply(x, xmlValue)[1:3], collapse = "-"))
 
-abstr.df<-do.call("rbind", xpathApply(top, "//PubmedArticle", function(node)
+abstr.df<-do.call("rbind", xpathApply(top, "//PubmedArticle/MedlineCitation/Article", function(node)
 {
-  grantID<-xmlValue(node[['MedlineCitation']][['Article']][['GrantList']][['Grant']][['GrantID']])
-  title<-xmlValue(node[['MedlineCitation']][['Article']][['ArticleTitle']])
-  abstr<-xmlValue(node[['MedlineCitation']][['Article']][['Abstract']][['AbstractText']])
+  grantID<-xmlValue(node[['GrantList']][['Grant']][['GrantID']])
+  title<-xmlValue(node[['ArticleTitle']])
+  abstr<-xmlValue(node[['Abstract']][['AbstractText']])
   data.frame("GrantID"=grantID, "Title"=title, "Abstract"=abstr, stringsAsFactors=F)
 } ))
 
 abstr.df<-cbind(pubdate.df, abstr.df)
-
-abstrCorpus<-Corpus(DataframeSource(abstr.df))
+abstrCorpus<-Corpus(DataframeSource(abstr.df[,3:4]))
 
 keywords<-xpathApply(top, "//KeywordList", xmlValue)
 keywords.df<-do.call("rbind",keywords)
-abstrCorpus<-Corpus(DataframeSource(keywords.df))
+#abstrCorpus<-Corpus(DataframeSource(keywords.df))
 
 mesh<-xpathApply(top, "//MeshHeadingList", xmlValue)
-mesh.df<-do.call("rbind",mesh)
-#abstrCorpus<-Corpus(DataframeSource(mesh.df))
+#mesh.df<-do.call("rbind",mesh)
 
 abstrCorpus<-tm_map(abstrCorpus, content_transformer(tolower))
 abstrCorpus<-tm_map(abstrCorpus, removePunctuation)
 abstrCorpus<-tm_map(abstrCorpus, removeNumbers)
-
-stopWords<-read.table("stopwords.txt")
-myStopwords<-c(stopwords('english'), stopWords$V1)
-
 abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
 dictCorpus<-abstrCorpus
 abstrCorpus<-tm_map(abstrCorpus, stemDocument)
 abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
-inspect(abstrCorpus[1:3])
 
 abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=24)
 abstrCorpus<-Corpus(VectorSource(abstrCorpus))
@@ -139,14 +132,12 @@ for (i in 1:k) {
   # print(tweets[which(kmeansResult$cluster==i)])
 }
 
-
 #############
 ##Topic Modelling
 #############
 dtm<-as.DocumentTermMatrix(tdm)
 lda<-LDA(dtm, 12)
 (topics<-terms(lda,6))
-
 
 #################
 ##Ngram Analysis
@@ -155,3 +146,4 @@ lda<-LDA(dtm, 12)
 tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
 inspect(removeSparseTerms(tdm.bigram[, 1:10], 0.9))
 inspect(tdm.bigram)
+
