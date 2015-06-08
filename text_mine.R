@@ -21,43 +21,53 @@ dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
-stopWords<-read.table("stopwords.txt")
-myStopwords<-c(stopwords('english'), stopWords$V1)
+if(!file.exists("Corpus/1001.txt")){
+  
+  stopWords<-read.table("stopwords.txt")
+  myStopwords<-c(stopwords('english'), stopWords$V1)
+  
+  pubmed<-xmlParse("pubmed_result.xml",useInternalNodes = T)
+  top<-xmlRoot(pubmed)
+  
+  nodes<-getNodeSet(top,"//PubmedData/History/PubMedPubDate[@PubStatus='pubmed']")
+  pubdate.df<-sapply(nodes, function(x)  paste(xmlSApply(x, xmlValue)[1:3], collapse = "-"))
+  
+  abstr.df<-do.call("rbind", xpathApply(top, "//PubmedArticle/MedlineCitation/Article", function(node)
+  {
+    grantID<-xmlValue(node[['GrantList']][['Grant']][['GrantID']])
+    title<-xmlValue(node[['ArticleTitle']])
+    abstr<-xmlValue(node[['Abstract']][['AbstractText']])
+    data.frame("GrantID"=grantID, "Title"=title, "Abstract"=abstr, stringsAsFactors=F)
+  } ))
+  
+  abstr.df<-cbind(pubdate.df, abstr.df)
+  abstrCorpus<-Corpus(DataframeSource(abstr.df[,3:4]))
+  
+  # keywords<-xpathApply(top, "//KeywordList", xmlValue)
+  # keywords.df<-do.call("rbind",keywords)
+  # #abstrCorpus<-Corpus(DataframeSource(keywords.df))
+  # 
+  # mesh<-xpathApply(top, "//MeshHeadingList", xmlValue)
+  # #mesh.df<-do.call("rbind",mesh)
+  
+  abstrCorpus<-tm_map(abstrCorpus, content_transformer(tolower))
+  abstrCorpus<-tm_map(abstrCorpus, removePunctuation)
+  abstrCorpus<-tm_map(abstrCorpus, removeNumbers)
+  abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
+  dictCorpus<-abstrCorpus
+  abstrCorpus<-tm_map(abstrCorpus, stemDocument)
+  abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
+  
+  abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=24)
+  abstrCorpus<-Corpus(VectorSource(abstrCorpus))
+  
+  dir.create("Corpus")
+  writeCorpus(abstrCorpus,"Corpus/")
+}
 
-pubmed<-xmlParse("very_small_pubmed.xml",useInternalNodes = T)
-top<-xmlRoot(pubmed)
-
-nodes<-getNodeSet(top,"//PubmedData/History/PubMedPubDate[@PubStatus='pubmed']")
-pubdate.df<-sapply(nodes, function(x)  paste(xmlSApply(x, xmlValue)[1:3], collapse = "-"))
-
-abstr.df<-do.call("rbind", xpathApply(top, "//PubmedArticle/MedlineCitation/Article", function(node)
-{
-  grantID<-xmlValue(node[['GrantList']][['Grant']][['GrantID']])
-  title<-xmlValue(node[['ArticleTitle']])
-  abstr<-xmlValue(node[['Abstract']][['AbstractText']])
-  data.frame("GrantID"=grantID, "Title"=title, "Abstract"=abstr, stringsAsFactors=F)
-} ))
-
-abstr.df<-cbind(pubdate.df, abstr.df)
-abstrCorpus<-Corpus(DataframeSource(abstr.df[,3:4]))
-
-keywords<-xpathApply(top, "//KeywordList", xmlValue)
-keywords.df<-do.call("rbind",keywords)
-#abstrCorpus<-Corpus(DataframeSource(keywords.df))
-
-mesh<-xpathApply(top, "//MeshHeadingList", xmlValue)
-#mesh.df<-do.call("rbind",mesh)
-
-abstrCorpus<-tm_map(abstrCorpus, content_transformer(tolower))
-abstrCorpus<-tm_map(abstrCorpus, removePunctuation)
-abstrCorpus<-tm_map(abstrCorpus, removeNumbers)
-abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
-dictCorpus<-abstrCorpus
-abstrCorpus<-tm_map(abstrCorpus, stemDocument)
-abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
-
-abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=24)
-abstrCorpus<-Corpus(VectorSource(abstrCorpus))
+if(!exists(abstrCorpus)){
+  ##read in corpus docs.
+}
 
 tdm<-TermDocumentMatrix(abstrCorpus)
 inspect(tdm[100:200,1:10])
@@ -81,36 +91,50 @@ dev.off()
 ################
 ##Some basic analyses
 ################
+
+###Paramters for the analyses below
+
+#Frequency Threshold; term are retained with they have a frequency above this value
 low<-quantile(rowSums(tdm.m), probs = 0.99)
 
-(freq.terms<-findFreqTerms(tdm,lowfreq = low))
+#Correlation Threshold for association rule mining and Word grapgh plot
+corLimit<-0.1
+
+#Sparsity removes terms that appear infrequently in the matrix must be <1
+sparsity<-0.9
+
+#Number of clusters to seed for kmeans clustering.
+k<-10
+
+
 keywords.SP<-read.csv("Keywords_by_SP_Goals.csv")
-findAssocs(tdm,terms = c("puberty", "pregnancy","lactation"), corlimit = 0.1)
+findAssocs(tdm,terms = c("puberty", "pregnancy","lactation"), corlimit = corLimit)
 
 
 #######
 ##Network of word correlations
 #######
-
+(freq.terms<-findFreqTerms(tdm,lowfreq = low))
 png(paste0(resultsPath,"/Word_graph.png"), height=2400, width=3200, units="px")
-plot(tdm, term=freq.terms, corThreshold = 0.2, weighting=T)
+plot(tdm, term=freq.terms, corThreshold = corLimit, weighting=T)
 dev.off()
 
 ##Word cloud :-)
 
 tdm.df<-data.frame(word=myNames, freq=tdm.s)
 png(paste0(resultsPath,"/wordCloud.png"), height=1600, width=1600, units="px")
-wordcloud(tdm.df$word, tdm.df$freq, scale=c(15,0.5),min.freq = low, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
+wordcloud(tdm.df$word, tdm.df$freq, scale=c(15,0.5), min.freq = low, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
 dev.off()
 
 ###########
 ##Hierchical Clustering and Dendrogram
 ###########
 
-tdm2<-removeSparseTerms(tdm, sparse =0.9)
+tdm2<-removeSparseTerms(tdm, sparse = sparsity)
 tdm2.m<-as.matrix(tdm2)
 distMatrix<-dist(dist(scale(tdm2.m)))
 fit<-hclust(distMatrix,method = "ward.D")
+
 png(paste0(resultsPath,"/Word_dendrogram.png"), height=800, width=1200, units="px")
 plot(fit, cex=0.75)
 dev.off()
@@ -120,7 +144,6 @@ dev.off()
 ############
 
 tdm.t<-t(tdm)
-k<-10
 kmeansResults<-kmeans(tdm.t, k)
 round(kmeansResults$centers, digits=3)
 
@@ -144,6 +167,6 @@ lda<-LDA(dtm, 12)
 #################
 
 tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
-inspect(removeSparseTerms(tdm.bigram[, 1:10], 0.9))
+inspect(removeSparseTerms(tdm.bigram[, 1:10], sparsity))
 inspect(tdm.bigram)
 
