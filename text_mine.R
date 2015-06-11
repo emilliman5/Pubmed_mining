@@ -6,8 +6,11 @@ library(graph)
 library(Rgraphviz)
 library(parallel)
 library(topicmodels)
+library(lubridate)
 
 # setwd("~/workspace/Pubmed_mining/")
+
+reset=FALSE
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
@@ -21,7 +24,7 @@ dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
-if(!file.exists("Corpus/1001.txt")){
+if(!file.exists("Corpus/1.txt") || reset){
   
   stopWords<-read.table("stopwords.txt")
   myStopwords<-c(stopwords('english'), stopWords$V1)
@@ -43,6 +46,15 @@ if(!file.exists("Corpus/1001.txt")){
   abstr.df<-cbind(pubdate.df, abstr.df)
   abstrCorpus<-Corpus(DataframeSource(abstr.df[,3:4]))
   
+  meta(abstrCorpus, "GrantID")<-abstr.df[,"GrantID"]
+  meta(abstrCorpus, "Date")<-abstr.df[,"pubdate.df"]
+  
+  abstrCorpus<-tm_map(abstrCorpus, function(x){
+    meta(x, "GrantID")<-LETTERS[round(runif(26))]
+    meta(x, "Date")<-"2015-06-10"
+    x
+    })
+  
   # keywords<-xpathApply(top, "//KeywordList", xmlValue)
   # keywords.df<-do.call("rbind",keywords)
   # #abstrCorpus<-Corpus(DataframeSource(keywords.df))
@@ -63,33 +75,32 @@ if(!file.exists("Corpus/1001.txt")){
   
   dir.create("Corpus")
   writeCorpus(abstrCorpus,"Corpus/")
-}
-
-if(!exists(abstrCorpus)){
+} else {
   ##read in corpus docs.
-}
-
-tdm<-TermDocumentMatrix(abstrCorpus)
-inspect(tdm[100:200,1:10])
-
-###########
-##TermFreq exploration
-###########
-tdm.m<-as.matrix(tdm)
-tdm.m.s<-tdm.m[sort(rowSums(tdm.m), decreasing = T),]
-tdm.s<-sort(rowSums(tdm.m), decreasing = T)
-myNames<-names(tdm.s)
-idf<-apply(tdm.m, 1, function(x) length(x)/sum(x>=1))
-
-png(file.path(resultsPath,"TermFreq_Distributions.png", fsep = "/"), height=4000, width=2400, units="px")
-par(mfrow=c(3,1), cex=4)
-hist(log2(rowSums(tdm.m)), breaks=100, col="blue4", main="Distribution of terms in Corpus")
-hist(log2(rowMeans(tdm.m)), breaks=100, col="red", main="Distribution of Avg. term usage per Document in Corpus")
-hist(idf, breaks=100, col="green",main="Distribution of idf Scores")
-dev.off()
+  abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
+  }
 
 ################
-##Some basic analyses
+##Term Document Matrix
+################
+
+#This is the basic data structure to mine for term usage trends, clustering, association rule mining, etc.
+tdm.monogram<-TermDocumentMatrix(abstrCorpus)
+inspect(tdm[100:200,1:10])
+
+#################
+##Ngram Analysis
+#################
+
+tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
+inspect(removeSparseTerms(tdm.bigram[, 1:10], sparsity))
+inspect(tdm.bigram)
+
+
+
+
+################
+##Term Usage Analysis
 ################
 
 ###Paramters for the analyses below
@@ -110,6 +121,21 @@ k<-10
 keywords.SP<-read.csv("Keywords_by_SP_Goals.csv")
 findAssocs(tdm,terms = c("puberty", "pregnancy","lactation"), corlimit = corLimit)
 
+###########
+##TermFreq exploration
+###########
+tdm.m<-as.matrix(tdm)
+tdm.m.s<-tdm.m[sort(rowSums(tdm.m), decreasing = T),]
+tdm.s<-sort(rowSums(tdm.m), decreasing = T)
+myNames<-names(tdm.s)
+idf<-apply(tdm.m, 1, function(x) length(x)/sum(x>=1))
+
+png(file.path(resultsPath,"TermFreq_Distributions.png", fsep = "/"), height=4000, width=2400, units="px")
+par(mfrow=c(3,1), cex=4)
+hist(log2(rowSums(tdm.m)), breaks=100, col="blue4", main="Distribution of terms in Corpus")
+hist(log2(rowMeans(tdm.m)), breaks=100, col="red", main="Distribution of Avg. term usage per Document in Corpus")
+hist(idf, breaks=100, col="green",main="Distribution of idf Scores")
+dev.off()
 
 #######
 ##Network of word correlations
@@ -161,12 +187,3 @@ for (i in 1:k) {
 dtm<-as.DocumentTermMatrix(tdm)
 lda<-LDA(dtm, 12)
 (topics<-terms(lda,6))
-
-#################
-##Ngram Analysis
-#################
-
-tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
-inspect(removeSparseTerms(tdm.bigram[, 1:10], sparsity))
-inspect(tdm.bigram)
-
