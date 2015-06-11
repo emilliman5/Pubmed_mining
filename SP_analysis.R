@@ -1,4 +1,3 @@
-library(XML)
 library(tm)
 library(SnowballC)
 library(wordcloud)
@@ -19,6 +18,7 @@ docs<-do.call("rbind", lapply(files, function(x) paste(readLines(file(x)), colla
 docs<-cbind(gsub("data/Strategic_goals//","",gsub(".txt", "",files)), docs)
 
 SP<-VCorpus(VectorSource(docs[,2]))
+
 SP<-tm_map(SP, removePunctuation)
 SP<-tm_map(SP, removeNumbers)
 stopWords<-read.table("stopwords.txt")
@@ -33,9 +33,10 @@ SP<-tm_map(SP,content_transformer(tolower))
 SP<-mclapply(SP, stemCompletion2, dictionary=dictCorpus, mc.cores=24)
 SP<-Corpus(VectorSource(SP))
 
-writeCorpus(SP)
+dir.create("Corpus/SP/")
+writeCorpus(SP,path = "Corpus/SP")
 
-tdm<-TermDocumentMatrix(SP,)
+tdm<-TermDocumentMatrix(SP)
 colnames(tdm)<-docs[,1]
 inspect(tdm[1:20,])
 
