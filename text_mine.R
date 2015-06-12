@@ -10,7 +10,7 @@ library(lubridate)
 
 # setwd("~/workspace/Pubmed_mining/")
 
-reset=FALSE
+reset=TRUE
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
@@ -70,7 +70,7 @@ if(!file.exists("Corpus/1.txt") || reset){
   abstrCorpus<-tm_map(abstrCorpus, stemDocument)
   abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
   
-  abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=24)
+  abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=11)
   abstrCorpus<-Corpus(VectorSource(abstrCorpus))
   
   dir.create("Corpus")
@@ -80,13 +80,29 @@ if(!file.exists("Corpus/1.txt") || reset){
   abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
   }
 
+
 ################
-##Term Document Matrix
+##Term Usage Analysis
+################
+
+###Paramters for the analyses below
+
+#Correlation Threshold for association rule mining and Word grapgh plot
+corLimit<-0.1
+
+#Sparsity removes terms that appear infrequently in the matrix must be <1
+sparsity<-0.999
+
+#Number of clusters to seed for kmeans clustering.
+k<-10
+
+################
+##Term Document Matrices
 ################
 
 #This is the basic data structure to mine for term usage trends, clustering, association rule mining, etc.
 tdm.monogram<-TermDocumentMatrix(abstrCorpus)
-inspect(tdm[100:200,1:10])
+inspect(tdm.monogram[100:200,1:10])
 
 #################
 ##Ngram Analysis
@@ -96,27 +112,13 @@ tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTok
 inspect(removeSparseTerms(tdm.bigram[, 1:10], sparsity))
 inspect(tdm.bigram)
 
+tdm<-removeSparseTerms(tdm.bigram, sparsity)
 
+tdm<-tdm.monogram
 
-
-################
-##Term Usage Analysis
-################
-
-###Paramters for the analyses below
-
-#Frequency Threshold; term are retained with they have a frequency above this value
-low<-quantile(rowSums(tdm.m), probs = 0.99)
-
-#Correlation Threshold for association rule mining and Word grapgh plot
-corLimit<-0.1
-
-#Sparsity removes terms that appear infrequently in the matrix must be <1
-sparsity<-0.9
-
-#Number of clusters to seed for kmeans clustering.
-k<-10
-
+#########
+##Association rule mining
+########
 
 keywords.SP<-read.csv("Keywords_by_SP_Goals.csv")
 findAssocs(tdm,terms = c("puberty", "pregnancy","lactation"), corlimit = corLimit)
@@ -129,6 +131,9 @@ tdm.m.s<-tdm.m[sort(rowSums(tdm.m), decreasing = T),]
 tdm.s<-sort(rowSums(tdm.m), decreasing = T)
 myNames<-names(tdm.s)
 idf<-apply(tdm.m, 1, function(x) length(x)/sum(x>=1))
+
+#Frequency Threshold; term are retained with they have a frequency above this value
+low<-quantile(rowSums(tdm.m), probs = 0.98)
 
 png(file.path(resultsPath,"TermFreq_Distributions.png", fsep = "/"), height=4000, width=2400, units="px")
 par(mfrow=c(3,1), cex=4)
@@ -145,7 +150,7 @@ png(paste0(resultsPath,"/Word_graph.png"), height=2400, width=3200, units="px")
 plot(tdm, term=freq.terms, corThreshold = corLimit, weighting=T)
 dev.off()
 
-##Word cloud :-)
+##Word cloud
 
 tdm.df<-data.frame(word=myNames, freq=tdm.s)
 png(paste0(resultsPath,"/wordCloud.png"), height=1600, width=1600, units="px")
