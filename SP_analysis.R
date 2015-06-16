@@ -6,6 +6,13 @@ library(Rgraphviz)
 library(parallel)
 library(topicmodels)
 
+# setwd("~/workspace/Pubmed_mining/")
+# setwd("~/Pubmed_mining/")
+
+#3 Set the number of cores available on your computer
+cores<-30
+
+
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
   source(extraFunFile, keep.source=TRUE);
@@ -21,7 +28,7 @@ SP<-VCorpus(VectorSource(docs[,2]))
 
 SP<-tm_map(SP, removePunctuation)
 SP<-tm_map(SP, removeNumbers)
-stopWords<-read.table("stopwords.txt")
+stopWords<-read.table("stopwords.txt", colClass=c("character"))
 myStopwords<-c(stopwords('english'), stopWords$V1)
 
 SP<-tm_map(SP, removeWords, myStopwords)
@@ -30,7 +37,7 @@ SP<-tm_map(SP, stemDocument)
 SP<-tm_map(SP, stripWhitespace)
 SP<-tm_map(SP,content_transformer(tolower))
 
-SP<-mclapply(SP, stemCompletion2, dictionary=dictCorpus, mc.cores=24)
+SP<-mclapply(SP, stemCompletion2, dictionary=dictCorpus, mc.cores=cores)
 SP<-Corpus(VectorSource(SP))
 
 dir.create("Corpus/SP/")
@@ -41,12 +48,16 @@ colnames(tdm)<-docs[,1]
 inspect(tdm[1:20,])
 
 
-png(paste0(resultsPath,"/StrategicPlan_wordcloud.png"), height=4500, width=6500, units="px")
-par(mfrow=c(3,4))
-apply(as.matrix(tdm), 2, function(x) 
-      wordcloud(row.names(as.matrix(tdm)), x, min.freq = 1, scale=c(20,0.5), 
-                colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
-      )
+png("StrategicPlan_wordClouds.png", height=3500, width=6000, units="px")
+layout(matrix(seq(1,24), nrow=4), heights=c(1,8,1,8))
+par(mar=rep(0,4))
+sapply(colnames(as.matrix(tdm)), function(x){ 
+  plot.new()
+  text(x=0.5, y=0.5, x, cex=8)
+  wordcloud(row.names(as.matrix(tdm)), as.matrix(tdm)[,x], min.freq = 1, scale=c(12,0.5), 
+            colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
+    }
+  )
 dev.off()
 
 tdm2<-removeSparseTerms(tdm, sparse =0.85)
