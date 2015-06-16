@@ -15,7 +15,7 @@ library(lubridate)
 pub.file<-"pubmed_result.xml"
 
 #3 Set the number of cores available on your computer
-cores<-3
+cores<-30
 
 reset=TRUE
 
@@ -31,7 +31,7 @@ dir.create(resultsPath)
 
 if(!file.exists("Corpus/1.txt") || reset){
   
-  stopWords<-read.table("stopwords.txt")
+  stopWords<-read.table("stopwords.txt", colClasses = c("character"))
   myStopwords<-c(stopwords('english'), stopWords$V1)
   
   pubmed<-xmlParse(pub.file,useInternalNodes = T)
