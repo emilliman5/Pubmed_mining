@@ -14,6 +14,8 @@ library(lubridate)
 #2 Set the name of the xml file to analyze
 pub.file<-"pubmed_result.xml"
 
+#3 Set the number of cores available on your computer
+cores<-3
 
 reset=TRUE
 
@@ -69,7 +71,7 @@ if(!file.exists("Corpus/1.txt") || reset){
   abstrCorpus<-tm_map(abstrCorpus, stemDocument)
   abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
   
-  abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=30)
+  abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=cores)
   abstrCorpus<-Corpus(VectorSource(abstrCorpus))
   
   dir.create("Corpus")
@@ -149,6 +151,7 @@ findAssocs(tdm,terms = c("puberty", "pregnancy","lactation"), corlimit = corLimi
 #######
 ##Network of word correlations
 #######
+
 freq.terms<-findFreqTerms(tdm,lowfreq = low)
 png(paste0(resultsPath,"/Word_graph.png"), height=2400, width=3200, units="px")
 plot(tdm, term=freq.terms, corThreshold = corLimit, weighting=F)
