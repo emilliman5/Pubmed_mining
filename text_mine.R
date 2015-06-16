@@ -9,16 +9,19 @@ library(topicmodels)
 library(lubridate)
 
 # setwd("~/workspace/Pubmed_mining/")
+# setwd("~/Pubmed_mining/")
+
+#2 Set the name of the xml file to analyze
+pub.file<-"pubmed_result.xml"
+
 
 reset=TRUE
+
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
   source(extraFunFile, keep.source=TRUE);
 }
-
-fiscalYear.start<-10
-fiscalYear.end<-9
 
 dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
@@ -29,7 +32,7 @@ if(!file.exists("Corpus/1.txt") || reset){
   stopWords<-read.table("stopwords.txt")
   myStopwords<-c(stopwords('english'), stopWords$V1)
   
-  pubmed<-xmlParse("pubmed_result.xml",useInternalNodes = T)
+  pubmed<-xmlParse(pub.file,useInternalNodes = T)
   top<-xmlRoot(pubmed)
   
   nodes<-getNodeSet(top,"//PubmedData/History/PubMedPubDate[@PubStatus='pubmed']")
@@ -44,16 +47,12 @@ if(!file.exists("Corpus/1.txt") || reset){
   } ))
   
   abstr.df<-cbind(pubdate.df, abstr.df)
+  abstr.df[,1]<-as.Date(abstr.df[,1], format = "%Y-%m-%d")
   abstrCorpus<-Corpus(DataframeSource(abstr.df[,3:4]))
   
   meta(abstrCorpus, "GrantID")<-abstr.df[,"GrantID"]
   meta(abstrCorpus, "Date")<-abstr.df[,"pubdate.df"]
-  
-  abstrCorpus<-tm_map(abstrCorpus, function(x){
-    meta(x, "GrantID")<-LETTERS[round(runif(26))]
-    meta(x, "Date")<-"2015-06-10"
-    x
-    })
+  meta(abstrCorpus, "FY")<-quarter(abstr.df[,"pubdate.df"]+90, with_year=T)
   
   # keywords<-xpathApply(top, "//KeywordList", xmlValue)
   # keywords.df<-do.call("rbind",keywords)
@@ -70,34 +69,39 @@ if(!file.exists("Corpus/1.txt") || reset){
   abstrCorpus<-tm_map(abstrCorpus, stemDocument)
   abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
   
-  abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=11)
+  abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=30)
   abstrCorpus<-Corpus(VectorSource(abstrCorpus))
   
   dir.create("Corpus")
   writeCorpus(abstrCorpus,"Corpus/")
+  write.csv(meta(abstrCorpus), "CorpusMetaData.txt",row.names=F)
 } else {
-  ##read in corpus docs.
-  abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
-  }
-
+    ##read in corpus docs.
+    abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
+    metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','Date','numeric'))
+    for (x in c("GrantID","Date", "FY")) {
+        meta(abstrCorpus, x)<-metaData[,x]
+        }
+    }
 
 ################
-##Term Usage Analysis
+##Parameters
 ################
 
-###Paramters for the analyses below
+#Frequency Threshold; term are retained with they have a frequency above this value
+low<-quantile(rowSums(tdm.m), probs = 0.99)
 
 #Correlation Threshold for association rule mining and Word grapgh plot
 corLimit<-0.1
 
 #Sparsity removes terms that appear infrequently in the matrix must be <1
-sparsity<-0.999
+sparsity<-0.9
 
 #Number of clusters to seed for kmeans clustering.
 k<-10
 
 ################
-##Term Document Matrices
+##Term Document Matrix Creation
 ################
 
 #This is the basic data structure to mine for term usage trends, clustering, association rule mining, etc.
@@ -114,12 +118,17 @@ inspect(tdm.bigram)
 
 tdm<-removeSparseTerms(tdm.bigram, sparsity)
 
+
+##Run one of the following commands before proceding. 
+##tdm.monogram are single term frequencies.
+##tdm.bigram are two term frequencies
+
 tdm<-tdm.monogram
+tdm<-tdm.bigram
 
-#########
-##Association rule mining
-########
-
+################
+##Keywords Dictionary
+################
 keywords.SP<-read.csv("Keywords_by_SP_Goals.csv")
 findAssocs(tdm,terms = c("puberty", "pregnancy","lactation"), corlimit = corLimit)
 
