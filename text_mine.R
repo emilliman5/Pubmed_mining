@@ -85,39 +85,18 @@ if(!file.exists("Corpus/1.txt") || reset){
     }
 
 ################
-##Parameters
-################
-
-#Frequency Threshold; term are retained with they have a frequency above this value
-low<-quantile(rowSums(tdm.m), probs = 0.99)
-
-#Correlation Threshold for association rule mining and Word grapgh plot
-corLimit<-0.1
-
-#Sparsity removes terms that appear infrequently in the matrix must be <1
-sparsity<-0.9
-
-#Number of clusters to seed for kmeans clustering.
-k<-10
-
-################
 ##Term Document Matrix Creation
 ################
 
 #This is the basic data structure to mine for term usage trends, clustering, association rule mining, etc.
-tdm.monogram<-TermDocumentMatrix(abstrCorpus)
-inspect(tdm.monogram[100:200,1:10])
+tdm.monogram<-TermDocumentMatrix(abstrCorpus) ##control = list(function(x) weightTfIdf(x,normalize=F)))
 
 #################
 ##Ngram Analysis
 #################
 
 tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
-inspect(removeSparseTerms(tdm.bigram[, 1:10], sparsity))
-inspect(tdm.bigram)
-
-tdm<-removeSparseTerms(tdm.bigram, sparsity)
-
+                                                             ##function(x) weightTfIdf(x,normalize=F)))
 
 ##Run one of the following commands before proceding. 
 ##tdm.monogram are single term frequencies.
@@ -126,37 +105,53 @@ tdm<-removeSparseTerms(tdm.bigram, sparsity)
 tdm<-tdm.monogram
 tdm<-tdm.bigram
 
+###########
+##TermFreq exploration
+###########
+tdm
+
+tdm.m<-as.matrix(tdm)
+tdm.s<-sort(rowSums(tdm.m), decreasing = T)
+idf<-apply(tdm.m, 1, function(x) length(x)/sum(x>=1))
+
+png(file.path(resultsPath,"TermFreq_Distributions.png", fsep = "/"), height=4000, width=2400, units="px")
+par(mfrow=c(3,1), cex=4)
+hist(sqrt(rowSums(tdm.m)), breaks=100, col="blue4", main="Distribution of terms in Corpus")
+hist(sqrt(rowMeans(tdm.m)), breaks=100, col="red", main="Distribution of Avg. term usage per Document in Corpus")
+hist(idf, breaks=100, col="green",main="Distribution of idf Scores")
+dev.off()
+
+
+################
+##Parameters
+################
+
+#Frequency Threshold; term are retained with they have a frequency above this value
+low<-quantile(rowSums(as.matrix(tdm)), probs = 0.998)
+
+paste0("Number of terms with a total frequency greater than ", round(low,0),": ", sum(rowSums(tdm.m)>low))
+
+#Correlation Threshold for association rule mining and Word grapgh plot
+corLimit<-0.15
+
+#Sparsity removes terms that appear infrequently in the matrix must be <1
+sparsity<-0.9
+
+#Number of clusters to seed for kmeans clustering.
+k<-10
+
 ################
 ##Keywords Dictionary
 ################
 keywords.SP<-read.csv("Keywords_by_SP_Goals.csv")
 findAssocs(tdm,terms = c("puberty", "pregnancy","lactation"), corlimit = corLimit)
 
-###########
-##TermFreq exploration
-###########
-tdm.m<-as.matrix(tdm)
-tdm.m.s<-tdm.m[sort(rowSums(tdm.m), decreasing = T),]
-tdm.s<-sort(rowSums(tdm.m), decreasing = T)
-myNames<-names(tdm.s)
-idf<-apply(tdm.m, 1, function(x) length(x)/sum(x>=1))
-
-#Frequency Threshold; term are retained with they have a frequency above this value
-low<-quantile(rowSums(tdm.m), probs = 0.98)
-
-png(file.path(resultsPath,"TermFreq_Distributions.png", fsep = "/"), height=4000, width=2400, units="px")
-par(mfrow=c(3,1), cex=4)
-hist(log2(rowSums(tdm.m)), breaks=100, col="blue4", main="Distribution of terms in Corpus")
-hist(log2(rowMeans(tdm.m)), breaks=100, col="red", main="Distribution of Avg. term usage per Document in Corpus")
-hist(idf, breaks=100, col="green",main="Distribution of idf Scores")
-dev.off()
-
 #######
 ##Network of word correlations
 #######
-(freq.terms<-findFreqTerms(tdm,lowfreq = low))
+freq.terms<-findFreqTerms(tdm,lowfreq = low)
 png(paste0(resultsPath,"/Word_graph.png"), height=2400, width=3200, units="px")
-plot(tdm, term=freq.terms, corThreshold = corLimit, weighting=T)
+plot(tdm, term=freq.terms, corThreshold = corLimit, weighting=F)
 dev.off()
 
 ##Word cloud
