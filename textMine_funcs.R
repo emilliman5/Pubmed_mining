@@ -75,7 +75,8 @@ wordCloudMontage<-function(tdm, file="wordcloud.png", path=resultsPath, dim=c(4,
     dev.off()
 }
 
-hclustgraph<-function(tdm=tdm, file="hierarchicalCluster.png", path=resultsPath, s=0.9){
+hclustgraph<-function(tdm=tdm, file="hierarchicalCluster.png", path=resultsPath, s=0.9)
+{
   tdm2<-removeSparseTerms(tdm, sparse =s)
   tdm2.m<-as.matrix(tdm2)
   dtm2<-t(as.matrix(tdm2))
