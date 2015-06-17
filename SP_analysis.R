@@ -18,6 +18,10 @@ if (file.exists(extraFunFile)) {
   source(extraFunFile, keep.source=TRUE);
 }
 
+dir.create("results/",showWarnings = F)
+resultsPath<-paste0("results/",getDate(),"/StrategicPan/")
+dir.create(resultsPath, recursive = T)
+
 files<-list.files(pattern = "SP_",path="data/Strategic_goals/",full.names = T)
 files<-files[grep("Goal", files)]
 
@@ -45,36 +49,30 @@ writeCorpus(SP,path = "Corpus/SP")
 
 tdm<-TermDocumentMatrix(SP)
 colnames(tdm)<-docs[,1]
-inspect(tdm[1:20,])
 
+wordCloudMontage(tdm, "SP_wordCloud_tf.png",resultsPath, c(4,6))
 
-png("StrategicPlan_wordClouds.png", height=3500, width=6000, units="px")
-layout(matrix(seq(1,24), nrow=4), heights=c(1,8,1,8))
-par(mar=rep(0,4))
-sapply(colnames(as.matrix(tdm)), function(x){ 
-  plot.new()
-  text(x=0.5, y=0.5, x, cex=8)
-  wordcloud(row.names(as.matrix(tdm)), as.matrix(tdm)[,x], min.freq = 1, scale=c(12,0.5), 
-            colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
-    }
-  )
-dev.off()
+tdm.tfidf<-TermDocumentMatrix(SP, control = list(weighting=weightTfIdf))
+colnames(tdm.tfidf)<-docs[,1]
 
-tdm2<-removeSparseTerms(tdm, sparse =0.85)
-tdm2.w<-as.matrix(tdm2)
-tdm2.d<-t(as.matrix(tdm2))
+wordCloudMontage(tdm.tfidf, "SP_wordCloud_tfidf.png",resultsPath, c(4,6), f=0)
+
+tdm2<-removeSparseTerms(tdm.tfidf, sparse =0.85)
+tdm2.m<-as.matrix(tdm2)
+dtm2<-t(as.matrix(tdm2))
 
 row.names(tdm2.d)<-docs[,1]
-distMatrix<-dist(scale(tdm2.w))
-dist.d<-dist(scale(tdm2.d))
-fit.w<-hclust(distMatrix,method = "ward.D")
-fit.d<-hclust(dist.d,method = "ward.D")
+dist.w<-dist(scale(tdm2.w))
+dist.d<-dist(scale(dtm2))
+fit.w<-hclust(dist.w, method = "ward.D")
+fit.d<-hclust(dist.d, method = "ward.D")
 
-png(paste0(resultsPath,"/StrategicPlan_dendrogram.png"), height=800, width=1200, units="px")
+png(paste0(resultsPath,"StrategicPlan_dendrogram.png"), height=800, width=1200, units="px")
 par(mfrow=c(2,1))
 plot(fit.d)
 plot(fit.w, cex=0.75)
 dev.off()
 
 heatmap(tdm2.m)
+
 
