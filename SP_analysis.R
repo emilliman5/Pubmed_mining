@@ -42,10 +42,11 @@ SP<-tm_map(SP, stripWhitespace)
 SP<-tm_map(SP,content_transformer(tolower))
 
 SP<-mclapply(SP, stemCompletion2, dictionary=dictCorpus, mc.cores=cores)
+meta(SP, "id")<-docs[,1]
 SP<-Corpus(VectorSource(SP))
 
 dir.create("Corpus/SP/")
-writeCorpus(SP,path = "Corpus/SP")
+writeCorpus(SP,path = "Corpus/SP",filenames = meta(SP)[,1])
 
 tdm<-TermDocumentMatrix(SP)
 colnames(tdm)<-docs[,1]
