@@ -59,3 +59,18 @@ stemCompletionF<-function (x, dictionary,
     setNames(sapply(possibleCompletions, "[", 1), x)
   })
 }
+
+wordCloudMontage<-function(tdm, file="wordcloud.png", path=resultsPath, dim=c(4,6), f=1)
+{  
+    png(paste0(resultsPath, file), height=3500, width=6000, units="px")
+    layout(matrix(seq(1,prod(dim)), nrow=dim[1]), heights=c(1,8,1,8))
+    par(mar=rep(0,4))
+    sapply(colnames(as.matrix(tdm)), function(x){ 
+      plot.new()
+      text(x=0.5, y=0.5, x, cex=8)
+      wordcloud(row.names(as.matrix(tdm)),min.freq=f, as.matrix(tdm)[,x], scale=c(10,0.5), 
+                colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
+          }
+      )
+    dev.off()
+}
