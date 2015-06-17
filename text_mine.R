@@ -19,7 +19,6 @@ cores<-30
 
 reset=TRUE
 
-
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
   source(extraFunFile, keep.source=TRUE);
@@ -52,10 +51,6 @@ if(!file.exists("Corpus/1.txt") || reset){
   abstr.df[,1]<-as.Date(abstr.df[,1], format = "%Y-%m-%d")
   abstrCorpus<-Corpus(DataframeSource(abstr.df[,3:4]))
   
-  meta(abstrCorpus, "GrantID")<-abstr.df[,"GrantID"]
-  meta(abstrCorpus, "Date")<-abstr.df[,"pubdate.df"]
-  meta(abstrCorpus, "FY")<-quarter(abstr.df[,"pubdate.df"]+90, with_year=T)
-  
   # keywords<-xpathApply(top, "//KeywordList", xmlValue)
   # keywords.df<-do.call("rbind",keywords)
   # #abstrCorpus<-Corpus(DataframeSource(keywords.df))
@@ -73,6 +68,9 @@ if(!file.exists("Corpus/1.txt") || reset){
   
   abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=cores)
   abstrCorpus<-Corpus(VectorSource(abstrCorpus))
+  meta(abstrCorpus, "GrantID")<-abstr.df[,"GrantID"]
+  meta(abstrCorpus, "Date")<-abstr.df[,"pubdate.df"]
+  meta(abstrCorpus, "FY")<-quarter(abstr.df[,"pubdate.df"]+90, with_year=T)
   
   dir.create("Corpus")
   writeCorpus(abstrCorpus,"Corpus/")
@@ -145,7 +143,7 @@ k<-10
 ################
 ##Keywords Dictionary
 ################
-keywords.SP<-read.csv("Keywords_by_SP_Goals.csv")
+keywords.SP<-read.csv("Keywords_by_SP_Goals.csv", stringsAsFactors=F)
 findAssocs(tdm,terms = c("puberty", "pregnancy","lactation"), corlimit = corLimit)
 
 #######
