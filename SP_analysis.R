@@ -57,22 +57,10 @@ colnames(tdm.tfidf)<-docs[,1]
 
 wordCloudMontage(tdm.tfidf, "SP_wordCloud_tfidf.png",resultsPath, c(4,6), f=0)
 
-tdm2<-removeSparseTerms(tdm.tfidf, sparse =0.85)
-tdm2.m<-as.matrix(tdm2)
-dtm2<-t(as.matrix(tdm2))
+hclustgraph(tdm, file = "SP_hierarchicalCluster_tf.png", resultsPath, 0.85)
 
-row.names(tdm2.d)<-docs[,1]
-dist.w<-dist(scale(tdm2.w))
-dist.d<-dist(scale(dtm2))
-fit.w<-hclust(dist.w, method = "ward.D")
-fit.d<-hclust(dist.d, method = "ward.D")
+hclustgraph(tdm.tfidf, file = "SP_hierarchicalCluster_tfidf.png", resultsPath, 0.85)
 
-png(paste0(resultsPath,"StrategicPlan_dendrogram.png"), height=800, width=1200, units="px")
-par(mfrow=c(2,1))
-plot(fit.d)
-plot(fit.w, cex=0.75)
-dev.off()
 
-heatmap(tdm2.m)
 
 
