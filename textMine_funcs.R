@@ -74,3 +74,21 @@ wordCloudMontage<-function(tdm, file="wordcloud.png", path=resultsPath, dim=c(4,
       )
     dev.off()
 }
+
+hclustgraph<-function(tdm=tdm, file="hierarchicalCluster.png", path=resultsPath, s=0.9){
+  tdm2<-removeSparseTerms(tdm, sparse =s)
+  tdm2.m<-as.matrix(tdm2)
+  dtm2<-t(as.matrix(tdm2))
+  
+  row.names(dtm2)<-docs[,1]
+  dist.w<-dist(scale(tdm2))
+  dist.d<-dist(scale(dtm2))
+  fit.w<-hclust(dist.w, method = "ward.D")
+  fit.d<-hclust(dist.d, method = "ward.D")
+  
+  png(paste0(resultsPath, file), height=800, width=1200, units="px")
+  par(mfrow=c(2,1))
+  plot(fit.d)
+  plot(fit.w, cex=0.75)
+  dev.off()
+}
