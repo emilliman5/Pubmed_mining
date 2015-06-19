@@ -12,10 +12,10 @@ library(lubridate)
 # setwd("~/Pubmed_mining/")
 
 #2 Set the name of the xml file to analyze
-pub.file<-"pubmed_result.xml"
+pub.file<-"ESlit.xml"
 
 #3 Set the number of cores available on your computer
-cores<-30
+cores<-24
 
 reset=TRUE
 
