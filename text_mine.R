@@ -12,10 +12,10 @@ library(lubridate)
 # setwd("~/Pubmed_mining/")
 
 #2 Set the name of the xml file to analyze
-pub.file<-"ESlit.xml"
+pub.file<-"pubmed_result.xml"
 
 #3 Set the number of cores available on your computer
-cores<-24
+cores<-30
 
 reset=TRUE
 
@@ -29,7 +29,7 @@ resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
 if(!file.exists("Corpus/1.txt") || reset){
-  
+  unlink("Corpus/*.txt")
   stopWords<-read.table("stopwords.txt", colClasses = c("character"))
   myStopwords<-c(stopwords('english'), stopWords$V1)
   
@@ -59,6 +59,7 @@ if(!file.exists("Corpus/1.txt") || reset){
   # #mesh.df<-do.call("rbind",mesh)
   
   abstrCorpus<-tm_map(abstrCorpus, content_transformer(tolower))
+  abstrCorpus<-tm_map(abstrCorpus, toSpace, "/|@|\\||-|_|\\\\")
   abstrCorpus<-tm_map(abstrCorpus, removePunctuation)
   abstrCorpus<-tm_map(abstrCorpus, removeNumbers)
   abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
