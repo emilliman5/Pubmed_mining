@@ -18,7 +18,8 @@ resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
 if(!file.exists("Corpus/1.txt") || reset){
-  ##call function to read and process corpus
+  source("makeCorpus.R")
+  abstrCorpus<-makeCorpus("pubmed_result.xml","stopwords.txt",30)
 } else {
   ##read in corpus docs.
   abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
@@ -27,8 +28,6 @@ if(!file.exists("Corpus/1.txt") || reset){
     meta(abstrCorpus, x)<-metaData[,x]
   }
 }
-
-
 
 if(!file.exists("Corpus/SP/SP_Goal1") || reset){
   ##call function to read and process corpus
