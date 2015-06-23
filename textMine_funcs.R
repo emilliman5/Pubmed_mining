@@ -95,3 +95,66 @@ hclustgraph<-function(tdm=tdm, file="hierarchicalCluster.png", path=resultsPath,
   plot(fit.w, cex=0.75)
   dev.off()
 }
+
+tfidfHisto<-function(tdm, fact, fun)
+  {
+  f<-unique(meta(abstrCorpus)[,fact])
+  x<-lapply(f, function(x) which(meta(abstrCorpus)[,fact]==x) )
+  
+  lapply(x, function(y){
+    m<-as.matrix(tdm)[rowSums(as.matrix(tdm)[,y]),y]
+    s<-apply(m), 1, fun)
+    m<-as.matrix(tdm[,y])
+    png(file.path(resultsPath,paste0(meta(abstrCorpus)[y[1],fact], "_TermFreqxIDF_Distributions.png"), fsep = "/"), 
+        height=800, width=1200, units="px")
+    par(mfrow=c(2,1), cex=2)
+    hist(as.vector(m)[as.vector(m)>0], breaks=100, col="blue4", main="Distribution of tf-idf Scores in Corpus")
+    hist(s, breaks=100, col="red", main=paste0("Distribution of ",fun, " tf-idf scores per term in Corpus"))  
+    dev.off()
+  })
+}
+
+tfHisto<-function(tdm, fact)
+{
+  f<-unique(meta(abstrCorpus)[,fact])
+  x<-lapply(f, function(x) which(meta(abstrCorpus)[,fact]==x) )
+  
+  lapply(x, function(y){
+    s<-rowMeans(as.matrix(tdm[,y]))
+    s<-s[s>0]
+    m<-rowSums(as.matrix(tdm[,y]))
+    m<-m[m>0]
+    png(file.path(resultsPath,paste0(meta(abstrCorpus)[y[1],fact], "_TermFreq_Distributions.png"), fsep = "/"), 
+        height=800, width=1200, units="px")
+    par(mfrow=c(2,1), cex=2)
+    hist(m, breaks=100, col="blue4", main="Distribution of term Freq in Corpus", xlab="Number of Occurences")
+    hist(s, breaks=100, col="red", main="Distribution of Avg. term freq. per Document in Corpus")  
+    dev.off()
+  })
+}
+
+wordCloud<-function(tdm, fact, maxWords, fun="sum")
+{
+  fun<-tolower(fun)
+  f<-unique(meta(abstrCorpus)[,fact])
+  x<-lapply(f, function(x) which(meta(abstrCorpus)[,fact]==x) )
+  
+  lapply(x, function(y) {
+    tdm.df<-data.frame(word=rownames(tdm), freq=apply(as.matrix(tdm)[,y], 1, fun))
+    tdm.df<-tdm.df[order(tdm.df$freq,decreasing = T),]
+    if(tdm.df[maxWords,"freq"]==0){
+      low=1
+    } else{
+      low=tdm.df[maxWords,"freq"]
+    }
+#     low<-quantile(rowSums(as.matrix(tdm[,y])), probs = 0.99)
+    
+    png(paste0(resultsPath,"/",paste0(meta(abstrCorpus)[y[1],fact],"_wordCloud.png")), height=1600, width=1600, units="px")
+    wordcloud(tdm.df$word, tdm.df$freq, scale=c(10,0.5), min.freq = low, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
+    dev.off()
+  })
+}
+
+
+
+
