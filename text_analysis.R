@@ -4,6 +4,7 @@ library(graph)
 library(Rgraphviz)
 library(topicmodels)
 library(lubridate)
+library(parallel)
 
 #If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
 reset<-FALSE
@@ -63,7 +64,7 @@ tdm<-tdm.monogram.tfidf
 tdm<-tdm.bigram
 
 ###########
-##TermFreq exploration
+##TermFreq exploration and visualization
 ###########
 
 tfidfHisto(tdm.monogram.tfidf ,fact = "FY", "max")
@@ -74,6 +75,19 @@ wordCloud(tdm.monogram.tfidf,fact="FY", 75, "mean")
 
 wordCloud(tdm,fact="FY", 50)
 
+
+############
+##Abstract SP goals correlations
+############
+
+corpse<-c(abstrCorpus,spCorpus)
+
+tail(meta(corpse), 15)
+
+dtm<-DocumentTermMatrix(corpse, control=list(weigthing=weightTfIdf))
+dtm<-dtm[,apply(as.matrix(dtm)[1296:1306,],2, sum)>0]
+
+dtm.dist<-mclapply(as.matrix(dtm)[1296:1306,], function(x) lapply(sqrt(sum((x-as.matrix(dtm))^2)), cores=12)
 ################
 ##Parameters
 ################
