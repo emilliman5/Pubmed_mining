@@ -1,4 +1,4 @@
-makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=30){
+makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
 
   library(XML)
   library(tm)
@@ -54,7 +54,8 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=30){
   abstrCorpus
 } 
 
-makeSPCorpus<-function(SP_path="data/Strategic_goals",stopwordList="stopwords.txt", pat=c("Goal","Theme","all")){
+makeSPCorpus<-function(SP_path="data/Strategic_goals",
+                       stopwordList="stopwords.txt", pat=c("Goal","Theme","all"), cores=4){
   files<-list.files(pattern = "SP_",path=SP_path,full.names = T)
   if(pat!="all"){
     files<-files[grep(pat, files)]
