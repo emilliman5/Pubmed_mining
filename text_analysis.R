@@ -19,7 +19,7 @@ dir.create(resultsPath)
 
 if(!file.exists("Corpus/1.txt") || reset){
   source("makeCorpus.R")
-  abstrCorpus<-makeCorpus("pubmed_result.xml","stopwords.txt",30)
+  abstrCorpus<-makeCorpus("pubmed_result.xml","stopwords.txt", 30)
 } else {
   ##read in corpus docs.
   abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
@@ -30,21 +30,22 @@ if(!file.exists("Corpus/1.txt") || reset){
 }
 
 if(!file.exists("Corpus/SP/SP_Goal1") || reset){
-  ##call function to read and process corpus
+  source("makeCorpus.R")
+  spCorpus<-makeSPCorpus("data/Strategic_goals//SP_Goal1.txt",
+                         stopwordList = "stopwords.txt", "Goal",30)
 } else {
-  ##read in Strategic Plan corpus
   spCorpus<-Corpus(DirSource("Corpus/SP/"), readerControl = list(language="english"))
 }
-
-abstrCorpus<-c(abstrCorpus, spCorpus)
 
 ################
 ##Term Document Matrix Creation
 ################
 
 #This is the basic data structure to mine for term usage trends, clustering, association rule mining, etc.
-tdm.monogram<-TermDocumentMatrix(abstrCorpus, 
+tdm.monogram.tfidf<-TermDocumentMatrix(abstrCorpus, 
                                  control = list(weighting=weightTfIdf))
+
+tdm.monogram<-TermDocumentMatrix(abstrCorpus)
 
 #################
 ##Ngram Analysis
@@ -58,32 +59,24 @@ tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTok
 ##tdm.bigram are two term frequencies
 
 tdm<-tdm.monogram
+tdm<-tdm.monogram.tfidf
 tdm<-tdm.bigram
 
 ###########
 ##TermFreq exploration
 ###########
-tdm
-FYs<-unique(meta(abstrCorpus)$FY)
-x<-lapply(FYs, function(x) which(meta(abstrCorpus)$FY==x) )
 
-lapply(x, function(y){
-  png(file.path(resultsPath,paste0(meta(abstrCorpus)[y[1],"FY"], "_TermFreq_Distributions.png"), fsep = "/"), 
-      height=800, width=1200, units="px")
-  par(mfrow=c(2,1), cex=2)
-  hist(sqrt(rowSums(as.matrix(tdm[,y]))), breaks=100, col="blue4", main="Distribution of term Scores in Corpus")
-  hist(sqrt(rowMeans(as.matrix(tdm[,y]))), breaks=100, col="red", main="Distribution of Avg. term score per Document in Corpus")  
-  dev.off()
-  })
+tfidfHisto(tdm.monogram.tfidf ,fact = "FY", "max")
+
+tfHisto(tdm,"FY")
+
+wordCloud(tdm.monogram.tfidf,fact="FY", 75, "mean")
+
+wordCloud(tdm,fact="FY", 50)
 
 ################
 ##Parameters
 ################
-
-#Frequency Threshold; term are retained with they have a frequency above this value
-low<-quantile(rowSums(as.matrix(tdm)), probs = 0.99)
-
-paste0("Number of terms with a total frequency greater than ", round(low,0),": ", sum(rowSums(as.matrix(tdm))>low))
 
 #Correlation Threshold for association rule mining and Word grapgh plot
 corLimit<-0.15
@@ -110,14 +103,6 @@ plot(tdm, term=freq.terms, corThreshold = corLimit, weighting=F)
 dev.off()
 
 ##Word cloud
-
-lapply(x, function(y) {
-  low<-quantile(rowSums(as.matrix(tdm[,y])), probs = 0.99)
-  tdm.df<-data.frame(word=rownames(tdm), freq=rowSums(as.matrix(tdm)[,y]))
-  png(paste0(resultsPath,"/",paste0(meta(abstrCorpus)[y[1],"FY"],"_wordCloud.png")), height=1600, width=1600, units="px")
-  wordcloud(tdm.df$word, tdm.df$freq, scale=c(15,0.5), min.freq = low, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
-  dev.off()
-})
   
 ###########
 ##Hierchical Clustering and Dendrogram
