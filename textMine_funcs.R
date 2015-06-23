@@ -133,7 +133,7 @@ tfHisto<-function(tdm, fact)
   })
 }
 
-wordCloud<-function(tdm, fact, maxWords, fun="sum")
+wordCloud<-function(tdm, fact, maxWords, fun="sum", pre="", scale=c(10,0.5))
 {
   fun<-tolower(fun)
   f<-unique(meta(abstrCorpus)[,fact])
@@ -149,8 +149,8 @@ wordCloud<-function(tdm, fact, maxWords, fun="sum")
     }
 #     low<-quantile(rowSums(as.matrix(tdm[,y])), probs = 0.99)
     
-    png(paste0(resultsPath,"/",paste0(meta(abstrCorpus)[y[1],fact],"_wordCloud.png")), height=1600, width=1600, units="px")
-    wordcloud(tdm.df$word, tdm.df$freq, scale=c(10,0.5), min.freq = low, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
+    png(paste0(resultsPath,"/",paste0(pre,meta(abstrCorpus)[y[1],fact],"_wordCloud.png")), height=1600, width=1600, units="px")
+    wordcloud(tdm.df$word, tdm.df$freq, scale=scale, min.freq = low, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
     dev.off()
   })
 }
