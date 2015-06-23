@@ -1,19 +1,28 @@
 # Pubmed_mining
-My toolings into text mining data dwnloaded from pubmed.
+My foray into text mining data from pubmed.
 
 ##To Do:
-1. Troubleshoot word stem completion
-2. Create custom stopwords dictionary (common words that are not meaningful)
-3. Test data scaling
-4. Pair some metadata with abstracts; Authors, title, institution???
-5. retain chemical names (should numbers be removed or kept?)
-6. Run analysis on MeSH terms
-7. Generate word association graphs
-8. Use n-grams
-9. Create dictionary of relevant terms
+1. Create custom stopwords dictionary (common words that are not meaningful (e.g. cell, gene, protein...)) -- remove words with an idf of 1.
+2. Mesh Headings and Keywords will need to be inspected for run-on words
+3. Pair some metadata with abstracts: Date and Grant Number -- very close
+4. Use n-grams (i.e. stem cell instead of cell and stem) -- bigram tokenizer initated
+5. Create dictionary of relevant terms
+6. Add dynamic processor resource allocation
+7. Add functionality to set frequency thresholds based on number of returned words
+8. Clean up and finsih code to generate corpus.
+9. Finish Strategic Plan corpus and EDA
+10. Fix stemCompletion2 code -- package update may have broken the code.
 
 ##Usage:
 
 The script takes pubmed data in xml form and extracts the abstracts for each citation. Abstracts are then processed in what seems to be a pretty standard way
 (remove numbers, puncuation and stems). Stems are completed and then some basic frequency and associations are computed. Lastly three graphics are generated,
 a word cloud, a dendrogram and graph for the most frequently occuring words.
+
+## Qualitative Performance Notes:
+
+XML reading and traversing seems memory efficient and fast. Whatever problem I encountered previous has been resolved with better functions. 
+
+tm_map calls seem relatively speedy. stop word removal and stemming are by far slower than to lower and remove numbers.
+Stem completion is very slow, distributing the task helps but a large corpus may need to be moved to larger machine. 
+However, memory usage has been reasonable throughout the transformation processes

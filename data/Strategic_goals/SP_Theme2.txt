@@ -1,0 +1,9 @@
+Understanding how the complex nature of exposures,
+at the individual and population levels, contributes to health outcomes
+ 
+
+This theme focuses on the study of environmental exposures themselves — internal and external — not just chemical environmental pollutants, but also exposures arising from
+a variety of sources, such as the microbiome, infectious agents, nutritional sources, and stress. Key research needs include technology development for exposure measurement, including better biological markers, new sensor and detector tools, remote detection of exposures, more sensitive analytical methods, high-throughput predictive pharmacokinetic models, and informatics tools to improve quantitation of information on exposure from large datasets. This theme also intersects with Theme 1, since new metrics of exposures include biological effects on key pathways involved in disease pathogenesis.
+New systems-based approaches to exposure science are now emerging that utilize omics technologies. This approach recognizes that environmentally related health and disease
+ 
+are the result of the totality of a person’s environmental exposures, from all sources and routes, across the life span. This totality of exposure is what we are describing in this document as the exposome, a concept that has become increasingly salient in the field of environmental health sciences. Part of our strategic direction will be to engage the scientific community in the effort to clearly define the exposome and to create research opportunities to explore it.

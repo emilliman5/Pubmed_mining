@@ -1,0 +1,8 @@
+Identify and understand fundamental shared mechanisms or common biological pathways, e.g., inflammation, epigenetic changes, oxidative stress, mutagenesis, etc., underlying a broad range of complex diseases, in order to enable the development of applicable prevention and intervention strategies.
+a.	Investigate the effects of the environment on genome structure and function.
+
+b.	Investigate the effects of the environment on the epigenetic regulation of biological and pathological processes.
+
+c.	Understand the role of key biological mechanisms and their regulation in determining resistance and susceptibility to environmental stressors.
+d.	Understand the normal processes of human development, maturation, and aging, and identify environmental factors that contribute to altered function.
+e.	Develop a pipeline to integrate high-throughput screening, cell systems, and model organisms, to identify fundamental mechanisms underlying responses to existing and emerging environmental toxicants, and to better predict their relationship to disease.
