@@ -7,7 +7,7 @@ library(lubridate)
 library(parallel)
 
 #If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
-reset<-FALSE
+reset<-TRUE
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
@@ -32,7 +32,7 @@ if(!file.exists("Corpus/1.txt") || reset){
 
 if(!file.exists("Corpus/SP/SP_Goal1") || reset){
   source("makeCorpus.R")
-  spCorpus<-makeSPCorpus("data/Strategic_goals//SP_Goal1.txt",
+  spCorpus<-makeSPCorpus("data/Strategic_goals/",
                          stopwordList = "stopwords.txt", "Goal",30)
 } else {
   spCorpus<-Corpus(DirSource("Corpus/SP/"), readerControl = list(language="english"))
@@ -87,7 +87,10 @@ tail(meta(corpse), 15)
 dtm<-DocumentTermMatrix(corpse, control=list(weigthing=weightTfIdf))
 dtm<-dtm[,apply(as.matrix(dtm)[1296:1306,],2, sum)>0]
 
-dtm.dist<-mclapply(as.matrix(dtm)[1296:1306,], function(x) lapply(sqrt(sum((x-as.matrix(dtm))^2)), cores=12)
+dtm.d<-dist(dtm, method="euclidean")
+m<-lapply(1:5267, function(x) dtm.d[])
+m<-do.call(cbind, lapply(1:5267, function(x) dtm.d[(x+5267):(x+5277)]))
+
 ################
 ##Parameters
 ################
