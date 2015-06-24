@@ -5,9 +5,11 @@ library(Rgraphviz)
 library(topicmodels)
 library(lubridate)
 library(parallel)
+library(networktools)
+library(igraph)
 
 #If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
-reset<-TRUE
+reset<-FALSE
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
@@ -67,14 +69,13 @@ tdm<-tdm.bigram
 ##TermFreq exploration and visualization
 ###########
 
-tfidfHisto(tdm.monogram.tfidf ,fact = "FY", "max")
+tfidfHisto(tdm.monogram.tfidf ,fact = "FY", "mean")
 
 tfHisto(tdm,"FY")
 
-wordCloud(tdm.monogram.tfidf,fact="FY", 75, "mean")
+wordCloud(tdm.monogram.tfidf,fact="FY", 50, "mean","tfidf")
 
-wordCloud(tdm,fact="FY", 50)
-
+wordCloud(tdm,fact="FY", 50, pre="tf")
 
 ############
 ##Abstract SP goals correlations
@@ -85,11 +86,15 @@ corpse<-c(abstrCorpus,spCorpus)
 tail(meta(corpse), 15)
 
 dtm<-DocumentTermMatrix(corpse, control=list(weigthing=weightTfIdf))
-dtm<-dtm[,apply(as.matrix(dtm)[1296:1306,],2, sum)>0]
+dtm.m<-dtm[,apply(as.matrix(dtm)[1296:1306,],2, sum)>0]
 
-dtm.d<-dist(dtm, method="euclidean")
-m<-lapply(1:5267, function(x) dtm.d[])
-m<-do.call(cbind, lapply(1:5267, function(x) dtm.d[(x+5267):(x+5277)]))
+dtm.d<-dist(dtm.m, method="euclidean")
+l<-dim(dtm)[1]-11
+m<-do.call(cbind, lapply(1:l, function(x) dtm.d[(x+(l)):(x+(l+10))]))
+#rownames(m)<-rownames(dtm)[1296:1306]
+rownames(m)<-c("SP1","SP2","SP3","SP4","SP5","SP6","SP7","SP8","SP9","SP10","SP11")
+sp.d<-dist(m)
+
 
 ################
 ##Parameters
@@ -114,10 +119,9 @@ findAssocs(tdm,terms = c("puberty", "pregnancy","lactation"), corlimit = corLimi
 ##Network of word correlations
 #######
 
-freq.terms<-findFreqTerms(tdm,lowfreq = low)
-png(paste0(resultsPath,"/Word_graph.png"), height=2400, width=3200, units="px")
-plot(tdm, term=freq.terms, corThreshold = corLimit, weighting=F)
-dev.off()
+sp.tdm<-DocumentTermMatrix(spCorpus,control = list(weighting=weightTfIdf))
+g<-similarity.graph(m=dtm.m, vertex.grouping.vars =list(Goal=rownames(dtm.m)),
+                    similarity.measure="correlation", min.similarity=0.15)
 
 ##Word cloud
   
@@ -139,8 +143,11 @@ dev.off()
 ############
 
 tdm.t<-t(tdm)
-kmeansResults<-kmeans(tdm.t, k)
+kmeansResults<-kmeans(dtm.m, k)
 round(kmeansResults$centers, digits=3)
+
+kResults<-aggregate(as.matrix(tdm.t), by=list(kmeansResults$cluster), mean)
+
 
 for (i in 1:k) {
   cat(paste("cluster ", i, ": ", sep = ""))
@@ -156,3 +163,5 @@ for (i in 1:k) {
 dtm<-as.DocumentTermMatrix(tdm)
 lda<-LDA(dtm, 12)
 (topics<-terms(lda,6))
+
+k.nn<-knn(as.matrix(dtm.m)[1296:1306,],as.matrix(dtm.m)[1:1295,], rownames(m))
