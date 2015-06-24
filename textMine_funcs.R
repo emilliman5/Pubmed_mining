@@ -102,14 +102,15 @@ tfidfHisto<-function(tdm, fact, fun)
   x<-lapply(f, function(x) which(meta(abstrCorpus)[,fact]==x) )
   
   lapply(x, function(y){
+    f<-meta(abstrCorpus)[y[1],fact]
     m<-as.matrix(tdm)[rowSums(as.matrix(tdm)[,y]),y]
     s<-apply(m, 1, fun)
     m<-as.matrix(tdm[,y])
-    png(file.path(resultsPath,paste0(meta(abstrCorpus)[y[1],fact], "_TermFreqxIDF_Distributions.png"), fsep = "/"), 
+    png(file.path(resultsPath,paste0(fact,"_",f, "_TermFreqxIDF_Distributions.png"), fsep = "/"), 
         height=800, width=1200, units="px")
     par(mfrow=c(2,1), cex=2)
-    hist(as.vector(m)[as.vector(m)>0], breaks=100, col="blue4", main="Distribution of tf-idf Scores in Corpus")
-    hist(s, breaks=100, col="red", main=paste0("Distribution of ",fun, " tf-idf scores per term in Corpus"))  
+    hist(as.vector(m)[as.vector(m)>0], breaks=100, col="blue4", main=paste(fact, f, "Distribution of tf-idf Scores in Corpus", collpase= " "))
+    hist(s, breaks=100, col="red", main=paste0(fact, " ", f, "Distribution of ",fun, " tf-idf scores per term in Corpus"))  
     dev.off()
   })
 }
@@ -120,15 +121,16 @@ tfHisto<-function(tdm, fact)
   x<-lapply(f, function(x) which(meta(abstrCorpus)[,fact]==x) )
   
   lapply(x, function(y){
+    f<-meta(abstrCorpus)[y[1],fact]
     s<-rowMeans(as.matrix(tdm[,y]))
     s<-s[s>0]
     m<-rowSums(as.matrix(tdm[,y]))
     m<-m[m>0]
-    png(file.path(resultsPath,paste0(meta(abstrCorpus)[y[1],fact], "_TermFreq_Distributions.png"), fsep = "/"), 
+    png(file.path(resultsPath,paste(fact,f, "TermFreq_Distributions.png", sep="_"), fsep = "/"), 
         height=800, width=1200, units="px")
     par(mfrow=c(2,1), cex=2)
-    hist(m, breaks=100, col="blue4", main="Distribution of term Freq in Corpus", xlab="Number of Occurences")
-    hist(s, breaks=100, col="red", main="Distribution of Avg. term freq. per Document in Corpus")  
+    hist(m, breaks=100, col="blue4", main=paste(fact, f,"Distribution of term Freq in Corpus", collapse=" "), xlab="Number of Occurences")
+    hist(s, breaks=100, col="red", main=paste(fact, f, "Distribution of Avg. term freq. per Document in Corpus", collapse=" "))  
     dev.off()
   })
 }
@@ -140,6 +142,7 @@ wordCloud<-function(tdm, fact, maxWords, fun="sum", pre="", scale=c(10,0.5))
   x<-lapply(f, function(x) which(meta(abstrCorpus)[,fact]==x) )
   
   lapply(x, function(y) {
+    f<-meta(abstrCorpus)[y[1],fact]
     tdm.df<-data.frame(word=rownames(tdm), freq=apply(as.matrix(tdm)[,y], 1, fun))
     tdm.df<-tdm.df[order(tdm.df$freq,decreasing = T),]
     if(tdm.df[maxWords,"freq"]==0){
@@ -149,7 +152,11 @@ wordCloud<-function(tdm, fact, maxWords, fun="sum", pre="", scale=c(10,0.5))
     }
 #     low<-quantile(rowSums(as.matrix(tdm[,y])), probs = 0.99)
     
-    png(paste0(resultsPath,"/",paste0(pre,meta(abstrCorpus)[y[1],fact],"_wordCloud.png")), height=1600, width=1600, units="px")
+    png(paste0(resultsPath,"/",paste(pre,fact,f,"_wordCloud.png", sep="_")), height=1600, width=1600, units="px")
+    layout(matrix(c(1,2), nrow=2), heights=c(0.25,3))
+    par(mar=rep(0,4))
+    plot.new()
+    text(0.5, 0.5, paste(pre, fact,f, collapse = " "), cex=4)
     wordcloud(tdm.df$word, tdm.df$freq, scale=scale, min.freq = low, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order=F)
     dev.off()
   })
