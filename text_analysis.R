@@ -144,13 +144,22 @@ dev.off()
 ##K-means clustering
 ############
 k<-11
+l<-dim(as.matrix(dtm))[1]
 tdm.t<-t(tdm.monogram.tfidf)
-dtm<-DocumentTermMatrix(corpse,control=list(weighting=weightTfIdf))
-dtm<-dtm[,apply(as.matrix(dtm)[5268:5278,],2, sum)>0]
+dtm<-DocumentTermMatrix(corp,control=list(weighting=weightTfIdf))
+dtm<-dtm[,apply(as.matrix(dtm)[(l-10):l,],2, sum)>0]
 kmeansResults<-kmeans(dtm, k)
 round(kmeansResults$centers, digits=3)
 
-kResults<-aggregate(as.matrix(tdm.t), by=list(kmeansResults$cluster), mean)
+kResults<-aggregate(as.matrix(dtm), by=list(kmeansResults$cluster), mean)
+kClusterResult<-do.call(cbind, lapply(getFactorIdx("FY",meta(corp)),function(x){
+    tapply(kmeansResults$cluster[x], kmeansResults$cluster[x], length)    
+            }
+    )
+)
+colnames(kClusterResult)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
+barplot((kClusterResult/colSums(kClusterResult)), names.arg = colnames(kClusterResult))
+barplot(t(t(kClusterResult)/colSums(kClusterResult)))
 
 clusplot(as.matrix(dtm), kmeansResults$cluster, color=TRUE, shade=TRUE, labels=TRUE, lines=0)
 
