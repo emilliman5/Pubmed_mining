@@ -7,6 +7,8 @@ library(lubridate)
 library(parallel)
 library(networktools)
 library(igraph)
+library(class)
+library(cluster)
 
 #If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
 reset<-FALSE
@@ -123,7 +125,6 @@ sp.tdm<-DocumentTermMatrix(spCorpus,control = list(weighting=weightTfIdf))
 g<-similarity.graph(m=dtm.m, vertex.grouping.vars =list(Goal=rownames(dtm.m)),
                     similarity.measure="correlation", min.similarity=0.15)
 
-##Word cloud
   
 ###########
 ##Hierchical Clustering and Dendrogram
@@ -141,12 +142,16 @@ dev.off()
 ############
 ##K-means clustering
 ############
-
-tdm.t<-t(tdm)
-kmeansResults<-kmeans(dtm.m, k)
+k<-11
+tdm.t<-t(tdm.monogram.tfidf)
+dtm<-DocumentTermMatrix(corpse,control=list(weighting=weightTfIdf))
+dtm<-dtm[,apply(as.matrix(dtm)[5268:5278,],2, sum)>0]
+kmeansResults<-kmeans(dtm, k)
 round(kmeansResults$centers, digits=3)
 
 kResults<-aggregate(as.matrix(tdm.t), by=list(kmeansResults$cluster), mean)
+
+clusplot(as.matrix(dtm), kmeansResults$cluster, color=TRUE, shade=TRUE, labels=TRUE, lines=0)
 
 
 for (i in 1:k) {
@@ -161,7 +166,29 @@ for (i in 1:k) {
 ##Topic Modelling
 #############
 dtm<-as.DocumentTermMatrix(tdm)
-lda<-LDA(dtm, 12)
+lda<-LDA(dtm, 11)
 (topics<-terms(lda,6))
 
-k.nn<-knn(as.matrix(dtm.m)[1296:1306,],as.matrix(dtm.m)[1:1295,], rownames(m))
+
+dtm.sp<-DocumentTermMatrix(spCorpus)
+lda.sp<-LDA(dtm.sp,10)
+terms(lda.sp,6)
+abstr.lda<-posterior(lda.sp,dtm)
+
+
+
+dtm<-DocumentTermMatrix(corpse, control=list(weigthing=weightTfIdf))
+dtm.m<-dtm[,apply(as.matrix(dtm)[5268:5278,],2, sum)>0]
+k.nn<-knn(as.matrix(dtm.m)[5268:5278,],as.matrix(dtm.m)[1:(dim(dtm.m)[1]-10),], 
+          rownames(as.matrix(dtm.m)[5268:5278,]))
+          
+goals<-tapply(k.nn, k.nn, length)          
+          
+          
+          
+          
+          
+          
+          
+          
+          
