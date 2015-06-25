@@ -135,6 +135,12 @@ tfHisto<-function(tdm, fact)
   })
 }
 
+getFactorIdx<-function(col, df){
+    f<-unique(df[,col])
+    x<-lapply(f, function(x) which(df[,col]==x) )
+    x
+}
+
 wordCloud<-function(tdm, fact, maxWords, fun="sum", pre="", scale=c(10,0.5))
 {
   fun<-tolower(fun)
