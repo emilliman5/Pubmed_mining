@@ -75,19 +75,20 @@ tfidfHisto(tdm.monogram.tfidf ,fact = "FY", "mean")
 
 tfHisto(tdm,"FY")
 
-wordCloud(tdm.monogram.tfidf,fact="FY", 50, "mean","tfidf")
+wordCloud(tdm.monogram.tfidf,fact="FY", 75, "mean","tfidf")
+wordCloud(tdm.monogram.tfidf,fact="FY.Q", 75, "mean","tfidf")
 
-wordCloud(tdm,fact="FY", 50, pre="tf")
-
+wordCloud(tdm,fact="FY", 75, pre="tf")
+wordCloud(tdm,fact="FY.Q", 75, pre="tf")
 ############
 ##Abstract SP goals correlations
 ############
 
-corpse<-c(abstrCorpus,spCorpus)
+corp<-c(abstrCorpus,spCorpus)
 
-tail(meta(corpse), 15)
+tail(meta(corp), 15)
 
-dtm<-DocumentTermMatrix(corpse, control=list(weigthing=weightTfIdf))
+dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTfIdf))
 dtm.m<-dtm[,apply(as.matrix(dtm)[1296:1306,],2, sum)>0]
 
 dtm.d<-dist(dtm.m, method="euclidean")
@@ -165,26 +166,55 @@ for (i in 1:k) {
 #############
 ##Topic Modelling
 #############
-dtm<-as.DocumentTermMatrix(tdm)
-lda<-LDA(dtm, 11)
-(topics<-terms(lda,6))
+corp<-c(abstrCorpus,spCorpus)
+dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTf))
+dtm.abstr<-DocumentTermMatrix(abstrCorpus, control=list(weighting=weightTf))
+dtm.sp<-DocumentTermMatrix(spCorpus, control=list(weighting=weightTf))
+
+lda<-LDA(dtm, 12)
+
+lda.summary<-do.call(rbind, lapply(getFactorIdx("FY", meta(abstrCorpus)),
+    function(x){
+        tapply(topics(lda)[x], topics(lda)[x], length)
+    }
+))
+rownames(lda.summary)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
+l<-length(topics(lda))
+lda.sp<-topics(lda)[(l-10):l]
+
+lda.summary<-do.call(rbind,lapply(lda, function(x) tapply(topics(x), topics(x), length)))
+rownames(lda.summary)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
+lapply(lda, function(x) terms(x,3))
+
+sp.lda<-LDA(dtm.sp,11)
+
+sp.lda.predict<-lapply(getFactorIdx("FY", meta(abstrCorpus)),
+            function(x){
+                LDA(dtm[x,], 12, lda.sp)
+            }
+        )
 
 
-dtm.sp<-DocumentTermMatrix(spCorpus)
-lda.sp<-LDA(dtm.sp,10)
-terms(lda.sp,6)
-abstr.lda<-posterior(lda.sp,dtm)
+
+topic.assign<-posterior(lda.sp, dtm.abstr)
 
 
+##K nearest Neighbors Analysis
+corp<-c(abstrCorpus,spCorpus)
+dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTfIdf))
 
-dtm<-DocumentTermMatrix(corpse, control=list(weigthing=weightTfIdf))
-dtm.m<-dtm[,apply(as.matrix(dtm)[5268:5278,],2, sum)>0]
-k.nn<-knn(as.matrix(dtm.m)[5268:5278,],as.matrix(dtm.m)[1:(dim(dtm.m)[1]-10),], 
-          rownames(as.matrix(dtm.m)[5268:5278,]))
-          
-goals<-tapply(k.nn, k.nn, length)          
-          
-          
+l<-dim(as.matrix(dtm))[1]
+dtm.m<-dtm[,apply(as.matrix(dtm)[(l-10):l,],2, sum)>0]
+
+knnResults<-lapply(getFactorIdx("FY", meta(abstrCorpus)),
+    function(x){    
+        knn(as.matrix(dtm.m)[(l-10):l,],as.matrix(dtm.m)[x,], 
+          rownames(as.matrix(dtm.m)[(l-10):l,]))
+    })
+
+FYs<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
+knnSummary<-do.call(rbind, lapply(knnResults, function(x) tapply(x, x, length)))          
+rownames(knnSummary)<-FYs       
           
           
           
