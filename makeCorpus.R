@@ -46,7 +46,7 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
   meta(abstrCorpus, "GrantID")<-abstr.df[,"GrantID"]
   meta(abstrCorpus, "Date")<-abstr.df[,"pubdate.df"]
   meta(abstrCorpus, "FY.Q")<-quarter(abstr.df[,"pubdate.df"]+90, with_year=T)
-  meta(abstrCorpus, "FY")<-floor(meta(abstrCorpus)$FY)
+  meta(abstrCorpus, "FY")<-floor(meta(abstrCorpus)[,"FY.Q"])
   
   dir.create("Corpus")
   writeCorpus(abstrCorpus,"Corpus/")
