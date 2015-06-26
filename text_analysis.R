@@ -92,20 +92,7 @@ wordCloudMontage(tdm = tdm.sp.tfidf,file = "SP_TfIdf_wordcloud.png", path = resu
 ##Topic Modelling
 #############
 corp<-c(abstrCorpus,spCorpus)
-idx<-getFactorIdx("FY",meta(abstrCorpus))
-idx<-do.call(c, lapply(idx, function(x) sample(x, 50)))
-
-test.corpus<-abstrCorpus[idx]
-test.dtm<-DocumentTermMatrix(test.corpus)
-fitted<-lapply(seq(2,200,1), function(x) LDA(test.dtm, 
-                    x, control=list(keep=50)))
-
-               
-               
-               
-               
-               
-               
+                 
 dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTf))
 dtm.abstr<-DocumentTermMatrix(abstrCorpus, control=list(weighting=weightTf))
 dtm.sp<-DocumentTermMatrix(spCorpus, control=list(weighting=weightTf))
