@@ -97,7 +97,7 @@ dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTf))
 dtm.abstr<-DocumentTermMatrix(abstrCorpus, control=list(weighting=weightTf))
 dtm.sp<-DocumentTermMatrix(spCorpus, control=list(weighting=weightTf))
 
-lda<-LDA(dtm, 12)
+lda<-LDA(dtm, 8)
 
 lda.summary<-do.call(rbind, lapply(getFactorIdx("FY", meta(abstrCorpus)),
                                    function(x){
