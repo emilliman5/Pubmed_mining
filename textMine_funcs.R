@@ -64,7 +64,7 @@ stemCompletionF<-function (x, dictionary,
 
 wordCloudMontage<-function(tdm, file="wordcloud.png", path=resultsPath, dim=c(4,6), f=1)
 {  
-    png(paste0(resultsPath, file), height=3500, width=6000, units="px")
+    png(paste(resultsPath, file,sep="/"), height=3500, width=6000, units="px")
     layout(matrix(seq(1,prod(dim)), nrow=dim[1]), heights=c(1,8,1,8))
     par(mar=rep(0,4))
     sapply(colnames(as.matrix(tdm)), function(x){ 
@@ -158,7 +158,7 @@ wordCloud<-function(tdm, fact, maxWords, fun="sum", pre="", scale=c(10,0.5))
     }
 #     low<-quantile(rowSums(as.matrix(tdm[,y])), probs = 0.99)
     
-    png(paste0(resultsPath,"/",paste(pre,fact,f,"_wordCloud.png", sep="_")), height=1600, width=1600, units="px")
+    png(paste0(resultsPath,"/",paste(pre,fact,f,"wordCloud.png", sep="_")), height=1600, width=1600, units="px")
     layout(matrix(c(1,2), nrow=2), heights=c(0.25,3))
     par(mar=rep(0,4))
     plot.new()
