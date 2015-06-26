@@ -28,8 +28,8 @@ if(!file.exists("Corpus/1.txt") || reset){
 } else {
   ##read in corpus docs.
   abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
-  metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','Date','numeric'))
-  for (x in c("GrantID","Date", "FY")) {
+  metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','Date','character','numeric'))
+  for (x in c("GrantID","Date", "FY", "FY.Q")) {
     meta(abstrCorpus, x)<-metaData[,x]
   }
 }
@@ -67,6 +67,9 @@ tdm<-tdm.monogram
 tdm<-tdm.monogram.tfidf
 tdm<-tdm.bigram
 
+tdm.sp<-TermDocumentMatrix(spCorpus)
+tdm.sp.tfidf<-TermDocumentMatrix(spCorpus, control=list(weighting=weightTfIdf))
+
 ###########
 ##TermFreq exploration and visualization
 ###########
@@ -80,6 +83,68 @@ wordCloud(tdm.monogram.tfidf,fact="FY.Q", 75, "mean","tfidf")
 
 wordCloud(tdm,fact="FY", 75, pre="tf")
 wordCloud(tdm,fact="FY.Q", 75, pre="tf")
+
+wordCloudMontage(tdm = tdm.sp,file = "SP_TF_wordcloud.png", path = resultsPath)
+wordCloudMontage(tdm = tdm.sp.tfidf,file = "SP_TfIdf_wordcloud.png", path = resultsPath)
+
+
+#############
+##Topic Modelling
+#############
+corp<-c(abstrCorpus,spCorpus)
+idx<-getFactorIdx("FY",meta(abstrCorpus))
+idx<-do.call(c, lapply(idx, function(x) sample(x, 50)))
+
+test.corpus<-abstrCorpus[idx]
+test.dtm<-DocumentTermMatrix(test.corpus)
+fitted<-lapply(seq(2,200,1), function(x) LDA(test.dtm, 
+                    x, control=list(keep=50)))
+
+               
+               
+               
+               
+               
+               
+dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTf))
+dtm.abstr<-DocumentTermMatrix(abstrCorpus, control=list(weighting=weightTf))
+dtm.sp<-DocumentTermMatrix(spCorpus, control=list(weighting=weightTf))
+
+lda<-LDA(dtm, 12)
+
+lda.summary<-do.call(rbind, lapply(getFactorIdx("FY", meta(abstrCorpus)),
+                                   function(x){
+                                       tapply(topics(lda)[x], topics(lda)[x], length)
+                                   }
+))
+rownames(lda.summary)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
+l<-length(topics(lda))
+lda.sp<-topics(lda)[(l-10):l]
+
+lda.summary<-do.call(rbind,lapply(lda, function(x) tapply(topics(x), topics(x), length)))
+rownames(lda.summary)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
+lapply(lda, function(x) terms(x,3))
+
+sp.lda<-LDA(dtm.sp,11)
+
+sp.lda.predict<-lapply(getFactorIdx("FY", meta(abstrCorpus)),
+                       function(x){
+                           LDA(dtm[x,], 12, lda.sp)
+                       }
+)
+
+
+
+topic.assign<-posterior(lda.sp, dtm.abstr)
+
+
+
+
+
+
+
+
+
 ############
 ##Abstract SP goals correlations
 ############
@@ -171,42 +236,6 @@ for (i in 1:k) {
   # print the tweets of every cluster
   # print(tweets[which(kmeansResult$cluster==i)])
 }
-
-#############
-##Topic Modelling
-#############
-corp<-c(abstrCorpus,spCorpus)
-dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTf))
-dtm.abstr<-DocumentTermMatrix(abstrCorpus, control=list(weighting=weightTf))
-dtm.sp<-DocumentTermMatrix(spCorpus, control=list(weighting=weightTf))
-
-lda<-LDA(dtm, 12)
-
-lda.summary<-do.call(rbind, lapply(getFactorIdx("FY", meta(abstrCorpus)),
-    function(x){
-        tapply(topics(lda)[x], topics(lda)[x], length)
-    }
-))
-rownames(lda.summary)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
-l<-length(topics(lda))
-lda.sp<-topics(lda)[(l-10):l]
-
-lda.summary<-do.call(rbind,lapply(lda, function(x) tapply(topics(x), topics(x), length)))
-rownames(lda.summary)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
-lapply(lda, function(x) terms(x,3))
-
-sp.lda<-LDA(dtm.sp,11)
-
-sp.lda.predict<-lapply(getFactorIdx("FY", meta(abstrCorpus)),
-            function(x){
-                LDA(dtm[x,], 12, lda.sp)
-            }
-        )
-
-
-
-topic.assign<-posterior(lda.sp, dtm.abstr)
-
 
 ##K nearest Neighbors Analysis
 corp<-c(abstrCorpus,spCorpus)
