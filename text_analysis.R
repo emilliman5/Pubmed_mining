@@ -97,7 +97,23 @@ dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTf))
 dtm.abstr<-DocumentTermMatrix(abstrCorpus, control=list(weighting=weightTf))
 dtm.sp<-DocumentTermMatrix(spCorpus, control=list(weighting=weightTf))
 
-lda<-LDA(dtm, 8)
+lda.sp<-LDA(dtm.sp, 10)
+
+lda.sp.predict<-posterior(lda.sp, dtm.abstr)
+
+trainSet<-do.call(c,lapply(1:10, function(x) which(lda.sp.predict[[2]][,x]>0.97)))
+
+l<-dim(dtm)[1]
+
+lapply(1:10, function(x) hist(lda.sp.predict[[2]][lda.sp.predict[[2]][,x]>0.01,x], breaks=100, main=paste0("Posterior Probabilities for topic ",x)))
+dtm.sp2<-dtm[c(trainSet,(l-10):l),]
+lda.sp2<-LDA(dtm.sp2,10)
+lda.sp.predict<-posterior(lda.sp, dtm.abstr[-trainSet,])
+
+lda.sp.predict<-lapply(getFactorIdx("FY", meta(abstrCorpus)),
+                       function(x){
+                         posterior(lda.sp,dtm.abstr )
+                       })
 
 lda.summary<-do.call(rbind, lapply(getFactorIdx("FY", meta(abstrCorpus)),
                                    function(x){
@@ -113,17 +129,6 @@ rownames(lda.summary)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), 
 lapply(lda, function(x) terms(x,3))
 
 sp.lda<-LDA(dtm.sp,11)
-
-sp.lda.predict<-lapply(getFactorIdx("FY", meta(abstrCorpus)),
-                       function(x){
-                           LDA(dtm[x,], 12, lda.sp)
-                       }
-)
-
-
-
-topic.assign<-posterior(lda.sp, dtm.abstr)
-
 
 
 
