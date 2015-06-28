@@ -130,9 +130,9 @@ names(lda.results)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), fun
 
 lda.correlation<-lapply(lda.results, function(x) cor(x))
 
-png(paste(resultsPath,"Topic_Correlations.png"), height=2500, width=1250, units="px")
+png(paste(resultsPath,"Topic_Correlations.png", sep="/"), height=2500, width=1250, units="px")
 lapply(seq_along(lda.correlation), function(y, n, i) {heatmap.2(y[[i]],trace = "none", 
-                                  col=colorRampPalette(rev(brewer.pal(11, "RdBu"))), main = paste0("FY",n[[i]]))}, y=lda.correlation, n=names(lda.correlation))
+                                  col=colorRampPalette(rev(brewer.pal(9, "RdBu"))), main = paste0("FY",n[[i]]))}, y=lda.correlation, n=names(lda.correlation))
 dev.off()
 
 l<-length(topics(lda))
