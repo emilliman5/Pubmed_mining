@@ -5,11 +5,13 @@ library(Rgraphviz)
 library(topicmodels)
 library(lubridate)
 library(parallel)
-library(networktools)
 library(igraph)
 library(class)
 library(cluster)
+library(gplots)
+library(RColorBrewer)
 
+#library(networktools)
 #If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
 reset<-FALSE
 
@@ -97,38 +99,48 @@ dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTf))
 dtm.abstr<-DocumentTermMatrix(abstrCorpus, control=list(weighting=weightTf))
 dtm.sp<-DocumentTermMatrix(spCorpus, control=list(weighting=weightTf))
 
-lda.sp<-LDA(dtm.sp, 10)
+l<-dim(dtm)[1]
 
-lda.sp.predict<-posterior(lda.sp, dtm.abstr)
+lda.sp<-LDA(dtm[(l-10):l,], 10)
+lda.sp.predict<-posterior(lda.sp, dtm[-c((l-10):l),])
 
 trainSet<-do.call(c,lapply(1:10, function(x) which(lda.sp.predict[[2]][,x]>0.97)))
 
-l<-dim(dtm)[1]
-
-lapply(1:10, function(x) hist(lda.sp.predict[[2]][lda.sp.predict[[2]][,x]>0.01,x], breaks=100, main=paste0("Posterior Probabilities for topic ",x)))
 dtm.sp2<-dtm[c(trainSet,(l-10):l),]
 lda.sp2<-LDA(dtm.sp2,10)
-lda.sp.predict<-posterior(lda.sp, dtm.abstr[-trainSet,])
 
-lda.sp.predict<-lapply(getFactorIdx("FY", meta(abstrCorpus)),
-                       function(x){
-                         posterior(lda.sp,dtm.abstr )
-                       })
+lda.sp.predict2<-posterior(lda.sp2, dtm[-c((l-10):l),])
+lapply(1:10, function(x){
+    plot(density(lda.sp.predict2[[2]][lda.sp.predict2[[2]][,x]>0.01,x], bw=0.001),col="blue", main=paste0("Posterior Probabilities for topic ",x))
+    lines(density(lda.sp.predict[[2]][lda.sp.predict[[2]][,x]>0.01,x],bw = 0.001), col="red")
+  })
 
-lda.summary<-do.call(rbind, lapply(getFactorIdx("FY", meta(abstrCorpus)),
+png(paste(resultsPath, "LDA_iteration_scatter.png", sep="/"), height=2400, width=1800, units="px")
+par(mfrow=c(5,2))
+lapply(1:10, function(x) smoothScatter(lda.sp.predict[[2]][,x], 
+                                       lda.sp.predict2[[2]][,x], xlab="First Prediction Pass", 
+                                       bandwidth = 0.0125, ylab="Second Prediction", colramp=colorRampPalette(c("white", "lightblue", "blue", "orange", "orangered2")),main=paste0("Topic Model ",x)))
+dev.off()
+
+lda.results<-lapply(getFactorIdx("FY", meta(abstrCorpus)),
                                    function(x){
-                                       tapply(topics(lda)[x], topics(lda)[x], length)
-                                   }
-))
-rownames(lda.summary)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
+                                       lda.sp.predict2[[2]][x,]
+                                   })
+names(lda.results)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
+
+lda.correlation<-lapply(lda.results, function(x) cor(x))
+
+png(paste(resultsPath,"Topic_Correlations.png"), height=2500, width=1250, units="px")
+lapply(seq_along(lda.correlation), function(y, n, i) {heatmap.2(y[[i]],trace = "none", 
+                                  col=colorRampPalette(rev(brewer.pal(11, "RdBu"))), main = paste0("FY",n[[i]]))}, y=lda.correlation, n=names(lda.correlation))
+dev.off()
+
 l<-length(topics(lda))
 lda.sp<-topics(lda)[(l-10):l]
 
 lda.summary<-do.call(rbind,lapply(lda, function(x) tapply(topics(x), topics(x), length)))
 rownames(lda.summary)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
 lapply(lda, function(x) terms(x,3))
-
-sp.lda<-LDA(dtm.sp,11)
 
 
 
