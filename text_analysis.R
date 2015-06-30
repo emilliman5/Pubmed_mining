@@ -26,7 +26,7 @@ dir.create(resultsPath)
 
 if(!file.exists("Corpus/1.txt") || reset){
   source("makeCorpus.R")
-  abstrCorpus<-makeCorpus("pubmed_result.xml","stopwords.txt", 30)
+  abstrCorpus<-makeCorpus("ESlit.xml","stopwords.txt", 30)
 } else {
   ##read in corpus docs.
   abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
@@ -173,7 +173,7 @@ sp.d<-dist(m)
 ################
 
 #Correlation Threshold for association rule mining and Word grapgh plot
-corLimit<-0.15
+corLimit<-0.1
 
 #Sparsity removes terms that appear infrequently in the matrix must be <1
 sparsity<-0.9
@@ -185,7 +185,7 @@ k<-10
 ##Keywords Dictionary
 ################
 keywords.SP<-read.csv("Keywords_by_SP_Goals.csv", stringsAsFactors=F)
-findAssocs(tdm,terms = c("puberty", "pregnancy","lactation"), corlimit = corLimit)
+findAssocs(tdm,terms = c("exposome","ewass"), corlimit = corLimit)
 
 #######
 ##Network of word correlations
