@@ -36,13 +36,13 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
   abstrCorpus<-tm_map(abstrCorpus, toSpace, "/|@|\\||-|_|\\\\")
   abstrCorpus<-tm_map(abstrCorpus, removePunctuation)
   abstrCorpus<-tm_map(abstrCorpus, removeNumbers)
-  abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
   dictCorpus<-abstrCorpus
   abstrCorpus<-tm_map(abstrCorpus, stemDocument)
-  abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
+  abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)  
   
   abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=cores)
   abstrCorpus<-Corpus(VectorSource(abstrCorpus))
+  abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
   meta(abstrCorpus, "GrantID")<-abstr.df[,"GrantID"]
   meta(abstrCorpus, "Date")<-abstr.df[,"pubdate.df"]
   meta(abstrCorpus, "FY.Q")<-quarter(abstr.df[,"pubdate.df"]+90, with_year=T)
