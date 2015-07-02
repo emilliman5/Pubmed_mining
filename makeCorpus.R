@@ -13,6 +13,7 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
   
   stopWords<-read.table(stopwordList, colClasses = c("character"))
   myStopwords<-c(stopwords('english'), stopWords$V1)
+  myStopwords<-tolower(myStopwords)
   
   pubmed<-xmlParse(pub.file,useInternalNodes = T)
   top<-xmlRoot(pubmed)
