@@ -101,7 +101,7 @@ dtm.sp<-DocumentTermMatrix(spCorpus, control=list(weighting=weightTf))
 
 l<-dim(dtm)[1]
 
-lda.sp<-LDA(dtm[(l-10):l,], 10)
+lda<-LDA(dtm, 350)
 lda.sp.predict<-posterior(lda.sp, dtm[-c((l-10):l),])
 
 trainSet<-do.call(c,lapply(1:10, function(x) which(lda.sp.predict[[2]][,x]>0.97)))
