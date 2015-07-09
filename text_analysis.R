@@ -93,59 +93,34 @@ wordCloudMontage(tdm = tdm.sp.tfidf,file = "SP_TfIdf_wordcloud.png", path = resu
 #############
 ##Topic Modelling
 #############
-corp<-c(abstrCorpus,spCorpus)
-                 
-dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTf))
-dtm.abstr<-DocumentTermMatrix(abstrCorpus, control=list(weighting=weightTf))
-dtm.sp<-DocumentTermMatrix(spCorpus, control=list(weighting=weightTf))
+library(mallet)
+options(java.parameters="-Xmx32g")
+corp<-mallet.read.dir("Corpus/")
+corp$id<-gsub("Corpus//", "", corp$id)
+sp<-mallet.read.dir("data/Strategic_goals/")
+sp$id<-gsub("data//Strategic_goals//","", sp$id)
 
-l<-dim(dtm)[1]
+corp<-rbind(corp,sp)
+mallet.instance<-mallet.import(corp$id,corp$text, "stopwords.txt")
 
-lda<-LDA(dtm, 350)
-lda.sp.predict<-posterior(lda.sp, dtm[-c((l-10):l),])
-
-trainSet<-do.call(c,lapply(1:10, function(x) which(lda.sp.predict[[2]][,x]>0.97)))
-
-dtm.sp2<-dtm[c(trainSet,(l-10):l),]
-lda.sp2<-LDA(dtm.sp2,10)
-
-lda.sp.predict2<-posterior(lda.sp2, dtm[-c((l-10):l),])
-lapply(1:10, function(x){
-    plot(density(lda.sp.predict2[[2]][lda.sp.predict2[[2]][,x]>0.01,x], bw=0.001),col="blue", main=paste0("Posterior Probabilities for topic ",x))
-    lines(density(lda.sp.predict[[2]][lda.sp.predict[[2]][,x]>0.01,x],bw = 0.001), col="red")
-  })
-
-png(paste(resultsPath, "LDA_iteration_scatter.png", sep="/"), height=2400, width=1800, units="px")
-par(mfrow=c(5,2))
-lapply(1:10, function(x) smoothScatter(lda.sp.predict[[2]][,x], 
-                                       lda.sp.predict2[[2]][,x], xlab="First Prediction Pass", 
-                                       bandwidth = 0.0125, ylab="Second Prediction", colramp=colorRampPalette(c("white", "lightblue", "blue", "orange", "orangered2")),main=paste0("Topic Model ",x)))
-dev.off()
-
-lda.results<-lapply(getFactorIdx("FY", meta(abstrCorpus)),
-                                   function(x){
-                                       lda.sp.predict2[[2]][x,]
-                                   })
-names(lda.results)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
-
-lda.correlation<-lapply(lda.results, function(x) cor(x))
-
-png(paste(resultsPath,"Topic_Correlations.png", sep="/"), height=2500, width=1250, units="px")
-lapply(seq_along(lda.correlation), function(y, n, i) {heatmap.2(y[[i]],trace = "none", 
-                                  col=colorRampPalette(rev(brewer.pal(9, "RdBu"))), main = paste0("FY",n[[i]]))}, y=lda.correlation, n=names(lda.correlation))
-dev.off()
-
-l<-length(topics(lda))
-lda.sp<-topics(lda)[(l-10):l]
-
-lda.summary<-do.call(rbind,lapply(lda, function(x) tapply(topics(x), topics(x), length)))
-rownames(lda.summary)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
-lapply(lda, function(x) terms(x,3))
+best.model<-lapply(seq(2,1000,2),
+    function(x){
+        topic.model<-MalletLDA(x)
+        topic.model$loadDocuments(mallet.instance)
+        topic.model$model$setNumThreads(as.integer(24))
+        topic.model$train(500)     
+        topic.model$model$modelLogLikelihood()
+    })
+                   
+        
 
 
 
 
 
+
+topic.model$setAlphaOptimization(20, 50)
+doc.topics<-mallet.doc.topics(topic.model, smoothed=T, normalized=T)
 
 
 
