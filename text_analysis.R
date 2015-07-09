@@ -102,13 +102,14 @@ sp$id<-gsub("data//Strategic_goals//","", sp$id)
 
 corp<-rbind(corp,sp)
 mallet.instance<-mallet.import(corp$id,corp$text, "stopwords.txt")
+topic.model<-MalletLDA()
+topic.model$loadDocuments(mallet.instance)
 
-best.model<-lapply(seq(2,1000,2),
+best.model<-lapply(seq(2,200,2),
     function(x){
-        topic.model<-MalletLDA(x)
-        topic.model$loadDocuments(mallet.instance)
+        topic.model$model$numTopics<-as.integer(x)
         topic.model$model$setNumThreads(as.integer(24))
-        topic.model$train(500)     
+        topic.model$train(100)     
         topic.model$model$modelLogLikelihood()
     })
                    
