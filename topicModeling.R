@@ -6,7 +6,7 @@ idx<-do.call(c, lapply(idx, function(x) sample(x, 10)))
 test.corpus<-abstrCorpus[idx]
 test.dtm<-DocumentTermMatrix(test.corpus)
 
-best.model<-mclapply(seq(2,200,1),mc.cores = 12, function(k) LDA(test.dtm, k) )
+best.model<-mclapply(seq(2,1000,2),mc.cores = 12, function(k) LDA(test.dtm, k) )
 best.model.lglk<-as.data.frame(as.matrix(lapply(best.model, logLik)))
 LogLik.df<-data.frame("topics"=seq(2,200,2), 
                     "LL"=as.numeric(as.matrix(best.model.lglk)))

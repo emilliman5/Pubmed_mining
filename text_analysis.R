@@ -94,7 +94,7 @@ wordCloudMontage(tdm = tdm.sp.tfidf,file = "SP_TfIdf_wordcloud.png", path = resu
 ##Topic Modelling
 #############
 library(mallet)
-options(java.parameters="-Xmx32g")
+options(java.parameters="-Xmx48g")
 corp<-mallet.read.dir("Corpus/")
 corp$id<-gsub("Corpus//", "", corp$id)
 sp<-mallet.read.dir("data/Strategic_goals/")
@@ -102,17 +102,13 @@ sp$id<-gsub("data//Strategic_goals//","", sp$id)
 
 corp<-rbind(corp,sp)
 mallet.instance<-mallet.import(corp$id,corp$text, "stopwords.txt")
-topic.model<-MalletLDA()
-topic.model$loadDocuments(mallet.instance)
 
-best.model<-lapply(seq(2,200,2),
-    function(x){
-        topic.model$model$numTopics<-as.integer(x)
-        topic.model$model$setNumThreads(as.integer(24))
-        topic.model$train(100)     
-        topic.model$model$modelLogLikelihood()
-    })
-                   
+topic.model<-MalletLDA(250)
+topic.model$loadDocuments(mallet.instance)
+topic.model$setAlphaOptimization(20, 50)
+topic.model$model$setNumThreads(as.integer(20))
+topic.model$train(100)     
+   
         
 
 
@@ -120,7 +116,7 @@ best.model<-lapply(seq(2,200,2),
 
 
 
-topic.model$setAlphaOptimization(20, 50)
+
 doc.topics<-mallet.doc.topics(topic.model, smoothed=T, normalized=T)
 
 
