@@ -13,40 +13,47 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
   
   stopWords<-read.table(stopwordList, colClasses = c("character"))
   myStopwords<-c(stopwords('english'), stopWords$V1)
+  myStopwords<-tolower(myStopwords)
   
   pubmed<-xmlParse(pub.file,useInternalNodes = T)
   top<-xmlRoot(pubmed)
   
   nodes<-getNodeSet(top,"//PubmedData/History/PubMedPubDate[@PubStatus='pubmed']")
   pubdate.df<-sapply(nodes, function(x)  paste(xmlSApply(x, xmlValue)[1:3], collapse = "-"))
+  pmid<-do.call("rbind", xpathApply(top, "//PubmedArticle/MedlineCitation/PMID", function(node)
+      xmlValue(node)))
   
   abstr.df<-do.call("rbind", xpathApply(top, "//PubmedArticle/MedlineCitation/Article", function(node)
   {
-    grantID<-xmlValue(node[['GrantList']][['Grant']][['GrantID']])
+    grantID<-xmlValue(node[['GrantList']][['Grant']][['GrantID']],recursive = T)
     title<-xmlValue(node[['ArticleTitle']])
     abstr<-xmlValue(node[['Abstract']][['AbstractText']])
     data.frame("GrantID"=grantID, "Title"=title, "Abstract"=abstr, stringsAsFactors=F)
   } ))
   
-  abstr.df<-cbind(pubdate.df, abstr.df)
-  abstr.df[,1]<-as.Date(abstr.df[,1], format = "%Y-%m-%d")
-  abstrCorpus<-Corpus(DataframeSource(abstr.df[,3:4]))
+  abstr.df<-cbind(as.data.frame(pmid),pubdate.df, abstr.df)
+  abstr.df[,"pubdate.df"]<-as.Date(abstr.df[,"pubdate.df"], format = "%Y-%m-%d")
+  
+  abstrCorpus<-Corpus(DataframeSource(abstr.df[,c("Title","Abstract")]))
   
   abstrCorpus<-tm_map(abstrCorpus, content_transformer(tolower))
   abstrCorpus<-tm_map(abstrCorpus, toSpace, "/|@|\\||-|_|\\\\")
   abstrCorpus<-tm_map(abstrCorpus, removePunctuation)
   abstrCorpus<-tm_map(abstrCorpus, removeNumbers)
-  abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
+  abstrCorpus<-tm_map(abstrCorpus, toSpace, "[^[:alnum:] ]", perl=T)
+  abstrCorpus<-tm_map(abstrCorpus, toSpace, "[\\s\\t][A-z]{1,2}[\\s\\t]", perl=T)
   dictCorpus<-abstrCorpus
   abstrCorpus<-tm_map(abstrCorpus, stemDocument)
-  abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)
+  abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)  
   
   abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=cores)
   abstrCorpus<-Corpus(VectorSource(abstrCorpus))
+  abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
+  meta(abstrCorpus, "PMID")<-abstr.df[,"PMID"]
   meta(abstrCorpus, "GrantID")<-abstr.df[,"GrantID"]
   meta(abstrCorpus, "Date")<-abstr.df[,"pubdate.df"]
   meta(abstrCorpus, "FY.Q")<-quarter(abstr.df[,"pubdate.df"]+90, with_year=T)
-  meta(abstrCorpus, "FY")<-floor(meta(abstrCorpus)$FY)
+  meta(abstrCorpus, "FY")<-floor(meta(abstrCorpus)[,"FY.Q"])
   
   dir.create("Corpus")
   writeCorpus(abstrCorpus,"Corpus/")
