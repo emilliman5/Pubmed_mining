@@ -1,7 +1,7 @@
 library(parallel)
 
 idx<-getFactorIdx("FY",meta(abstrCorpus))
-idx<-do.call(c, lapply(idx, function(x) sample(x, 50)))
+idx<-do.call(c, lapply(idx, function(x) sample(x, 100)))
 
 test.corpus<-abstrCorpus[idx]
 test.dtm<-DocumentTermMatrix(test.corpus)
