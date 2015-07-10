@@ -16,7 +16,7 @@ stemCompletion2 <- function(x, dictionary)
   
 }
 
-toSpace<-content_transformer(function(x, pattern) gsub(pattern, " ", x))
+toSpace<-content_transformer(function(x, pattern, perl=F) gsub(pattern, " ",perl=perl, x))
 
 NgramTokenizer <-function(x,n=2)
 {
