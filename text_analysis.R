@@ -109,17 +109,14 @@ topic.model$setAlphaOptimization(20, 50)
 topic.model$model$setNumThreads(as.integer(20))
 topic.model$train(100)     
    
-        
+doc.topics<-mallet.doc.topics(topic.model,normalized = T,T)        
+topic.words<-mallet.topic.words(topic.model,normalized = T,smoothed = T)
+colnames(topic.words)<-topic.model$getVocabulary()
 
+plot(mallet.topic.hclust(doc.topics, topic.words,1), cex=0.5)
 
-
-
-
-
-
-doc.topics<-mallet.doc.topics(topic.model, smoothed=T, normalized=T)
-
-
+top.words<-lapply(seq(1,250), function(x) 
+    mallet.top.words(topic.model,topic.words[x,],5))
 
 ############
 ##Abstract SP goals correlations
