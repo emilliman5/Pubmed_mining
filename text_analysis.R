@@ -165,18 +165,7 @@ g<-similarity.graph(m=dtm.m, vertex.grouping.vars =list(Goal=rownames(dtm.m)),
                     similarity.measure="correlation", min.similarity=0.15)
 
   
-###########
-##Hierchical Clustering and Dendrogram
-###########
 
-tdm2<-removeSparseTerms(tdm, sparse = sparsity)
-tdm2.m<-t(as.matrix(tdm))
-distMatrix<-dist(dist(scale(tdm2.m)))
-fit<-hclust(distMatrix,method = "ward.D")
-
-png(paste0(resultsPath,"/Word_dendrogram.png"), height=4500, width=9000, units="px")
-plot(fit, cex=0.75)
-dev.off()
 
 ############
 ##K-means clustering
