@@ -20,22 +20,37 @@ png(paste(resultsPath,"LDA_topicNumber_optimziation.png", sep="/"), height=1200,
 plot(LogLik.df$LL~LogLik.df$topics, pch=19, col="red", main="LDA Simulation with 10 docs per FY")
 dev.off()
 
-topTermBeta<-as.matrix(best.model[[7]]@beta)
-colnames(topTermBeta)<-best.model[[7]]@terms
-rownames(topTermBeta)<-apply(terms(best.model[[7]],3),2,function(x) paste(x,collapse=","))
+topTermBeta<-lapply(best.model, function(x){
+    y<-as.matrix(x@beta)
+    colnames(y)<-x@terms
+    rownames(y)<-apply(terms(x,4),2,function(z) paste(z,collapse=","))
+    y
+})
 
-topTermsDist<-dist(topTermBeta,method = "cosine")
+topTermsDist<-lapply( topTermBeta, function(x) {
+    dist(x,method = "cosine")
+})
 
-png(paste(resultsPath,"TopicClustering_byTerms.png", sep="/"), height=1200, width=2400, units="px")
-plot(hclust(topTermsDist), cex=1)
-dev.off()
+names(topTermsDist)<-lapply(best.model, function(x) x@k)
+lapply(names(topTermsDist)[-1], function(x){
+    png(paste0(resultsPath,"/","TopicClustering_byTerms_TopicNumber_",x,".png"), height=1200, width=2400, units="px")
+    plot(hclust(topTermsDist[[x]]), cex=1)
+    dev.off()
+})
 
-topDocGamma<-as.matrix(best.model[[7]]@gamma)
-colnames(topDocGamma)<-rownames(topTermBeta)
+topDocGamma<-lapply(best.model, function(x) {
+    y<-as.matrix(x@gamma)
+    colnames(y)<-apply(terms(x,4),2,function(z) paste(z,collapse=","))
+    y
+})
 
-topDocDist<-dist(t(topDocGamma),method="cosine")
+topDocDist<-lapply(topDocGamma, function(x){
+    dist(t(x),method="cosine")
+})
+names(topDocDist)<-lapply(best.model, function(x) x@k)
 
-png(paste(resultsPath,"TopicClustering_byDoc.png", sep="/"), height=1200, width=2400, units="px")
-plot(hclust(topDocDist), cex=1)
-dev.off()
-
+lapply(names(topDocDist)[-1], function(x){
+    png(paste0(resultsPath,"/","TopicClustering_byDoc_TopicNumber_",x,".png"), height=1200, width=2400, units="px")
+    plot(hclust(topDocDist[[x]]), cex=1)
+    dev.off()
+})
