@@ -23,32 +23,36 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
   pmid<-do.call("rbind", xpathApply(top, "//PubmedArticle/MedlineCitation/PMID", function(node)
       xmlValue(node)))
   
+  grantNodes<-getNodeSet(top, "//GrantList")
+  grantID<-xmlSApply(grantNodes, function(x) xmlSApply(x, function(y)
+      xmlValue(y[['GrantID']])))
+  grantID<-do.call("rbind", lapply(grantID, function(x) paste(x, collapse="|")))
+  
   abstr.df<-do.call("rbind", xpathApply(top, "//PubmedArticle/MedlineCitation/Article", function(node)
   {
-    grantID<-xmlValue(node[['GrantList']][['Grant']][['GrantID']],recursive = T)
     title<-xmlValue(node[['ArticleTitle']])
     abstr<-xmlValue(node[['Abstract']][['AbstractText']])
-    data.frame("GrantID"=grantID, "Title"=title, "Abstract"=abstr, stringsAsFactors=F)
+    data.frame("Title"=title, "Abstract"=abstr, stringsAsFactors=F)
   } ))
   
-  abstr.df<-cbind(as.data.frame(pmid),pubdate.df, abstr.df)
+  abstr.df<-cbind(as.data.frame(pmid),as.data.frame(grantID),pubdate.df, abstr.df)
   abstr.df[,"pubdate.df"]<-as.Date(abstr.df[,"pubdate.df"], format = "%Y-%m-%d")
-  
+  colnames(abstr.df)[1:2]<-c("PMID","GrantID")
   abstrCorpus<-Corpus(DataframeSource(abstr.df[,c("Title","Abstract")]))
   
-  abstrCorpus<-tm_map(abstrCorpus, content_transformer(tolower))
-  abstrCorpus<-tm_map(abstrCorpus, toSpace, "/|@|\\||-|_|\\\\")
-  abstrCorpus<-tm_map(abstrCorpus, removePunctuation)
-  abstrCorpus<-tm_map(abstrCorpus, removeNumbers)
-  abstrCorpus<-tm_map(abstrCorpus, toSpace, "[^[:alnum:] ]", perl=T)
-  abstrCorpus<-tm_map(abstrCorpus, toSpace, "[\\s\\t][A-z]{1,2}[\\s\\t]", perl=T)
+  abstrCorpus<-tm_map(abstrCorpus, content_transformer(tolower), mc.cores=cores)
+  abstrCorpus<-tm_map(abstrCorpus, toSpace, "/|@|\\||-|_|\\\\", mc.cores=cores)
+  abstrCorpus<-tm_map(abstrCorpus, removePunctuation, mc.cores=cores)
+  abstrCorpus<-tm_map(abstrCorpus, removeNumbers, mc.cores=cores)
+  abstrCorpus<-tm_map(abstrCorpus, toSpace, "[^[:alnum:] ]", perl=T, mc.cores=cores)
+  abstrCorpus<-tm_map(abstrCorpus, toSpace, "[\\s\\t][A-z]{1,2}[\\s\\t]", perl=T, mc.cores=cores)
   dictCorpus<-abstrCorpus
-  abstrCorpus<-tm_map(abstrCorpus, stemDocument)
-  abstrCorpus<-tm_map(abstrCorpus, stripWhitespace)  
+  abstrCorpus<-tm_map(abstrCorpus, stemDocument, mc.cores=cores)
+  abstrCorpus<-tm_map(abstrCorpus, stripWhitespace, mc.cores=cores)  
   
   abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=cores)
   abstrCorpus<-Corpus(VectorSource(abstrCorpus))
-  abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords)
+  abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords, mc.cores=cores)
   meta(abstrCorpus, "PMID")<-abstr.df[,"PMID"]
   meta(abstrCorpus, "GrantID")<-abstr.df[,"GrantID"]
   meta(abstrCorpus, "Date")<-abstr.df[,"pubdate.df"]
@@ -75,18 +79,20 @@ makeSPCorpus<-function(SP_path="data/Strategic_goals",
   docs<-cbind(gsub("data/Strategic_goals//","",gsub(".txt", "",files)), docs)
   
   SP<-VCorpus(VectorSource(docs[,2]))
-  SP<-tm_map(SP, toSpace, "/|@|\\||-|_|\\\\")
-  SP<-tm_map(SP, removePunctuation)
-  SP<-tm_map(SP, removeNumbers)
+  SP<-tm_map(SP, toSpace, "/|@|\\||-|_|\\\\", mc.cores=cores)
+  SP<-tm_map(SP, removePunctuation, mc.cores=cores)
+  SP<-tm_map(SP, removeNumbers, mc.cores=cores)
   
-  SP<-tm_map(SP, removeWords, myStopwords)
+  SP<-tm_map(SP, removeWords, myStopwords, mc.cores=cores)
   dictCorpus<-SP
-  SP<-tm_map(SP, stemDocument)
-  SP<-tm_map(SP, stripWhitespace)
-  SP<-tm_map(SP,content_transformer(tolower))
+  SP<-tm_map(SP, stemDocument, mc.cores=cores)
+  SP<-tm_map(SP, stripWhitespace, mc.cores=cores)
+  SP<-tm_map(SP,content_transformer(tolower), mc.cores=cores)
   
   SP<-mclapply(SP, stemCompletion2, dictionary=dictCorpus, mc.cores=cores)
   SP<-Corpus(VectorSource(SP))
+  SP<-tm_map(SP, toSpace, "[\\s\\t][A-z]{1,2}[\\s\\t]", perl=T, mc.cores=cores)
+ 
   meta(SP, "id")<-docs[,1]
   
   dir.create("Corpus/SP/")
