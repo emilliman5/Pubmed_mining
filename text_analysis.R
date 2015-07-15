@@ -93,30 +93,62 @@ wordCloudMontage(tdm = tdm.sp.tfidf,file = "SP_TfIdf_wordcloud.png", path = resu
 #############
 ##Topic Modelling
 #############
-library(mallet)
-options(java.parameters="-Xmx48g")
-corp<-mallet.read.dir("Corpus/")
-corp$id<-gsub("Corpus//", "", corp$id)
-sp<-mallet.read.dir("data/Strategic_goals/")
-sp$id<-gsub("data//Strategic_goals//","", sp$id)
+library(proxy)
+dtm<-DocumentTermMatrix(c(abstrCorpus, spCorpus))
+dtm<-t(t(as.matrix(dtm))[as.vector(apply(t(as.matrix(dtm)), 1, sum)>10),])
 
-corp<-rbind(corp,sp)
-mallet.instance<-mallet.import(corp$id,corp$text, "stopwords.txt")
+dtm<-dtm[rowSums(dtm)>0,]
 
-topic.model<-MalletLDA(250)
-topic.model$loadDocuments(mallet.instance)
-topic.model$setAlphaOptimization(20, 50)
-topic.model$model$setNumThreads(as.integer(20))
-topic.model$train(100)     
-   
-doc.topics<-mallet.doc.topics(topic.model,normalized = T,T)        
-topic.words<-mallet.topic.words(topic.model,normalized = T,smoothed = T)
-colnames(topic.words)<-topic.model$getVocabulary()
+seq.k<-c(50,100,200,400)
 
-plot(mallet.topic.hclust(doc.topics, topic.words,1), cex=0.5)
+#models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
+models<-mclapply(seq.k,mc.cores=4, function(k) LDA(dtm, k) )
 
-top.words<-lapply(seq(1,250), function(x) 
-    mallet.top.words(topic.model,topic.words[x,],5))
+best.model.lglk<-as.data.frame(as.matrix(lapply(model, logLik)))
+LogLik.df<-data.frame("topics"=seq.k, 
+                      "LL"=as.numeric(as.matrix(best.model.lglk)))
+
+png(paste(resultsPath,"LDA_topicNumber_optimziation.png", sep="/"), height=1200, width=1200, units="px")
+plot(LogLik.df$LL~LogLik.df$topics, pch=19, col="red", main="LDA Simulation with 10 docs per FY")
+dev.off()
+
+topTermBeta<-lapply(models, function(x){
+    y<-as.matrix(x@beta)
+    colnames(y)<-x@terms
+    rownames(y)<-apply(terms(x,4),2,function(z) paste(z,collapse=","))
+    y
+})
+
+topTermsDist<-lapply( topTermBeta, function(x) {
+    dist(x,method = "cosine")
+})
+
+names(topTermsDist)<-lapply(models, function(x) x@k)
+lapply(names(topTermsDist)[-1], function(x){
+    png(paste0(resultsPath,"/","TopicClustering_byTerms_TopicNumber_",x,".png"), height=1200, width=2400, units="px")
+    plot(hclust(topTermsDist[[x]]), cex=1)
+    dev.off()
+})
+
+topDocGamma<-lapply(models, function(x) {
+    y<-as.matrix(x@gamma)
+    colnames(y)<-apply(terms(x,4),2,function(z) paste(z,collapse=","))
+    y
+})
+
+topDocDist<-lapply(topDocGamma, function(x){
+    dist(t(x),method="cosine")
+})
+names(topDocDist)<-lapply(models, function(x) x@k)
+
+lapply(names(topDocDist)[-1], function(x){
+    png(paste0(resultsPath,"/","TopicClustering_byDoc_TopicNumber_",x,".png"), height=1200, width=2400, units="px")
+    plot(hclust(topDocDist[[x]]), cex=1)
+    dev.off()
+})
+
+
+
 
 ############
 ##Abstract SP goals correlations
