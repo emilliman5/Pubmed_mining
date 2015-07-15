@@ -7,4 +7,5 @@ abstr.df<-do.call("rbind", xpathApply(top, "//PubmedArticle/MedlineCitation/Arti
 
 
 grantNodes<-getNodeSet(top, "//GrantList")
-grantID<-xmlSApply(grantNodes, function(x) xpathApply(x, "//GrantID", xmlValue))
+grantID<-xmlSApply(grantNodes, function(x) xmlSApply(x, function(y)
+    xmlValue(y[['GrantID']])))
