@@ -30,8 +30,8 @@ if(!file.exists("Corpus/1.txt") || reset){
 } else {
   ##read in corpus docs.
   abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
-  metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','Date','character','numeric'))
-  for (x in c("GrantID","Date", "FY", "FY.Q")) {
+  metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
+  for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
     meta(abstrCorpus, x)<-metaData[,x]
   }
 }
@@ -97,16 +97,17 @@ library(proxy)
 dtm<-DocumentTermMatrix(c(abstrCorpus, spCorpus))
 dtm<-t(t(as.matrix(dtm))[as.vector(apply(t(as.matrix(dtm)), 1, sum)>10),])
 
-dtm<-dtm[rowSums(dtm)>0,]
+docRemove<-which(rowSums(dtm)==0)
+dtm<-dtm[-docRemove,]
 
-seq.k<-c(50,100,200,400)
+seq.k<-c(50,100)
 
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
-models<-mclapply(seq.k,mc.cores=4, function(k) LDA(dtm, k) )
+models<-lapply(seq.k, function(k) LDA(dtm, k) )
 
-best.model.lglk<-as.data.frame(as.matrix(lapply(model, logLik)))
+model.lglk<-as.data.frame(as.matrix(lapply(models, logLik)))
 LogLik.df<-data.frame("topics"=seq.k, 
-                      "LL"=as.numeric(as.matrix(best.model.lglk)))
+                      "LL"=as.numeric(as.matrix(model.lglk)))
 
 png(paste(resultsPath,"LDA_topicNumber_optimziation.png", sep="/"), height=1200, width=1200, units="px")
 plot(LogLik.df$LL~LogLik.df$topics, pch=19, col="red", main="LDA Simulation with 10 docs per FY")
@@ -124,7 +125,7 @@ topTermsDist<-lapply( topTermBeta, function(x) {
 })
 
 names(topTermsDist)<-lapply(models, function(x) x@k)
-lapply(names(topTermsDist)[-1], function(x){
+lapply(names(topTermsDist), function(x){
     png(paste0(resultsPath,"/","TopicClustering_byTerms_TopicNumber_",x,".png"), height=1200, width=2400, units="px")
     plot(hclust(topTermsDist[[x]]), cex=1)
     dev.off()
@@ -141,12 +142,86 @@ topDocDist<-lapply(topDocGamma, function(x){
 })
 names(topDocDist)<-lapply(models, function(x) x@k)
 
-lapply(names(topDocDist)[-1], function(x){
+lapply(names(topDocDist), function(x){
     png(paste0(resultsPath,"/","TopicClustering_byDoc_TopicNumber_",x,".png"), height=1200, width=2400, units="px")
     plot(hclust(topDocDist[[x]]), cex=1)
     dev.off()
 })
 
+#######
+#Network Output
+#######
+
+meta(abstrCorpus, "Type")<-"Abstract"
+write.table(file = "Network/AbstrNodeAttrs.csv", x=meta(abstrCorpus)[,c("PMID","FY","FY.Q","Type")],sep=",",
+            quote=F, row.names=F, col.names=T)
+
+spMeta<-as.data.frame(cbind(names(spCorpus), "StrategicPlan"))
+colnames(spMeta)<-c("ID","Type")
+write.table(spMeta, "Network/SpNodeAttrs.csv",sep=",",
+            quote=F, row.names=F, col.names=T)
+
+lapply(models, function(x) {
+    dir.create(paste0("Network/Topics", x@k))    
+    path<-paste0("Network/Topics", x@k)
+    topicNodes<-as.data.frame(apply(terms(x,4),2,function(z) paste(z,collapse="|")))
+    colnames(topicNodes)<-"TopicWords"
+    topicNodes$ID<-rownames(topicNodes)
+    write.table(topicNodes, paste0(path,"/TopicNodes.csv"), row.names=F,sep=",", quote=F)
+})
+
+lapply(topDocGamma, function(x){
+    path<-paste0("Network/Topics", ncol(x))
+    colnames(x)<-paste(rep("Topic",ncol(x)),seq(1,ncol(x)))
+    x<-as.data.frame(x)
+    x$id<-c(meta(abstrCorpus)[-docRemove,"PMID"], names(spCorpus))
+    t<-reshape(x, times = colnames(x)[-ncol(x)], varying = colnames(x)[-ncol(x)], direction="long",v.names ="Weight",idvar = "id" ,ids = rownames(x),timevar = "Topic")
+    t<-t[t$Weight>0.01,]
+    write.table(t, paste0(path, "/TopicDocumentProbEdges.csv"), sep=",",
+                          row.names=F, col.names=T,quote=F)
+    })
+
+lapply(topTermBeta, function(x){
+    path<-paste0("Network/Topics", nrow(x))
+    x<-as.data.frame(x)
+    x$Topics<-paste(rep("Topic",nrow(x)),seq(1,nrow(x)))
+    t<-reshape(x, times = colnames(x)[-ncol(x)], varying = colnames(x)[-ncol(x)], direction="long",v.names ="Weight",idvar = "Topics" ,ids = rownames(x),timevar = "Term")
+    t<-t[t$Weight>-250,]
+    write.table(t, paste0(path, "/TopicTermWeightEdges.csv"), sep=",",
+                row.names=F, col.names=T,quote=F)
+})
+
+library(reshape2)
+
+lapply(topDocDist, function(x){
+    path<-paste0("Network/Topics", nrow(x))
+    x<-as.matrix(x)
+    rownames(x)<-seq(1,nrow(x))
+    colnames(x)<-seq(1,ncol(x))
+    t<-melt(as.matrix(x), varnames=c("col","row"))   
+    t<-t[t$row>t$col,]
+    t$col<-paste(rep("Topic", nrow(x)), t$col)
+    t$row<-paste(rep("Topic", nrow(x)), t$row)
+    colnames(t)<-c("Source", "Target","Weight")
+    write.table(t,paste0(path,"/TopicTopicbyDocSimilarity.csv"), sep=",", row.names=F, quote=F, col.names=T)    
+})
+
+lapply(topTermsDist, function(x){
+    path<-paste0("Network/Topics", nrow(x))
+    x<-as.matrix(x)
+    rownames(x)<-seq(1,nrow(x))
+    colnames(x)<-seq(1,ncol(x))
+    t<-melt(as.matrix(x), varnames=c("col","row"))   
+    t<-t[t$row>t$col,]
+    t$col<-paste(rep("Topic", nrow(x)), t$col)
+    t$row<-paste(rep("Topic", nrow(x)), t$row)
+    colnames(t)<-c("Source", "Target","Weight")
+    write.table(t,paste0(path,"/TopicTopicbyTermSimilarity.csv"), sep=",", row.names=F, quote=F, col.names=T)        
+})
+
+dtm.df<-as.data.frame(dtm)
+dtm.df$id<-c(meta(abstrCorpus)[-docRemove,"PMID"], names(spCorpus))
+dtm.df<-reshape(dtm.df, times = colnames(dtm.df)[-ncol(dtm.df)],varying = colnames(dtm.df)[-ncol(dtm.df)], v.names = "TF",idvar = "id",ids = "id",direction = "long")
 
 
 
