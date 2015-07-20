@@ -95,12 +95,12 @@ wordCloudMontage(tdm = tdm.sp.tfidf,file = "SP_TfIdf_wordcloud.png", path = resu
 #############
 library(proxy)
 dtm<-DocumentTermMatrix(c(abstrCorpus, spCorpus))
-dtm<-t(t(as.matrix(dtm))[as.vector(apply(t(as.matrix(dtm)), 1, sum)>10),])
+dtm<-t(t(as.matrix(dtm))[as.vector(apply(t(as.matrix(dtm)), 1, sum)>15),])
 
 docRemove<-which(rowSums(dtm)==0)
 dtm<-dtm[-docRemove,]
 
-seq.k<-c(50,100)
+seq.k<-c(50,100, 250,500,1000)
 
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
 models<-lapply(seq.k, function(k) LDA(dtm, k) )
