@@ -1,14 +1,14 @@
 library(tm)
 library(wordcloud)
-library(graph)
-library(Rgraphviz)
+#library(graph)
+#library(Rgraphviz)
 library(topicmodels)
 library(lubridate)
 library(parallel)
-library(igraph)
+#library(igraph)
 library(class)
 library(cluster)
-library(gplots)
+#library(gplots)
 library(RColorBrewer)
 
 #library(networktools)
@@ -66,8 +66,8 @@ tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTok
 ##tdm.bigram are two term frequencies
 
 tdm<-tdm.monogram
-tdm<-tdm.monogram.tfidf
-tdm<-tdm.bigram
+#tdm<-tdm.monogram.tfidf
+#tdm<-tdm.bigram
 
 tdm.sp<-TermDocumentMatrix(spCorpus)
 tdm.sp.tfidf<-TermDocumentMatrix(spCorpus, control=list(weighting=weightTfIdf))
@@ -87,7 +87,7 @@ wordCloud(tdm,fact="FY", 75, pre="tf")
 wordCloud(tdm,fact="FY.Q", 75, pre="tf")
 
 wordCloudMontage(tdm = tdm.sp,file = "SP_TF_wordcloud.png", path = resultsPath)
-wordCloudMontage(tdm = tdm.sp.tfidf,file = "SP_TfIdf_wordcloud.png", path = resultsPath)
+wordCloudMontage(tdm = tdm.sp.tfidf,f=0.001,file = "SP_TfIdf_wordcloud.png", path = resultsPath)
 
 
 #############
@@ -100,10 +100,10 @@ dtm<-t(t(as.matrix(dtm))[as.vector(apply(t(as.matrix(dtm)), 1, sum)>15),])
 docRemove<-which(rowSums(dtm)==0)
 dtm<-dtm[-docRemove,]
 
-seq.k<-c(50,100, 250,500,1000)
+seq.k<-c(50,100, 250)
 
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
-models<-lapply(seq.k, function(k) LDA(dtm, k) )
+models<-mclapply(seq.k, mc.cores=2, function(k) LDA(dtm, k) )
 
 model.lglk<-as.data.frame(as.matrix(lapply(models, logLik)))
 LogLik.df<-data.frame("topics"=seq.k, 
@@ -244,84 +244,7 @@ rownames(m)<-c("SP1","SP2","SP3","SP4","SP5","SP6","SP7","SP8","SP9","SP10","SP1
 sp.d<-dist(m)
 
 
-################
-##Parameters
-################
 
-#Correlation Threshold for association rule mining and Word grapgh plot
-corLimit<-0.1
-
-#Sparsity removes terms that appear infrequently in the matrix must be <1
-sparsity<-0.9
-
-#Number of clusters to seed for kmeans clustering.
-k<-10
-
-################
-##Keywords Dictionary
-################
-keywords.SP<-read.csv("Keywords_by_SP_Goals.csv", stringsAsFactors=F)
-findAssocs(tdm,terms = c("exposome","ewass"), corlimit = corLimit)
-
-#######
-##Network of word correlations
-#######
-
-sp.tdm<-DocumentTermMatrix(spCorpus,control = list(weighting=weightTfIdf))
-g<-similarity.graph(m=dtm.m, vertex.grouping.vars =list(Goal=rownames(dtm.m)),
-                    similarity.measure="correlation", min.similarity=0.15)
-
-  
-
-
-############
-##K-means clustering
-############
-k<-11
-l<-dim(as.matrix(dtm))[1]
-tdm.t<-t(tdm.monogram.tfidf)
-dtm<-DocumentTermMatrix(corp,control=list(weighting=weightTfIdf))
-dtm<-dtm[,apply(as.matrix(dtm)[(l-10):l,],2, sum)>0]
-kmeansResults<-kmeans(dtm, k)
-round(kmeansResults$centers, digits=3)
-
-kResults<-aggregate(as.matrix(dtm), by=list(kmeansResults$cluster), mean)
-kClusterResult<-do.call(cbind, lapply(getFactorIdx("FY",meta(corp)),function(x){
-    tapply(kmeansResults$cluster[x], kmeansResults$cluster[x], length)    
-            }
-    )
-)
-colnames(kClusterResult)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
-barplot((kClusterResult/colSums(kClusterResult)), names.arg = colnames(kClusterResult))
-barplot(t(t(kClusterResult)/colSums(kClusterResult)))
-
-clusplot(as.matrix(dtm), kmeansResults$cluster, color=TRUE, shade=TRUE, labels=TRUE, lines=0)
-
-
-for (i in 1:k) {
-  cat(paste("cluster ", i, ": ", sep = ""))
-  s <- sort(kmeansResults$centers[i, ], decreasing = T) 
-  cat(names(s)[1:8], "\n")
-  # print the tweets of every cluster
-  # print(tweets[which(kmeansResult$cluster==i)])
-}
-
-##K nearest Neighbors Analysis
-corp<-c(abstrCorpus,spCorpus)
-dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTfIdf))
-
-l<-dim(as.matrix(dtm))[1]
-dtm.m<-dtm[,apply(as.matrix(dtm)[(l-10):l,],2, sum)>0]
-
-knnResults<-lapply(getFactorIdx("FY", meta(abstrCorpus)),
-    function(x){    
-        knn(as.matrix(dtm.m)[(l-10):l,],as.matrix(dtm.m)[x,], 
-          rownames(as.matrix(dtm.m)[(l-10):l,]))
-    })
-
-FYs<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
-knnSummary<-do.call(rbind, lapply(knnResults, function(x) tapply(x, x, length)))          
-rownames(knnSummary)<-FYs       
           
           
           
