@@ -1,15 +1,14 @@
 library(tm)
 library(wordcloud)
-#library(graph)
-#library(Rgraphviz)
+library(slam)
 library(topicmodels)
 library(lubridate)
 library(parallel)
-#library(igraph)
 library(class)
 library(cluster)
-#library(gplots)
 library(RColorBrewer)
+library(gplots)
+library(proxy)
 
 #library(networktools)
 #If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
@@ -77,8 +76,29 @@ tdm.sp.tfidf<-TermDocumentMatrix(spCorpus, control=list(weighting=weightTfIdf))
 ###########
 
 tfidfHisto(tdm.monogram.tfidf ,fact = "FY", "mean")
-
 tfHisto(tdm,"FY")
+
+tf<-rowSums(as.matrix(tdm))
+tf<-tf[order(-tf)]
+
+tf.bi<-do.call(rbind, mclapply(seq(1,dim(tdm.bigram)[1]), mc.cores=16, function(x){
+    rowSums(as.matrix(tdm.bigram[x,]))
+}))
+
+tf.bi<-row_sums(tdm.bigram)
+
+tf.bi<-tf.bi[order(-tf.bi)]
+
+png(paste0(resultsPath,"/Zipfs_plots.png"), height=3000, width=3000, units="px")
+par(mfrow=c(2,1), cex=4)
+plot(tf.bi, ylim=c(0,12500),lwd=2,type="l", xlab="Rank Ordered Terms", ylab="Term Count", main="Zipf's Law plot")
+lines(tf, col="blue", lwd=2)
+legend("topright",lty=c(1,1), col=c("black","blue"), legend=c("Bigrams", "Unigrams"), bty="n")
+
+plot(tf.bi, xlim=c(0,10000),lwd=2,ylim=c(0,1000), type="l", xlab="Rank Ordered Terms", ylab="Term Count", main="Zipf's Law plot")
+lines(tf, col="blue",lwd=2)
+dev.off()
+
 
 wordCloud(tdm.monogram.tfidf,fact="FY", 75, "mean","tfidf")
 wordCloud(tdm.monogram.tfidf,fact="FY.Q", 75, "mean","tfidf")
@@ -93,7 +113,6 @@ wordCloudMontage(tdm = tdm.sp.tfidf,f=0.001,file = "SP_TfIdf_wordcloud.png", pat
 #############
 ##Topic Modelling
 #############
-library(proxy)
 dtm<-DocumentTermMatrix(c(abstrCorpus, spCorpus))
 dtm<-t(t(as.matrix(dtm))[as.vector(apply(t(as.matrix(dtm)), 1, sum)>15),])
 
@@ -152,101 +171,109 @@ lapply(names(topDocDist), function(x){
 #Network Output
 #######
 
+path<-getDate()
+dir.create(paste0("Network/",path))
+
 meta(abstrCorpus, "Type")<-"Abstract"
-write.table(file = "Network/AbstrNodeAttrs.csv", x=meta(abstrCorpus)[,c("PMID","FY","FY.Q","Type")],sep=",",
+write.table(file =paste0("Network/",path,"/AbstrNodeAttrs.csv"), x=meta(abstrCorpus)[,c("PMID","FY","FY.Q","Type")],sep=",",
             quote=F, row.names=F, col.names=T)
 
 spMeta<-as.data.frame(cbind(names(spCorpus), "StrategicPlan"))
 colnames(spMeta)<-c("ID","Type")
-write.table(spMeta, "Network/SpNodeAttrs.csv",sep=",",
+write.table(spMeta, paste0("Network/",path,"/SpNodeAttrs.csv"),sep=",",
             quote=F, row.names=F, col.names=T)
 
 lapply(models, function(x) {
-    dir.create(paste0("Network/Topics", x@k))    
-    path<-paste0("Network/Topics", x@k)
+    p<-paste0("Network/",path,"/Topics", x@k)
+    dir.create(p)    
     topicNodes<-as.data.frame(apply(terms(x,4),2,function(z) paste(z,collapse="|")))
     colnames(topicNodes)<-"TopicWords"
     topicNodes$ID<-rownames(topicNodes)
-    write.table(topicNodes, paste0(path,"/TopicNodes.csv"), row.names=F,sep=",", quote=F)
+    topicNodes$ID<-gsub(" ", "", topicNodes$ID)
+    write.table(topicNodes, paste0(p,"/TopicNodes.csv"), row.names=F,sep=",", quote=F)
 })
 
-lapply(topDocGamma, function(x){
-    path<-paste0("Network/Topics", ncol(x))
-    colnames(x)<-paste(rep("Topic",ncol(x)),seq(1,ncol(x)))
+mclapply(topDocGamma, cores=4,function(x){
+    p<-paste0("Network/",path,"/Topics", ncol(x))
+    colnames(x)<-paste(rep("Topic",ncol(x)),seq(1,ncol(x)), sep="")
     x<-as.data.frame(x)
     x$id<-c(meta(abstrCorpus)[-docRemove,"PMID"], names(spCorpus))
     t<-reshape(x, times = colnames(x)[-ncol(x)], varying = colnames(x)[-ncol(x)], direction="long",v.names ="Weight",idvar = "id" ,ids = rownames(x),timevar = "Topic")
     t<-t[t$Weight>0.01,]
-    write.table(t, paste0(path, "/TopicDocumentProbEdges.csv"), sep=",",
+    t$Type<-rep("Undirected")
+    colnames(t)<-c("Source","Target","Weight","Type")
+    write.table(t, paste0(p, "/TopicDocumentProbEdges.csv"), sep=",",
                           row.names=F, col.names=T,quote=F)
     })
 
-lapply(topTermBeta, function(x){
-    path<-paste0("Network/Topics", nrow(x))
+mclapply(topTermBeta,mc.cores=4, function(x){
+    p<-paste0("Network/",path,"/Topics", nrow(x))
     x<-as.data.frame(x)
-    x$Topics<-paste(rep("Topic",nrow(x)),seq(1,nrow(x)))
+    x$Topics<-paste(rep("Topic",nrow(x)),seq(1,nrow(x)), sep="")
     t<-reshape(x, times = colnames(x)[-ncol(x)], varying = colnames(x)[-ncol(x)], direction="long",v.names ="Weight",idvar = "Topics" ,ids = rownames(x),timevar = "Term")
     t<-t[t$Weight>-250,]
-    write.table(t, paste0(path, "/TopicTermWeightEdges.csv"), sep=",",
+    t$Type<-rep("Undirected")
+    colnames(t)<-c("Source","Target","Weight","Type")
+    write.table(t, paste0(p, "/TopicTermWeightEdges.csv"), sep=",",
                 row.names=F, col.names=T,quote=F)
 })
 
 library(reshape2)
 
 lapply(topDocDist, function(x){
-    path<-paste0("Network/Topics", nrow(x))
+    p<-paste0("Network/",path,"/Topics", nrow(x))
     x<-as.matrix(x)
     rownames(x)<-seq(1,nrow(x))
     colnames(x)<-seq(1,ncol(x))
     t<-melt(as.matrix(x), varnames=c("col","row"))   
     t<-t[t$row>t$col,]
-    t$col<-paste(rep("Topic", nrow(x)), t$col)
-    t$row<-paste(rep("Topic", nrow(x)), t$row)
-    colnames(t)<-c("Source", "Target","Weight")
-    write.table(t,paste0(path,"/TopicTopicbyDocSimilarity.csv"), sep=",", row.names=F, quote=F, col.names=T)    
+    t$col<-paste(rep("Topic", nrow(x)), t$col, sep="")
+    t$row<-paste(rep("Topic", nrow(x)), t$row, sep="")
+    t$Type<-rep("Undirected")
+    colnames(t)<-c("Source", "Target","Weight", "Type")
+    write.table(t,paste0(p,"/TopicTopicbyDocSimilarity.csv"), sep=",", row.names=F, quote=F, col.names=T)    
 })
 
 lapply(topTermsDist, function(x){
-    path<-paste0("Network/Topics", nrow(x))
+    p<-paste0("Network/",path,"/Topics", nrow(x))
     x<-as.matrix(x)
     rownames(x)<-seq(1,nrow(x))
     colnames(x)<-seq(1,ncol(x))
     t<-melt(as.matrix(x), varnames=c("col","row"))   
     t<-t[t$row>t$col,]
-    t$col<-paste(rep("Topic", nrow(x)), t$col)
-    t$row<-paste(rep("Topic", nrow(x)), t$row)
+    t$col<-paste(rep("Topic", nrow(x)), t$col, sep="")
+    t$row<-paste(rep("Topic", nrow(x)), t$row, sep="")
     colnames(t)<-c("Source", "Target","Weight")
-    write.table(t,paste0(path,"/TopicTopicbyTermSimilarity.csv"), sep=",", row.names=F, quote=F, col.names=T)        
+    t$Type<-rep("Undirected")
+    write.table(t,paste0(p,"/TopicTopicbyTermSimilarity.csv"), sep=",", row.names=F, quote=F, col.names=T)        
 })
 
 dtm.df<-as.data.frame(dtm)
 dtm.df$id<-c(meta(abstrCorpus)[-docRemove,"PMID"], names(spCorpus))
 dtm.df<-reshape(dtm.df, times = colnames(dtm.df)[-ncol(dtm.df)],varying = colnames(dtm.df)[-ncol(dtm.df)], v.names = "TF",idvar = "id",ids = "id",direction = "long")
 
-
+save(models, file = paste0("LDA_models",getDate(),".rda"))
 
 ############
-##Abstract SP goals correlations
+##SP goals topic assigment
 ############
 
-corp<-c(abstrCorpus,spCorpus)
+sp_topics<-lapply(models, function(x){
+        x@gamma[grep("SP_",x@documents),]
+})
 
-tail(meta(corp), 15)
+heatmap.2(sp_topics[[1]], trace = "none",)
 
-dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTfIdf))
-dtm.m<-dtm[,apply(as.matrix(dtm)[1296:1306,],2, sum)>0]
-
-dtm.d<-dist(dtm.m, method="euclidean")
-l<-dim(dtm)[1]-11
-m<-do.call(cbind, lapply(1:l, function(x) dtm.d[(x+(l)):(x+(l+10))]))
-#rownames(m)<-rownames(dtm)[1296:1306]
-rownames(m)<-c("SP1","SP2","SP3","SP4","SP5","SP6","SP7","SP8","SP9","SP10","SP11")
-sp.d<-dist(m)
-
-
-
+sp.dist<-lapply(sp_topics, function(x) {
+    dist(x, "cosine")
+})
           
-          
+png(paste0(resultsPath,"/SPGoals_dendrogram.png"), height=3000, width=1500, units="px")
+par(mfrow=c(3,1), cex=2.5)
+lapply(sp.dist, function(x){
+    plot(hclust(x))    
+})
+dev.off()
           
           
           
