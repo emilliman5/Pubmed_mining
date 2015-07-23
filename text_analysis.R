@@ -262,7 +262,14 @@ sp_topics<-lapply(models, function(x){
         x@gamma[grep("SP_",x@documents),]
 })
 
-heatmap.2(sp_topics[[1]], trace = "none",)
+png(paste0(resultsPath,"/SPGoals_heatmap.png"), height=3000, width=1500, units="px")
+par(mfrow=c(3,1), cex=2.5)
+lapply(sp_topics, function(x){
+    heatmap.2(log10(x), trace = "none",
+              distfun=function(x) dist(x,method="cosine") )       
+})
+dev.off()
+
 
 sp.dist<-lapply(sp_topics, function(x) {
     dist(x, "cosine")
@@ -275,7 +282,12 @@ lapply(sp.dist, function(x){
 })
 dev.off()
           
-          
+png(paste0(resultsPath,"/SPGoals_endrogram.png"), height=3000, width=1500, units="px")
+par(mfrow=c(3,1), cex=2.5)
+lapply(sp.dist, function(x){
+    heatmap.2(x, trace = "none",)    
+})
+dev.off()          
           
           
           
