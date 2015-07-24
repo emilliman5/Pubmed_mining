@@ -168,6 +168,14 @@ wordCloud<-function(tdm, fact, maxWords, fun="sum", pre="", scale=c(10,0.5))
   })
 }
 
-
+getTopicAssign<-function(ids, model, corpus){
+    idx<-do.call(c, lapply(ids, function(x){
+        which(meta(corpus)[-484,]$PMID==x)
+    }))
+    t<-as.data.frame(model@gamma[idx,])
+        colnames(t)<-apply(terms(model,4),2,function(z) paste(z,collapse=","))
+        rownames(t)<-ids
+    t
+}
 
 
