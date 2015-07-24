@@ -144,7 +144,7 @@ topTermBeta<-lapply(models, function(x){
 })
 
 topTermsDist<-lapply( topTermBeta, function(x) {
-    dist(x,method = "eJaccard")
+    dist(x,method = "cosine")
 })
 
 names(topTermsDist)<-lapply(models, function(x) x@k)
@@ -161,7 +161,7 @@ topDocGamma<-lapply(models, function(x) {
 })
 
 topDocDist<-lapply(topDocGamma, function(x){
-    dist(t(x),method="eJaccard")
+    dist(t(x),method="fJaccard")
 })
 names(topDocDist)<-lapply(models, function(x) x@k)
 
