@@ -132,6 +132,10 @@ png(paste(resultsPath,"LDA_topicNumber_optimziation.png", sep="/"), height=1200,
 plot(LogLik.df$LL~LogLik.df$topics, pch=19, col="red", main="LDA Simulation with 10 docs per FY")
 dev.off()
 
+if(file.exists("LDA_models2015jul22_1709.rda")){
+    load("LDA_models2015jul22_1709.rda")
+}
+
 topTermBeta<-lapply(models, function(x){
     y<-as.matrix(x@beta)
     colnames(y)<-x@terms
@@ -140,7 +144,7 @@ topTermBeta<-lapply(models, function(x){
 })
 
 topTermsDist<-lapply( topTermBeta, function(x) {
-    dist(x,method = "cosine")
+    dist(x,method = "eJaccard")
 })
 
 names(topTermsDist)<-lapply(models, function(x) x@k)
@@ -157,7 +161,7 @@ topDocGamma<-lapply(models, function(x) {
 })
 
 topDocDist<-lapply(topDocGamma, function(x){
-    dist(t(x),method="cosine")
+    dist(t(x),method="eJaccard")
 })
 names(topDocDist)<-lapply(models, function(x) x@k)
 
