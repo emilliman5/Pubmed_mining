@@ -128,6 +128,8 @@ model.lglk<-as.data.frame(as.matrix(lapply(models, logLik)))
 LogLik.df<-data.frame("topics"=seq.k, 
                       "LL"=as.numeric(as.matrix(model.lglk)))
 
+save(models, file = paste0("LDA_models",getDate(),".rda"))
+
 png(paste(resultsPath,"LDA_topicNumber_optimziation.png", sep="/"), height=1200, width=1200, units="px")
 plot(LogLik.df$LL~LogLik.df$topics, pch=19, col="red", main="LDA Simulation with 10 docs per FY")
 dev.off()
@@ -161,7 +163,7 @@ topDocGamma<-lapply(models, function(x) {
 })
 
 topDocDist<-lapply(topDocGamma, function(x){
-    dist(t(x),method="fJaccard")
+    dist(t(x),method="cosine")
 })
 names(topDocDist)<-lapply(models, function(x) x@k)
 
@@ -171,34 +173,66 @@ lapply(names(topDocDist), function(x){
     dev.off()
 })
 
+
+topDocDist.fy<-lapply(topDocGamma, function(x){
+    f<-unique(meta(abstrCorpus)[,"FY"])
+    idx<-lapply(f, function(x) which(meta(abstrCorpus)[,"FY"]==x) )
+    lapply(idx, function(y) {
+        f<-meta(abstrCorpus)[y[1],"FY"]
+        dist(t(x[y,]),method="cosine")
+        })
+    })
+
+names(topDocDist.fy)<-lapply(models, function(x) x@k)
+
+lapply(names(topDocDist.fy), function(x){
+    lapply(seq(1,length(topDocDist.fy[[x]])), function(y){
+        png(paste0(resultsPath,"/","TopicClustering_byDoc_TopicNumber_",x,"FY",y,".png"), height=1200, width=2400, units="px")
+        plot(hclust(topDocDist.fy[[x]][[y]]), cex=1)
+        dev.off()        
+    }) 
+})
+
+dev.off()
+######
+#FY dendrogram comparisons
+######
+
+dends<-lapply(names(topDocDist.fy), function(x){
+    lapply(seq(1,length(topDocDist.fy[[x]])), function(y){
+        as.dendrogram(hclust(topDocDist.fy[[x]][[y]]))
+    })
+})
+
 #######
 #Network Output
 #######
 
-path<-getDate()
-dir.create(paste0("Network/",path))
+path<-paste0(resultsPath,"/Network/")
+dir.create(path)
 
 meta(abstrCorpus, "Type")<-"Abstract"
-write.table(file =paste0("Network/",path,"/AbstrNodeAttrs.csv"), x=meta(abstrCorpus)[,c("PMID","FY","FY.Q","Type")],sep=",",
+write.table(file =paste0(path,"/AbstrNodeAttrs.csv"), x=meta(abstrCorpus)[,c("PMID","FY","FY.Q","Type")],sep=",",
             quote=F, row.names=F, col.names=T)
 
 spMeta<-as.data.frame(cbind(names(spCorpus), "StrategicPlan"))
 colnames(spMeta)<-c("ID","Type")
-write.table(spMeta, paste0("Network/",path,"/SpNodeAttrs.csv"),sep=",",
+write.table(spMeta, paste0(path,"/SpNodeAttrs.csv"),sep=",",
             quote=F, row.names=F, col.names=T)
 
 lapply(models, function(x) {
-    p<-paste0("Network/",path,"/Topics", x@k)
+    p<-paste0(path,"/Topics", x@k)
     dir.create(p)    
     topicNodes<-as.data.frame(apply(terms(x,4),2,function(z) paste(z,collapse="|")))
     colnames(topicNodes)<-"TopicWords"
     topicNodes$ID<-rownames(topicNodes)
     topicNodes$ID<-gsub(" ", "", topicNodes$ID)
+    topicNodes$Type<-"Topic"
     write.table(topicNodes, paste0(p,"/TopicNodes.csv"), row.names=F,sep=",", quote=F)
 })
 
-mclapply(topDocGamma, cores=4,function(x){
-    p<-paste0("Network/",path,"/Topics", ncol(x))
+mclapply(topDocGamma, mc.cores=4,function(x){
+    p<-paste0(path,"/Topics", ncol(x))
     colnames(x)<-paste(rep("Topic",ncol(x)),seq(1,ncol(x)), sep="")
     x<-as.data.frame(x)
     x$id<-c(meta(abstrCorpus)[-docRemove,"PMID"], names(spCorpus))
@@ -210,8 +244,8 @@ mclapply(topDocGamma, cores=4,function(x){
                           row.names=F, col.names=T,quote=F)
     })
 
-mclapply(topTermBeta,mc.cores=4, function(x){
-    p<-paste0("Network/",path,"/Topics", nrow(x))
+mclapply(topTermBeta,mc.cores=2, function(x){
+    p<-paste0(path,"/Topics", nrow(x))
     x<-as.data.frame(x)
     x$Topics<-paste(rep("Topic",nrow(x)),seq(1,nrow(x)), sep="")
     t<-reshape(x, times = colnames(x)[-ncol(x)], varying = colnames(x)[-ncol(x)], direction="long",v.names ="Weight",idvar = "Topics" ,ids = rownames(x),timevar = "Term")
@@ -225,7 +259,7 @@ mclapply(topTermBeta,mc.cores=4, function(x){
 library(reshape2)
 
 lapply(topDocDist, function(x){
-    p<-paste0("Network/",path,"/Topics", nrow(x))
+    p<-paste0(path,"/Topics", nrow(x))
     x<-as.matrix(x)
     rownames(x)<-seq(1,nrow(x))
     colnames(x)<-seq(1,ncol(x))
@@ -239,7 +273,7 @@ lapply(topDocDist, function(x){
 })
 
 lapply(topTermsDist, function(x){
-    p<-paste0("Network/",path,"/Topics", nrow(x))
+    p<-paste0(path,"/Topics", nrow(x))
     x<-as.matrix(x)
     rownames(x)<-seq(1,nrow(x))
     colnames(x)<-seq(1,ncol(x))
@@ -255,8 +289,6 @@ lapply(topTermsDist, function(x){
 dtm.df<-as.data.frame(dtm)
 dtm.df$id<-c(meta(abstrCorpus)[-docRemove,"PMID"], names(spCorpus))
 dtm.df<-reshape(dtm.df, times = colnames(dtm.df)[-ncol(dtm.df)],varying = colnames(dtm.df)[-ncol(dtm.df)], v.names = "TF",idvar = "id",ids = "id",direction = "long")
-
-save(models, file = paste0("LDA_models",getDate(),".rda"))
 
 ############
 ##SP goals topic assigment
