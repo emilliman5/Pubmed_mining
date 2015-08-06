@@ -343,7 +343,7 @@ dev.off()
 png(paste0(resultsPath,"/SPGoals_endrogram.png"), height=3000, width=1500, units="px")
 par(mfrow=c(3,1), cex=2.5)
 lapply(sp.dist, function(x){
-    heatmap.2(x, trace = "none",)    
+    heatmap.2(x, trace = "none")    
 })
 dev.off()          
           
