@@ -214,14 +214,14 @@ lapply(dends, function(x){
     l<-length(labels(x[[y]]))
     png(paste0(resultsPath,"/","DendroCompare",l,"FY",y,".png"), height=1200, width=2400, units="px")
     d %>% untangle(method= "DendSer") %>% 
-      tanglegram(common_subtrees_color_branches=TRUE, hang=T,lab.cex=2)
+      tanglegram(common_subtrees_color_branches=TRUE, hang=T,lab.cex=2, xlim=c(1,0.5))
     dev.off()
   })
   d<-dendlist(x[[2]],x[[8]])
   l<-length(labels(x[[2]]))
   png(paste0(resultsPath,"/","DendroCompare",l,"FY2009-2015",".png"), height=1200, width=2400, units="px")
   d %>% untangle(method= "DendSer") %>% 
-    tanglegram(common_subtrees_color_branches=TRUE, hang=T,lab.cex=2)
+    tanglegram(common_subtrees_color_branches=TRUE, hang=T,lab.cex=2, xlim=c(1,0.5))
   dev.off()
 })
 
@@ -259,6 +259,7 @@ mclapply(topDocGamma, mc.cores=4,function(x){
     x$id<-c(meta(abstrCorpus)[-docRemove,"PMID"], names(spCorpus))
     t<-reshape(x, times = colnames(x)[-ncol(x)], varying = colnames(x)[-ncol(x)], direction="long",v.names ="Weight",idvar = "id" ,ids = rownames(x),timevar = "Topic")
     t<-t[t$Weight>0.01,]
+    t$Weight<--t$Weight
     t$Type<-rep("Undirected")
     colnames(t)<-c("Source","Target","Weight","Type")
     write.table(t, paste0(p, "/TopicDocumentProbEdges.csv"), sep=",",
