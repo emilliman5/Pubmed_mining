@@ -122,6 +122,10 @@ dtm<-dtm[-docRemove,]
 seq.k<-c(50,100, 250)
 
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
+if(file.exists("LDA_models2015jul22_1709.rda")){
+  load("LDA_models2015jul22_1709.rda")
+}
+
 models<-mclapply(seq.k, mc.cores=2, function(k) LDA(dtm, k) )
 
 model.lglk<-as.data.frame(as.matrix(lapply(models, logLik)))
@@ -155,7 +159,7 @@ lapply(names(topTermsDist), function(x){
     plot(hclust(topTermsDist[[x]]), cex=1)
     dev.off()
 })
-
+dev.off()
 topDocGamma<-lapply(models, function(x) {
     y<-as.matrix(x@gamma)
     colnames(y)<-apply(terms(x,4),2,function(z) paste(z,collapse=","))
@@ -202,6 +206,23 @@ dends<-lapply(names(topDocDist.fy), function(x){
     lapply(seq(1,length(topDocDist.fy[[x]])), function(y){
         as.dendrogram(hclust(topDocDist.fy[[x]][[y]]))
     })
+})
+
+lapply(dends, function(x){
+  lapply(seq(2,length(x)-1), function(y){
+    d<-dendlist(x[[y]],x[[(y+1)]])
+    l<-length(labels(x[[y]]))
+    png(paste0(resultsPath,"/","DendroCompare",l,"FY",y,".png"), height=1200, width=2400, units="px")
+    d %>% untangle(method= "DendSer") %>% 
+      tanglegram(common_subtrees_color_branches=TRUE, hang=T,lab.cex=2)
+    dev.off()
+  })
+  d<-dendlist(x[[2]],x[[8]])
+  l<-length(labels(x[[2]]))
+  png(paste0(resultsPath,"/","DendroCompare",l,"FY2009-2015",".png"), height=1200, width=2400, units="px")
+  d %>% untangle(method= "DendSer") %>% 
+    tanglegram(common_subtrees_color_branches=TRUE, hang=T,lab.cex=2)
+  dev.off()
 })
 
 #######
