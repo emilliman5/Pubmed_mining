@@ -221,7 +221,7 @@ lapply(dends, function(x){
   l<-length(labels(x[[2]]))
   png(paste0(resultsPath,"/","DendroCompare",l,"FY2009-2015",".png"), height=1200, width=2400, units="px")
   d %>% untangle(method= "DendSer") %>% 
-    tanglegram(common_subtrees_color_branches=TRUE, hang=T,lab.cex=2, xlim=c(1,0.5))
+    tanglegram(common_subtrees_color_branches=TRUE, hang=T,lab.cex=2)
   dev.off()
 })
 
@@ -311,41 +311,3 @@ lapply(topTermsDist, function(x){
 dtm.df<-as.data.frame(dtm)
 dtm.df$id<-c(meta(abstrCorpus)[-docRemove,"PMID"], names(spCorpus))
 dtm.df<-reshape(dtm.df, times = colnames(dtm.df)[-ncol(dtm.df)],varying = colnames(dtm.df)[-ncol(dtm.df)], v.names = "TF",idvar = "id",ids = "id",direction = "long")
-
-############
-##SP goals topic assigment
-############
-
-sp_topics<-lapply(models, function(x){
-        x@gamma[grep("SP_",x@documents),]
-})
-
-png(paste0(resultsPath,"/SPGoals_heatmap.png"), height=3000, width=1500, units="px")
-par(mfrow=c(3,1), cex=2.5)
-lapply(sp_topics, function(x){
-    heatmap.2(log10(x), trace = "none",
-              distfun=function(x) dist(x,method="cosine") )       
-})
-dev.off()
-
-
-sp.dist<-lapply(sp_topics, function(x) {
-    dist(x, "cosine")
-})
-          
-png(paste0(resultsPath,"/SPGoals_dendrogram.png"), height=3000, width=1500, units="px")
-par(mfrow=c(3,1), cex=2.5)
-lapply(sp.dist, function(x){
-    plot(hclust(x))    
-})
-dev.off()
-          
-png(paste0(resultsPath,"/SPGoals_endrogram.png"), height=3000, width=1500, units="px")
-par(mfrow=c(3,1), cex=2.5)
-lapply(sp.dist, function(x){
-    heatmap.2(x, trace = "none")    
-})
-dev.off()          
-          
-          
-          
