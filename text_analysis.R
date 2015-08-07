@@ -9,6 +9,7 @@ library(cluster)
 library(RColorBrewer)
 library(gplots)
 library(proxy)
+library(dendextend)
 
 #library(networktools)
 #If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
@@ -124,23 +125,18 @@ seq.k<-c(50,100, 250)
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
 if(file.exists("LDA_models2015jul22_1709.rda")){
   load("LDA_models2015jul22_1709.rda")
+} else{
+    models<-mclapply(seq.k, mc.cores=2, function(k) LDA(dtm, k) )
+    save(models, file = paste0("LDA_models",getDate(),".rda"))
 }
-
-models<-mclapply(seq.k, mc.cores=2, function(k) LDA(dtm, k) )
 
 model.lglk<-as.data.frame(as.matrix(lapply(models, logLik)))
 LogLik.df<-data.frame("topics"=seq.k, 
                       "LL"=as.numeric(as.matrix(model.lglk)))
 
-save(models, file = paste0("LDA_models",getDate(),".rda"))
-
 png(paste(resultsPath,"LDA_topicNumber_optimziation.png", sep="/"), height=1200, width=1200, units="px")
 plot(LogLik.df$LL~LogLik.df$topics, pch=19, col="red", main="LDA Simulation with 10 docs per FY")
 dev.off()
-
-if(file.exists("LDA_models2015jul22_1709.rda")){
-    load("LDA_models2015jul22_1709.rda")
-}
 
 topTermBeta<-lapply(models, function(x){
     y<-as.matrix(x@beta)
@@ -224,6 +220,13 @@ lapply(dends, function(x){
     tanglegram(common_subtrees_color_branches=TRUE, hang=T,lab.cex=2)
   dev.off()
 })
+
+
+ent<-unlist(lapply(seq(2,length(dends[[1]])-1), function(x){
+    dendlist(dends[[1]][[x]],dends[[1]][[x+1]]) %>% untangle(method="random") %>% entanglement
+}))
+
+ent<-c(ent,dendlist(dends[[1]][[2]],dends[[1]][[8]]) %>% untangle(method="random") %>% entanglement)
 
 #######
 #Network Output
