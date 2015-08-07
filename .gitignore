@@ -6,3 +6,4 @@ Corpus/
 /CorpusMetaData.txt
 results/mallet/
 *.rda
+results/
