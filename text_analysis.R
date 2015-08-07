@@ -156,11 +156,15 @@ lapply(names(topTermsDist), function(x){
     dev.off()
 })
 dev.off()
+
 topDocGamma<-lapply(models, function(x) {
     y<-as.matrix(x@gamma)
     colnames(y)<-apply(terms(x,4),2,function(z) paste(z,collapse=","))
     y
 })
+
+boxplot(log10(topDocGamma[[1]]), range = 0, las=2)
+barplot(topDocGamma[[1]])
 
 topDocDist<-lapply(topDocGamma, function(x){
     dist(t(x),method="cosine")
