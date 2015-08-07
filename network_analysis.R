@@ -8,7 +8,7 @@ setwd("results/2015aug06_0840/")
 ##Static Network Output
 ############
 nodes<-read.csv("results//2015aug05_0846//Network//Topics50//TopicNodes.csv", stringsAsFactors=F)
-edges<-read.csv("results//2015aug05_0846//Network//Topics50//TopicTopicbyDocSimilarity.csv",, stringsAsFactors=F)         
+edges<-read.csv("results//2015aug05_0846//Network//Topics50//TopicTopicbyDocSimilarity.csv", stringsAsFactors=F)         
 
 nodes<-nodes[,c("ID","TopicWords","Type")]
 colnames(edges)<-c("from","to","Weight","Type")          
