@@ -76,3 +76,33 @@ plot(net,
      edge.width=(edges$Weight*4.26)+0.957, edge.curved=0.2, 
      layout=l, rescale=T)
 dev.off()
+
+##############
+##Topic-Topic Distance by FY
+##############
+library(reshape2)
+
+topDocDistFYtable<-do.call(cbind, lapply(topDocDist.fy[[1]], function(x){
+  x<-as.matrix(x)
+  rownames(x)<-seq(1,nrow(x))
+  colnames(x)<-seq(1,ncol(x))
+  t<-melt(as.matrix(x), varnames=c("col","row"))   
+  t<-t[t$row>t$col,]
+  t
+}) )
+
+topDocDistFYtable<-topDocDistFYtable[,c(1,2,3,6,9,12,15,18,21,24)]
+topDocDistFYtable[,1]<-paste0("Topic",topDocDistFYtable[,1])
+topDocDistFYtable[,2]<-paste0("Topic",topDocDistFYtable[,2])
+colnames(topDocDistFYtable)<-c("to","from", "2008","2009","2010","2011","2012","2013","2014","2015")
+rownames(topDocDistFYtable)<-paste(topDocDistFYtable[,1],topDocDistFYtable[,2], sep = "-")
+
+heatmap.2(as.matrix(topDocDistFYtable[,3:10]), trace = "none")
+
+hist(as.matrix(topDocDistFYtable[,3:10]), breaks=100)
+
+matplot(x=colnames(topDocDistFYtable)[4:10], t(topDocDistFYtable[,4:10]), type="l", col=1:length(topDocDistFYtable))
+
+k<-kmeans(topDocDistFYtable[,3:10],centers = 5, iter.max = 1000)
+matplot(x=colnames(k$centers), t(k$centers), type="l")
+legend("bottomleft", lty=1, legend=paste("Cluster", 1:length(k$size), sep=" "), col=1:length(k$size), bty="n")
