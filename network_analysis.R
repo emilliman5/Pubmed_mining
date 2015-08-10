@@ -115,4 +115,12 @@ legend("bottomleft", lty=1, legend=paste("Cluster", 1:length(k$size), sep=" "), 
 
 x<-dends1[[1]][[2]]
 z<-hclust(topTermsDist[[1]])
+d<-topDocDistFYtable[topDocDistFYtable$`2009`<=0.94,c(1:2,4)]
+order<-gsub("Topic ", "", names(z$labels[z$order]))
+edges<-as.matrix(d[,1:2])
+edges<-gsub("Topic","", edges)
+lab<-gsub("Topic ","", names(z$labels))
 
+png(paste0(resultsPath, "/ArcDiagram.png"),height=600, width=1200, units="px")
+arcplot(edges,vertices = lab, ordering=order,)
+dev.off()
