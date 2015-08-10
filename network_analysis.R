@@ -9,6 +9,8 @@ dends1<-lapply(names(topDocDist.fy), function(x){
 })
 
 x<-dends1[[1]][[2]]
+z<-hclust(topTermsDist[[1]])
+
 phyloTree<-as.phylo(x)
 phyloEdges<-phyloTree$edge    
 net<-graph.edgelist(phyloEdges,directed = F)     
@@ -106,3 +108,11 @@ matplot(x=colnames(topDocDistFYtable)[4:10], t(topDocDistFYtable[,4:10]), type="
 k<-kmeans(topDocDistFYtable[,3:10],centers = 5, iter.max = 1000)
 matplot(x=colnames(k$centers), t(k$centers), type="l")
 legend("bottomleft", lty=1, legend=paste("Cluster", 1:length(k$size), sep=" "), col=1:length(k$size), bty="n")
+
+##############
+##DendroArcs
+##############
+
+x<-dends1[[1]][[2]]
+z<-hclust(topTermsDist[[1]])
+
