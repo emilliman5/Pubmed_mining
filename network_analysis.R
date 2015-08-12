@@ -157,3 +157,9 @@ V(g)$degree<-degree(g)
 png(paste0(resultsPath,"/CoOccurenceGraph",gsub("-| |:", "",Sys.time()),".png"),height=1200, width=1200, units="px")
 plot(g)
 dev.off()
+
+cm<-com[rowSums(com)>500,colSums(com)>500]
+s<-sample(1:dim(com)[1], 500)
+png("heatmap.png", height=10000, width=10000,units="px")
+heatmap.2(cm, Rowv=NA, Colv=NA,dendrogram='none',trace='none',labRow = NA, labCol=NA, key = F)
+dev.off()
