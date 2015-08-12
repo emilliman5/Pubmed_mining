@@ -1,5 +1,6 @@
 library(igraph)
 library(ape)
+library(arcdiagram)
 #setwd("results/2015aug06_0840/")
 
 dends1<-lapply(names(topDocDist.fy), function(x){
@@ -153,5 +154,6 @@ g<-graph.adjacency(com, weight=T, mode="undirected")
 g<-simplify(g)
 V(g)$label<-V(g)$name
 V(g)$degree<-degree(g)
-png(paste0(resultsPath,"/CoOccurenceGraph",))
+png(paste0(resultsPath,"/CoOccurenceGraph",gsub("-| |:", "",Sys.time()),".png"),height=1200, width=1200, units="px")
 plot(g)
+dev.off()
