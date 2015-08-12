@@ -14,10 +14,9 @@ z<-hclust(topTermsDist[[1]])
 phyloTree<-as.phylo(x)
 phyloEdges<-phyloTree$edge    
 net<-graph.edgelist(phyloEdges,directed = F)     
-plot(net)
 
 graphLayout<-layout.auto(net)
-plot(net, layout = graphLayout*0.2, rescale=F)
+#plot(net, layout = graphLayout*0.2, rescale=F)
 n.obs<-length(x$labels)
 png(paste0(resultsPath, "/topic_phylo.png"), height=2400, width=2400, units="px")
 plot(graphLayout[,1],graphLayout[,2], type="n", axes=F, xlab="", ylab="")
@@ -115,7 +114,7 @@ legend("bottomleft", lty=1, legend=paste("Cluster", 1:length(k$size), sep=" "), 
 dev.off()
 
 ##############
-##DendroArcs
+##DendroArc plots
 ##############
 
 x<-dends1[[1]][[2]]
@@ -131,15 +130,28 @@ png(paste0(resultsPath, "/ArcDiagram",gsub("-| |:", "",Sys.time()),".png"),heigh
 arcplot(edges,vertices = lab, col.labels = "black", ordering=order,col.nodes = 1+colors)
 dev.off()
 
-png(paste0(resultsPath, "/ArcDiagram_veritical.png"),height=1200, width=1200, units="px")
-par(mfrow=c(2,1))
-plot(z,hang=-1, xlab="", sub=NA)
-arcplot(edges, vertices = lab, ordering=order,above = 0)
-dev.off()
-
 png(paste0(resultsPath, "/ArcDiagram_2horizontal.png"),height=1200, width=1200, units="px")
 par(mfcol=c(1,2))
 plot(as.phylo(z))
 arcplot(edges, ylim=c(0.01,.99), vertices = lab, ordering=order,horizontal=F)
 dev.off()
 
+############
+##Co-Occurence analysis
+############
+
+pmid<-meta(abstrCorpus)[,"FY"]=="2009"
+
+dtm.sub<-dtm[pmid,]
+dtm.sub<-dtm.sub[,colSums(dtm.sub)>0]
+dtm.sub<-apply(dtm.sub, 2, function(x) as.numeric(x>0))
+terms<-colnames(dtm.sub)
+com<-t(dtm.sub) %*% dtm.sub
+diag(com)<-0
+
+g<-graph.adjacency(com, weight=T, mode="undirected")
+g<-simplify(g)
+V(g)$label<-V(g)$name
+V(g)$degree<-degree(g)
+png(paste0(resultsPath,"/CoOccurenceGraph",))
+plot(g)
