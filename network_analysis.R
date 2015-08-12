@@ -115,12 +115,26 @@ legend("bottomleft", lty=1, legend=paste("Cluster", 1:length(k$size), sep=" "), 
 
 x<-dends1[[1]][[2]]
 z<-hclust(topTermsDist[[1]])
-d<-topDocDistFYtable[topDocDistFYtable$`2009`<=0.94,c(1:2,4)]
+d<-topDocDistFYtable[topDocDistFYtable$`2009`<=0.95,c(1:2,4)]
 order<-gsub("Topic ", "", names(z$labels[z$order]))
 edges<-as.matrix(d[,1:2])
 edges<-gsub("Topic","", edges)
 lab<-gsub("Topic ","", names(z$labels))
+colors<-cutree(z, k=5)
 
 png(paste0(resultsPath, "/ArcDiagram.png"),height=600, width=1200, units="px")
-arcplot(edges,vertices = lab, ordering=order,)
+arcplot(edges,vertices = lab, col.labels = "black", ordering=order,col.nodes = 1+colors)
 dev.off()
+
+png(paste0(resultsPath, "/ArcDiagram_veritical.png"),height=1200, width=1200, units="px")
+par(mfrow=c(2,1))
+plot(z,hang=-1, xlab="", sub=NA)
+arcplot(edges, vertices = lab, ordering=order,above = 0)
+dev.off()
+
+png(paste0(resultsPath, "/ArcDiagram_2horizontal.png"),height=1200, width=1200, units="px")
+par(mfcol=c(1,2))
+plot(as.phylo(z))
+arcplot(edges, ylim=c(0.01,.99), vertices = lab, ordering=order,horizontal=F)
+dev.off()
+
