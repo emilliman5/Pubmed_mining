@@ -99,15 +99,20 @@ topDocDistFYtable[,2]<-paste0("Topic",topDocDistFYtable[,2])
 colnames(topDocDistFYtable)<-c("to","from", "2008","2009","2010","2011","2012","2013","2014","2015")
 rownames(topDocDistFYtable)<-paste(topDocDistFYtable[,1],topDocDistFYtable[,2], sep = "-")
 
-heatmap.2(as.matrix(topDocDistFYtable[,3:10]), trace = "none")
-
+png(paste0(resultsPath, "/Topic-TopicSimilarityHeatmap_overTime.png"), height=1200, width=1200, units="px")
+heatmap.2(as.matrix(topDocDistFYtable[,3:10]),labRow = NA, trace = "none")
+dev.off()
+png(paste0(resultsPath, "/Topic-TopicSimilarityDistribution_overTime.png"), height=600, width=1200, units="px")
 hist(as.matrix(topDocDistFYtable[,3:10]), breaks=100)
-
-matplot(x=colnames(topDocDistFYtable)[4:10], t(topDocDistFYtable[,4:10]), type="l", col=1:length(topDocDistFYtable))
+dev.off()
 
 k<-kmeans(topDocDistFYtable[,3:10],centers = 5, iter.max = 1000)
+png(paste0(resultsPath, "/Topic-TopicKmeans_overTime.png"), height=1200, width=1200, units="px")
+par(mfrow=c(2,1))
+matplot(x=colnames(topDocDistFYtable)[4:10], t(topDocDistFYtable[,4:10]), type="l", col=1:length(topDocDistFYtable))
 matplot(x=colnames(k$centers), t(k$centers), type="l")
 legend("bottomleft", lty=1, legend=paste("Cluster", 1:length(k$size), sep=" "), col=1:length(k$size), bty="n")
+dev.off()
 
 ##############
 ##DendroArcs
@@ -115,14 +120,14 @@ legend("bottomleft", lty=1, legend=paste("Cluster", 1:length(k$size), sep=" "), 
 
 x<-dends1[[1]][[2]]
 z<-hclust(topTermsDist[[1]])
-d<-topDocDistFYtable[topDocDistFYtable$`2009`<=0.95,c(1:2,4)]
+d<-topDocDistFYtable[topDocDistFYtable$`2009`<=0.94,c(1:2,4)]
 order<-gsub("Topic ", "", names(z$labels[z$order]))
 edges<-as.matrix(d[,1:2])
 edges<-gsub("Topic","", edges)
 lab<-gsub("Topic ","", names(z$labels))
-colors<-cutree(z, k=5)
+colors<-cutree(z, k=6)
 
-png(paste0(resultsPath, "/ArcDiagram.png"),height=600, width=1200, units="px")
+png(paste0(resultsPath, "/ArcDiagram",gsub("-| |:", "",Sys.time()),".png"),height=600, width=1200, units="px")
 arcplot(edges,vertices = lab, col.labels = "black", ordering=order,col.nodes = 1+colors)
 dev.off()
 
