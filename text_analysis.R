@@ -58,7 +58,7 @@ tdm.monogram<-TermDocumentMatrix(abstrCorpus)
 ##Ngram Analysis
 #################
 
-tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
+#tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
 ##function(x) weightTfIdf(x,normalize=F)))
 
 ##Run one of the following commands before proceeding. 
@@ -163,8 +163,9 @@ topDocGamma<-lapply(models, function(x) {
     y
 })
 
+png(paste0(resultsPath, "GammaDistbyTopic.png"), height=600, width=1400, units="px")
 boxplot(log10(topDocGamma[[1]]), range = 0, las=2)
-barplot(topDocGamma[[1]])
+dev.off()
 
 topDocDist<-lapply(topDocGamma, function(x){
     dist(t(x),method="cosine")
