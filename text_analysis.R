@@ -168,7 +168,7 @@ boxplot(log10(topDocGamma[[1]]), range = 0, las=2)
 dev.off()
 
 topDocDist<-lapply(topDocGamma, function(x){
-    dist(t(x),method="cosine")
+    dist(t(x),method="correlation")
 })
 names(topDocDist)<-lapply(models, function(x) x@k)
 
@@ -184,7 +184,7 @@ topDocDist.fy<-lapply(topDocGamma, function(x){
     idx<-lapply(f, function(x) which(meta(abstrCorpus)[,"FY"]==x) )
     lapply(idx, function(y) {
         f<-meta(abstrCorpus)[y[1],"FY"]
-        dist(t(x[y,]),method="cosine")
+        dist(t(x[y,]),method="correlation")
         })
     })
 
