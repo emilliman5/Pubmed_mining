@@ -3,6 +3,21 @@ library(igraph)
 library(ape)
 library(arcdiagram)
 
+###############
+##EDA of LDA assignments and data reduction methods
+###############
+
+#to determine a reasonable cutoff for "significant" assoignment of docs to topics
+#I would expect most docs to truely contain 1-3 topics with reviews containing no more than 10ish...
+hist(rowSums(topDocGamma[[1]]>=0.15),6)
+summary(rowSums(topDocGamma[[1]]>=0.15))
+table(cut(rowSums(topDocGamma[[1]]>=0.15),6))
+
+
+
+
+
+
 ############
 ##Static Network Output
 ############
