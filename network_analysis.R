@@ -104,9 +104,18 @@ names(degree)<-levels(as.factor(meta(abstrCorpus)$FY))
 names(d)<-levels(as.factor(meta(abstrCorpus)$FY))
 
 topDocDegree<-do.call(rbind, degree)[-1,]
-barplot(topDocDegree, las=2, col=2:7)
-barplot(t(t(topDocDegree)/colSums(topDocDegree)), las=2, col=2:7)
-barplot(t(topDocDegree))
+png(paste0(resultsPath, "/TopicUsagebyDocumentbyFY.png"), height=1600, width=1600, units="px")
+par(mfrow=c(2,1),oma=c(4,1,1,1), mar=c(15,4,2,2))
+barplot(topDocDegree, las=2, col=2:7, ylab="Number of Citations Assigned to Topic")
+barplot(t(t(topDocDegree)/colSums(topDocDegree)), las=2, col=2:7, ylab="Percentage of Citations Assigned to Topic")
+dev.off()
+barplot(t(topDocDegree/rowSums(topDocDegree)))
+
+png(paste0(resultsPath, "/TopicUsagebyDocumentbyFY_lineplot.png"), height=1600, width=1600, units="px")
+par(mfrow=c(2,1),mar=c(6,8,2,2))
+matplot(x=c(2009:2015),topDocDegree/rowSums(topDocDegree),cex.lab=2, cex.axis=2, type="l", xlab="Fiscal Year", ylab="Proportion of Citations in Topic")
+matplot(xlim=c(1,50), xlab="Topic Number",cex.lab=2, cex.axis=2, ylab="Proportion of Citations Assigned to Topic",t(topDocDegree/rowSums(topDocDegree)), type="l")
+dev.off()
 
 order<-gsub("Topic ", "", names(z$labels[z$order]))
 edges<-lapply(d, function(x) as.matrix(x[,1:2]))
