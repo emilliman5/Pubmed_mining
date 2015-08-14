@@ -120,7 +120,7 @@ dtm<-t(t(as.matrix(dtm))[as.vector(apply(t(as.matrix(dtm)), 1, sum)>15),])
 docRemove<-which(rowSums(dtm)==0)
 dtm<-dtm[-docRemove,]
 
-seq.k<-c(50,100, 250)
+seq.k<-c(25,50,100,250)
 
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
 if(file.exists("LDA_models2015jul22_1709.rda")){
