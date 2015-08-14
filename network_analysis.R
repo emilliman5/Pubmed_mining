@@ -1,37 +1,7 @@
+library(reshape2)
 library(igraph)
 library(ape)
 library(arcdiagram)
-#setwd("results/2015aug06_0840/")
-
-dends1<-lapply(names(topDocDist.fy), function(x){
-    lapply(seq(1,length(topDocDist.fy[[x]])), function(y){
-        hclust(topDocDist.fy[[x]][[y]])
-    })
-})
-
-x<-dends1[[1]][[2]]
-z<-hclust(topTermsDist[[1]])
-
-phyloTree<-as.phylo(x)
-phyloEdges<-phyloTree$edge    
-net<-graph.edgelist(phyloEdges,directed = F)     
-
-graphLayout<-layout.auto(net)
-#plot(net, layout = graphLayout*0.2, rescale=F)
-n.obs<-length(x$labels)
-png(paste0(resultsPath, "/topic_phylo.png"), height=2400, width=2400, units="px")
-plot(graphLayout[,1],graphLayout[,2], type="n", axes=F, xlab="", ylab="")
-segments(
-    x0 = graphLayout[phyloEdges[,1],1], 
-    y0 = graphLayout[phyloEdges[,1],2],
-    x1 = graphLayout[phyloEdges[,2],1],
-    y1 = graphLayout[phyloEdges[,2],2],
-    col = "darkgray", lwd = 3
-)
-
-text(graphLayout[1:n.obs,1],graphLayout[1:n.obs,2],
-    phyloTree$tip.label, cex=2, xpd=T, font=1)
-dev.off()
 
 ############
 ##Static Network Output
@@ -60,7 +30,6 @@ edges<-DocTopEdges[DocTopEdges$from %in% nodes$ID,]
 edges<-do.call(rbind, by(edges, edges$from, function(x) x[order(x$Weight, decreasing=T)[1:3],]))
 edges<-edges[!is.na(edges$Weight),]
 
-
 net<-graph.data.frame(edges, nodes, directed=F)
 V(net)$TopicWords<-gsub("\\|", ",", V(net)$TopicWords)
 
@@ -82,7 +51,6 @@ dev.off()
 ##############
 ##Topic-Topic Distance by FY
 ##############
-library(reshape2)
 
 topDocDistFYtable<-do.call(cbind, lapply(topDocDist.fy[[1]], function(x){
   x<-as.matrix(x)
@@ -117,31 +85,58 @@ dev.off()
 ##############
 ##DendroArc plots
 ##############
+dends1<-lapply(names(topDocDist.fy), function(x){
+    lapply(seq(1,length(topDocDist.fy[[x]])), function(y){
+        hclust(topDocDist.fy[[x]][[y]])
+    })
+})
 
-x<-dends1[[1]][[2]]
+dendTop50<-dends[[1]]
 z<-hclust(topTermsDist[[1]])
-d<-topDocDistFYtable[topDocDistFYtable$`2009`<=0.94,c(1:2,4)]
+d<-lapply(levels(as.factor(meta(abstrCorpus)$FY)), function(x){
+    topDocDistFYtable[topDocDistFYtable[,x]<=0.94,c("to","from",as.character(x))]
+})
+degree<-lapply(levels(as.factor(meta(abstrCorpus)$FY)), function(x){
+    pmids<-meta(abstrCorpus)[-docRemove,"FY"]==x
+    colSums(topDocGamma[[1]][pmids,]>=0.15)
+})
+names(degree)<-levels(as.factor(meta(abstrCorpus)$FY))
+names(d)<-levels(as.factor(meta(abstrCorpus)$FY))
+
+topDocDegree<-do.call(rbind, degree)[-1,]
+barplot(topDocDegree, las=2, col=2:7)
+barplot(t(t(topDocDegree)/colSums(topDocDegree)), las=2, col=2:7)
+barplot(t(topDocDegree))
+
 order<-gsub("Topic ", "", names(z$labels[z$order]))
-edges<-as.matrix(d[,1:2])
-edges<-gsub("Topic","", edges)
+edges<-lapply(d, function(x) as.matrix(x[,1:2]))
+edges<-lapply(edges, function(x) gsub("Topic","",x))
 lab<-gsub("Topic ","", names(z$labels))
+sizes<-lapply(degree, function(x) as.integer(cut(x,10)))
 colors<-cutree(z, k=6)
+edge.widths<-lapply(d, function(x) as.integer(cut(1-x[,3],5))*2)
 
-png(paste0(resultsPath, "/ArcDiagram",gsub("-| |:", "",Sys.time()),".png"),height=600, width=1200, units="px")
-arcplot(edges,vertices = lab, col.labels = "black", ordering=order,col.nodes = 1+colors)
-dev.off()
+lapply(seq(2,8), function(x){
+    png(paste0(resultsPath, "/ArcDiagram",x,"_",gsub("-| |:", "",Sys.time()),".png"),height=600, width=1200, units="px")
+    arcplot(edges[[x]],vertices = lab, col.labels = "black", pch=21,
+            main=names(degree)[x],cex.nodes = sizes[[x]],ordering=order, col.nodes="black", bg.nodes= 1+colors)
+    dev.off()
+})
 
-png(paste0(resultsPath, "/ArcDiagram_2horizontal.png"),height=1200, width=1200, units="px")
-par(mfcol=c(1,2))
-plot(as.phylo(z))
-arcplot(edges, ylim=c(0.01,.99), vertices = lab, ordering=order,horizontal=F)
-dev.off()
+lapply(seq(2,8), function(x){
+    png(paste0(resultsPath, "/DendroArcs",x,"_",gsub("-| |:", "",Sys.time()),".png"),height=1200, width=800, units="px")
+    par(mfcol=c(1,2))
+    plot(as.phylo(z), main="Topic-Topic relationship by Terms")
+    arcplot(edges[[x]],vertices = lab, col.labels = "black", pch=21,lwd.arcs = edge.widths[[x]],
+            main=paste("FY",names(degree)[x]), cex.nodes = sizes[[x]],ylim=c(0.01,.99),ordering=order, horizontal=F,col.nodes="black", bg.nodes= 1+colors)
+        dev.off()
+})
 
 ############
 ##Co-Occurence analysis
 ############
 
-pmid<-meta(abstrCorpus)[,"FY"]=="2009"
+pmid<-meta(abstrCorpus)[,"FY.Q"]=="2009.4"
 
 dtm.sub<-dtm[pmid,]
 dtm.sub<-dtm.sub[,colSums(dtm.sub)>0]
@@ -158,7 +153,8 @@ png(paste0(resultsPath,"/CoOccurenceGraph",gsub("-| |:", "",Sys.time()),".png"),
 plot(g)
 dev.off()
 
-cm<-com[rowSums(com)>500,colSums(com)>500]
+cm<-com
+cm<-com[rowSums(com)>150,colSums(com)>150]
 s<-sample(1:dim(com)[1], 500)
 png("heatmap.png", height=10000, width=10000,units="px")
 heatmap.2(cm, Rowv=NA, Colv=NA,dendrogram='none',trace='none',labRow = NA, labCol=NA, key = F)
