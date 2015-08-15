@@ -21,6 +21,11 @@ table(cut(rowSums(topDocGamma[[1]]>=0.15),6))
 ############
 ##Static Network Output
 ############
+fys<-as.integer(c(levels(as.factor(DocNodes$FY))))
+fys<-fys[-1]
+fyqs<-as.numeric(c(levels(as.factor(DocNodes$FY.Q))))
+fyqs<-fyqs[-c(1,2,3,4)]
+
 TopicNodes<-read.csv("results//2015aug05_0846//Network//Topics50//TopicNodes.csv", stringsAsFactors=F)
 DocTopEdges<-read.csv("results//2015aug05_0846//Network//Topics50/TopicDocumentProbEdges.csv", stringsAsFactors=F)         
 DocNodes<-read.csv("results/2015aug05_0846/Network/AbstrNodeAttrs.csv", stringsAsFactors=F)
@@ -37,33 +42,69 @@ DocNodes<-DocNodes[,c("ID","TopicWords","Type","FY","FY.Q")]
 SpNodes<-SpNodes[,c("ID","TopicWords","Type","FY","FY.Q")]
 
 nodes<-rbind(TopicNodes,DocNodes,SpNodes)
-
 colnames(DocTopEdges)<-c("from","to","Weight","Type")          
 
-nodes<-rbind(TopicNodes,DocNodes[DocNodes$FY.Q==2009.1,],SpNodes)
-edges<-DocTopEdges[DocTopEdges$from %in% nodes$ID,]
-edges<-do.call(rbind, by(edges, edges$from, function(x) x[order(x$Weight, decreasing=T)[1:3],]))
-edges<-edges[!is.na(edges$Weight),]
+lapply(fyqs, function(x){
+    nodes<-rbind(TopicNodes,DocNodes[DocNodes$FY.Q==x,],SpNodes)
+    edges<-DocTopEdges[DocTopEdges$from %in% nodes$ID,]
+    edges<-do.call(rbind, by(edges, edges$from, function(x) x[order(x$Weight, decreasing=F)[1:3],]))
+    edges<-edges[!is.na(edges$Weight),]
+    
+    net<-graph.data.frame(edges, nodes, directed=F)
+    V(net)$TopicWords<-gsub("\\|", ",", V(net)$TopicWords)
+    
+    l<-layout.fruchterman.reingold(net, weight=E(net)$Weight*10)
+    shape<-factor(nodes$Type,labels = c("circle","square","csquare"))
+    color<-factor(nodes$Type,labels = c("blue","chartreuse4","red"))
+    
+    png(paste0(resultsPath, "/TopicDoc_network_FYQ",x,"_minWeights_",timeStamp(),".png"), height=2500, width=2500, units="px")
+    plot(net, 
+         vertex.size=1+(degree(net, V(net), mode="all", normalized=T)*40),
+         vertex.label.cex=1.5, 
+         vertex.label.color="black",
+         vertex.label=V(net)$TopicWords,vertex.color=as.character(color), 
+         vertex.shape=as.character(shape), 
+         edge.width=(edges$Weight*4.26)+0.957, edge.curved=0.2, 
+         layout=l, rescale=T)
+    dev.off()
+})
 
-net<-graph.data.frame(edges, nodes, directed=F)
-V(net)$TopicWords<-gsub("\\|", ",", V(net)$TopicWords)
+#####################
+###Topic-Topic Co Occurences
+#####################
+lapply(fys, function(x){
+    DocTopEdge.m<-dcast(DocTopEdges[DocTopEdges$from %in% DocNodes[DocNodes$FY==x,"ID"],], to ~ from, value.var="Weight", fill=0)
+    rownames(DocTopEdge.m)<-DocTopEdge.m[,1]
+    DocTopEdge.m<-as.matrix(DocTopEdge.m[,-1])
+    DocTopEdge.m<-apply(DocTopEdge.m, 2, function(x) as.numeric(x>0.1))
+    TopCoOc<-DocTopEdge.m %*% t(DocTopEdge.m)
+    diag(TopCoOc)<-0
+    
+    png(paste0(resultsPath, "/TopicCoOccurence_heatmapFY",x,"_",timeStamp(),".png"), height=1200, width=1200, units="px")
+        heatmap.2(TopCoOc, trace="none",cexRow = 0.75, cexCol=0.75)
+    dev.off()
+})
 
-l<-layout.fruchterman.reingold(net, weight=E(net)$Weight*10,repulserad=vcount(net)^4)
-shape<-factor(nodes$Type,labels = c("circle","square","csquare"))
-color<-factor(nodes$Type,labels = c("blue","chartreuse4","red"))
+lapply(fyqs, function(x){
+    DocTopEdge.m<-dcast(DocTopEdges[DocTopEdges$from %in% DocNodes[DocNodes$FY.Q==x,"ID"],], to ~ from, value.var="Weight", fill=0)
+    rownames(DocTopEdge.m)<-DocTopEdge.m[,1]
+    DocTopEdge.m<-as.matrix(DocTopEdge.m[,-1])
+    DocTopEdge.m<-apply(DocTopEdge.m, 2, function(x) as.numeric(x<0.15))
+    TopCoOc<-DocTopEdge.m %*% t(DocTopEdge.m)
+    diag(TopCoOc)<-0
+    
+    png(paste0(resultsPath, "/TopicCoOccurence_heatmapFY",x,"_",timeStamp(),".png"), height=1200, width=1200, units="px")
+    heatmap.2(TopCoOc, trace="none",cexRow = 0.75, cexCol=0.75)
+    dev.off()
+})
 
-png(paste0(resultsPath, "/TopicDoc_network",getDate(),".png"), height=2500, width=2500, units="px")
-plot(net, 
-     vertex.size=1+(degree(net, V(net), mode="all", normalized=T)*40),
-     vertex.label.cex=1.5, 
-     vertex.label.color="black",
-     vertex.label=V(net)$TopicWords,vertex.color=as.character(color), 
-     vertex.shape=as.character(shape), 
-     edge.width=(edges$Weight*4.26)+0.957, edge.curved=0.2, 
-     layout=l, rescale=T)
-dev.off()
 
-##############
+
+g<-graph.adjacency(TopCoOc, weighted =TRUE,mode = "upper")
+g<-simplify(g)
+l<-layout_with_fr(g)
+plot(g)
+#############
 ##Topic-Topic Distance by FY
 ##############
 
