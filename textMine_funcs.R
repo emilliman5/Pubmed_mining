@@ -5,6 +5,11 @@ getDate<-function()
   tolower(format(Sys.time(), "%Y%b%d_%H%M"));
 }
 
+timeStamp<-function()
+{
+    gsub("-| |:", "",Sys.time())
+}
+
 stemCompletion2 <- function(x, dictionary) 
 {
   
