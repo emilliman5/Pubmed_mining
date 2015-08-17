@@ -47,17 +47,17 @@ colnames(DocTopEdges)<-c("from","to","Weight","Type")
 lapply(fyqs, function(x){
     nodes<-rbind(TopicNodes,DocNodes[DocNodes$FY.Q==x,],SpNodes)
     edges<-DocTopEdges[DocTopEdges$from %in% nodes$ID,]
-    edges<-do.call(rbind, by(edges, edges$from, function(x) x[order(x$Weight, decreasing=F)[1:3],]))
+    edges<-do.call(rbind, by(edges, edges$from, function(x) x[order(x$Weight, decreasing=T)[1:3],]))
     edges<-edges[!is.na(edges$Weight),]
     
     net<-graph.data.frame(edges, nodes, directed=F)
     V(net)$TopicWords<-gsub("\\|", ",", V(net)$TopicWords)
     
-    l<-layout.fruchterman.reingold(net, weight=E(net)$Weight*10)
+    l<-layout.fruchterman.reingold(net, weight=1-E(net)$Weight*10)
     shape<-factor(nodes$Type,labels = c("circle","square","csquare"))
     color<-factor(nodes$Type,labels = c("blue","chartreuse4","red"))
     
-    png(paste0(resultsPath, "/TopicDoc_network_FYQ",x,"_minWeights_",timeStamp(),".png"), height=2500, width=2500, units="px")
+    png(paste0(resultsPath, "/TopicDoc_network_FYQ",x,"_similWeights_",timeStamp(),".png"), height=2500, width=2500, units="px")
     plot(net, 
          vertex.size=1+(degree(net, V(net), mode="all", normalized=T)*40),
          vertex.label.cex=1.5, 
@@ -196,31 +196,3 @@ lapply(seq(2,8), function(x){
             main=paste("FY",names(degree)[x]), cex.nodes = sizes[[x]],ylim=c(0.01,.99),ordering=order, horizontal=F,col.nodes="black", bg.nodes= 1+colors)
         dev.off()
 })
-
-############
-##Co-Occurence analysis
-############
-
-pmid<-meta(abstrCorpus)[,"FY.Q"]=="2009.4"
-
-dtm.sub<-dtm[pmid,]
-dtm.sub<-dtm.sub[,colSums(dtm.sub)>0]
-dtm.sub<-apply(dtm.sub, 2, function(x) as.numeric(x>0))
-terms<-colnames(dtm.sub)
-com<-t(dtm.sub) %*% dtm.sub
-diag(com)<-0
-
-g<-graph.adjacency(com, weight=T, mode="undirected")
-g<-simplify(g)
-V(g)$label<-V(g)$name
-V(g)$degree<-degree(g)
-png(paste0(resultsPath,"/CoOccurenceGraph",gsub("-| |:", "",Sys.time()),".png"),height=1200, width=1200, units="px")
-plot(g)
-dev.off()
-
-cm<-com
-cm<-com[rowSums(com)>150,colSums(com)>150]
-s<-sample(1:dim(com)[1], 500)
-png("heatmap.png", height=10000, width=10000,units="px")
-heatmap.2(cm, Rowv=NA, Colv=NA,dendrogram='none',trace='none',labRow = NA, labCol=NA, key = F)
-dev.off()
