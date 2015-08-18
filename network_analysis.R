@@ -53,7 +53,7 @@ lapply(fyqs, function(x){
     net<-graph.data.frame(edges, nodes, directed=F)
     V(net)$TopicWords<-gsub("\\|", ",", V(net)$TopicWords)
     
-    l<-layout.fruchterman.reingold(net, weight=1-E(net)$Weight*10)
+    l<-layout.fruchterman.reingold(net, weight=(1-E(net)$Weight)*10)
     shape<-factor(nodes$Type,labels = c("circle","square","csquare"))
     color<-factor(nodes$Type,labels = c("blue","chartreuse4","red"))
     
@@ -98,11 +98,16 @@ lapply(fyqs, function(x){
     dev.off()
 })
 
+DocTopEdge.m<-dcast(DocTopEdges[DocTopEdges$from %in% DocNodes[DocNodes$FY==x,"ID"],], to ~ from, value.var="Weight", fill=0)
+rownames(DocTopEdge.m)<-DocTopEdge.m[,1]
+DocTopEdge.m<-as.matrix(DocTopEdge.m[,-1])
+DocTopEdge.m<-apply(DocTopEdge.m, 2, function(x) as.numeric(x>0.5))
+TopCoOc<-DocTopEdge.m %*% t(DocTopEdge.m)
+diag(TopCoOc)<-0
 
-
-g<-graph.adjacency(TopCoOc, weighted =TRUE,mode = "upper")
+g<-graph.adjacency(TopCoOc, weighted =TRUE,mode = "undirected")
 g<-simplify(g)
-l<-layout_with_fr(g)
+l<-layout_with_fr(g, weights = E(g)$weight)
 plot(g)
 #############
 ##Topic-Topic Distance by FY
