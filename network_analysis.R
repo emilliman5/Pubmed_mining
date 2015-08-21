@@ -69,46 +69,6 @@ lapply(fyqs, function(x){
     dev.off()
 })
 
-#####################
-###Topic-Topic Co Occurences
-#####################
-lapply(fys, function(x){
-    DocTopEdge.m<-dcast(DocTopEdges[DocTopEdges$from %in% DocNodes[DocNodes$FY==x,"ID"],], to ~ from, value.var="Weight", fill=0)
-    rownames(DocTopEdge.m)<-DocTopEdge.m[,1]
-    DocTopEdge.m<-as.matrix(DocTopEdge.m[,-1])
-    DocTopEdge.m<-apply(DocTopEdge.m, 2, function(x) as.numeric(x>0.1))
-    TopCoOc<-DocTopEdge.m %*% t(DocTopEdge.m)
-    diag(TopCoOc)<-0
-    
-    png(paste0(resultsPath, "/TopicCoOccurence_heatmapFY",x,"_",timeStamp(),".png"), height=1200, width=1200, units="px")
-        heatmap.2(TopCoOc, trace="none",cexRow = 0.75, cexCol=0.75)
-    dev.off()
-})
-
-lapply(fyqs, function(x){
-    DocTopEdge.m<-dcast(DocTopEdges[DocTopEdges$from %in% DocNodes[DocNodes$FY.Q==x,"ID"],], to ~ from, value.var="Weight", fill=0)
-    rownames(DocTopEdge.m)<-DocTopEdge.m[,1]
-    DocTopEdge.m<-as.matrix(DocTopEdge.m[,-1])
-    DocTopEdge.m<-apply(DocTopEdge.m, 2, function(x) as.numeric(x<0.15))
-    TopCoOc<-DocTopEdge.m %*% t(DocTopEdge.m)
-    diag(TopCoOc)<-0
-    
-    png(paste0(resultsPath, "/TopicCoOccurence_heatmapFY",x,"_",timeStamp(),".png"), height=1200, width=1200, units="px")
-    heatmap.2(TopCoOc, trace="none",cexRow = 0.75, cexCol=0.75)
-    dev.off()
-})
-
-DocTopEdge.m<-dcast(DocTopEdges[DocTopEdges$from %in% DocNodes[DocNodes$FY==x,"ID"],], to ~ from, value.var="Weight", fill=0)
-rownames(DocTopEdge.m)<-DocTopEdge.m[,1]
-DocTopEdge.m<-as.matrix(DocTopEdge.m[,-1])
-DocTopEdge.m<-apply(DocTopEdge.m, 2, function(x) as.numeric(x>0.5))
-TopCoOc<-DocTopEdge.m %*% t(DocTopEdge.m)
-diag(TopCoOc)<-0
-
-g<-graph.adjacency(TopCoOc, weighted =TRUE,mode = "undirected")
-g<-simplify(g)
-l<-layout_with_fr(g, weights = E(g)$weight)
-plot(g)
 #############
 ##Topic-Topic Distance by FY
 ##############
