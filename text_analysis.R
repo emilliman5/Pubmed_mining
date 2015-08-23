@@ -58,7 +58,7 @@ tdm.monogram<-TermDocumentMatrix(abstrCorpus)
 ##Ngram Analysis
 #################
 
-#tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
+tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
 ##function(x) weightTfIdf(x,normalize=F)))
 
 ##Run one of the following commands before proceeding. 
