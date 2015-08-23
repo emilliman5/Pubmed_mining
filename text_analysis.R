@@ -120,7 +120,7 @@ dtm<-t(t(as.matrix(dtm))[as.vector(apply(t(as.matrix(dtm)), 1, sum)>15),])
 docRemove<-which(rowSums(dtm)==0)
 dtm<-dtm[-docRemove,]
 
-seq.k<-c(25,50,100,250)
+seq.k<-c(25,50,100)
 
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
 if(file.exists("LDA_models2015jul22_1709.rda")){
@@ -315,7 +315,3 @@ lapply(topTermsDist, function(x){
     t$Type<-rep("Undirected")
     write.table(t,paste0(p,"/TopicTopicbyTermSimilarity.csv"), sep=",", row.names=F, quote=F, col.names=T)        
 })
-
-dtm.df<-as.data.frame(dtm)
-dtm.df$id<-c(meta(abstrCorpus)[-docRemove,"PMID"], names(spCorpus))
-dtm.df<-reshape(dtm.df, times = colnames(dtm.df)[-ncol(dtm.df)],varying = colnames(dtm.df)[-ncol(dtm.df)], v.names = "TF",idvar = "id",ids = "id",direction = "long")
