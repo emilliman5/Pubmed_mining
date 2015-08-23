@@ -7,3 +7,4 @@ Corpus/
 results/mallet/
 *.rda
 results/
+*.Rout
