@@ -82,9 +82,9 @@ tfHisto(tdm,"FY")
 tf<-rowSums(as.matrix(tdm))
 tf<-tf[order(-tf)]
 
-tf.bi<-do.call(rbind, mclapply(seq(1,dim(tdm.bigram)[1]), mc.cores=16, function(x){
-    rowSums(as.matrix(tdm.bigram[x,]))
-}))
+# tf.bi<-do.call(rbind, mclapply(seq(1,dim(tdm.bigram)[1]), mc.cores=16, function(x){
+#     rowSums(as.matrix(tdm.bigram[x,]))
+# }))
 
 tf.bi<-row_sums(tdm.bigram)
 
