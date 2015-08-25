@@ -82,9 +82,9 @@ tfHisto(tdm,"FY")
 tf<-rowSums(as.matrix(tdm))
 tf<-tf[order(-tf)]
 
-# tf.bi<-do.call(rbind, mclapply(seq(1,dim(tdm.bigram)[1]), mc.cores=16, function(x){
-#     rowSums(as.matrix(tdm.bigram[x,]))
-# }))
+#tf.bi<-do.call(rbind, mclapply(seq(1,dim(tdm.bigram)[1]), mc.cores=16, function(x){
+#    rowSums(as.matrix(tdm.bigram[x,]))
+#}))
 
 tf.bi<-row_sums(tdm.bigram)
 
@@ -123,8 +123,8 @@ dtm<-dtm[-docRemove,]
 seq.k<-c(25,50,100)
 
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
-if(file.exists("LDA_models2015jul22_1709.rda")){
-  load("LDA_models2015jul22_1709.rda")
+if(file.exists("LDA_models2015aug24_1041.rda")){
+  load("LDA_models2015aug24_1041.rda")
 } else{
     models<-mclapply(seq.k, mc.cores=2, function(k) LDA(dtm, k) )
     save(models, file = paste0("LDA_models",getDate(),".rda"))

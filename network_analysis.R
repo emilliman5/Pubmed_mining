@@ -13,10 +13,13 @@ hist(rowSums(topDocGamma[[1]]>=0.15),6)
 summary(rowSums(topDocGamma[[1]]>=0.15))
 table(cut(rowSums(topDocGamma[[1]]>=0.15),6))
 
+plot(density(as.vector(topDocGamma[[3]])), ylim=c(0,5000))
+lines(density(as.vector(topDocGamma[[2]])), col="blue")
+lines(density(as.vector(topDocGamma[[3]])),col="red")
 
-
-
-
+boxplot(log10(as.vector(topDocGamma[[1]])),range=0 ,
+        log10(as.vector(topDocGamma[[2]])),
+        log10(as.vector(topDocGamma[[3]])), names = c("25 topics","50 topics","100 topics"))
 
 ############
 ##Static Network Output
