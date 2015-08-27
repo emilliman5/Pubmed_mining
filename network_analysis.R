@@ -9,17 +9,34 @@ library(arcdiagram)
 
 #to determine a reasonable cutoff for "significant" assoignment of docs to topics
 #I would expect most docs to truely contain 1-3 topics with reviews containing no more than 10ish...
-hist(rowSums(topDocGamma[[1]]>=0.15),6)
-summary(rowSums(topDocGamma[[1]]>=0.15))
-table(cut(rowSums(topDocGamma[[1]]>=0.15),6))
+hist(rowSums(topDocGamma[[2]]>=0.15),6)
+summary(rowSums(topDocGamma[[2]]>=0.15))
+table(cut(rowSums(topDocGamma[[2]]>=0.15),6))
 
 plot(density(as.vector(topDocGamma[[3]])), ylim=c(0,5000))
 lines(density(as.vector(topDocGamma[[2]])), col="blue")
-lines(density(as.vector(topDocGamma[[3]])),col="red")
+lines(density(as.vector(topDocGamma[[1]])),col="red")
 
 boxplot(log10(as.vector(topDocGamma[[1]])),range=0 ,
         log10(as.vector(topDocGamma[[2]])),
         log10(as.vector(topDocGamma[[3]])), names = c("25 topics","50 topics","100 topics"))
+
+## stacked barplot depciting the number of documents that are assigned to each topic
+degree<-lapply(levels(as.factor(meta(abstrCorpus)$FY)), function(x){
+    pmids<-meta(abstrCorpus)[-docRemove,"FY"]==x
+    colSums(topDocGamma[[1]][pmids,]>=0.15)
+})
+names(degree)<-levels(as.factor(meta(abstrCorpus)$FY))
+names(d)<-levels(as.factor(meta(abstrCorpus)$FY))
+
+topDocDegree<-do.call(rbind, degree)[-1,]
+png(paste0(resultsPath, "/TopicUsagebyDocumentbyFY.png"), height=1600, width=1600, units="px")
+par(mfrow=c(2,1),oma=c(4,1,1,1), mar=c(15,4,2,2))
+barplot(topDocDegree, las=2, col=2:7, ylab="Number of Citations Assigned to Topic")
+barplot(t(t(topDocDegree)/colSums(topDocDegree)), las=2, col=2:7, ylab="Percentage of Citations Assigned to Topic")
+dev.off()
+barplot(t(topDocDegree/rowSums(topDocDegree)))
+
 
 ############
 ##Static Network Output
@@ -126,14 +143,6 @@ degree<-lapply(levels(as.factor(meta(abstrCorpus)$FY)), function(x){
 })
 names(degree)<-levels(as.factor(meta(abstrCorpus)$FY))
 names(d)<-levels(as.factor(meta(abstrCorpus)$FY))
-
-topDocDegree<-do.call(rbind, degree)[-1,]
-png(paste0(resultsPath, "/TopicUsagebyDocumentbyFY.png"), height=1600, width=1600, units="px")
-par(mfrow=c(2,1),oma=c(4,1,1,1), mar=c(15,4,2,2))
-barplot(topDocDegree, las=2, col=2:7, ylab="Number of Citations Assigned to Topic")
-barplot(t(t(topDocDegree)/colSums(topDocDegree)), las=2, col=2:7, ylab="Percentage of Citations Assigned to Topic")
-dev.off()
-barplot(t(topDocDegree/rowSums(topDocDegree)))
 
 png(paste0(resultsPath, "/TopicUsagebyDocumentbyFY_lineplot.png"), height=1600, width=1600, units="px")
 par(mfrow=c(2,1),mar=c(6,8,2,2))
