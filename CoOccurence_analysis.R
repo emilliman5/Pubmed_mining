@@ -4,16 +4,18 @@
 
 pmid<-meta(abstrCorpus)[,"FY.Q"]=="2009.4"
 
-dtm.sub<-dtm[pmid,]
+dtm.sub<-as.matrix(dtm[pmid,])
 dtm.sub<-dtm.sub[,colSums(dtm.sub)>0]
 dtm.sub<-apply(dtm.sub, 2, function(x) as.numeric(x>0))
 terms<-colnames(dtm.sub)
-com<-t(dtm.sub) %*% dtm.sub
+com<-dtm.sub %*% t(dtm.sub)
 diag(com)<-0
 
-comDist<-dist(com, "cosine")
+comDist<-dist(com, "jaccard")
 comDendro<-as.dendrogram(hclust(comDist))
 plot(cut(comDendro, h=0.6)$upper, cex=0.1)
+plot(comDendro)
+
 
 #####################
 ###Topic-Topic Co Occurences
