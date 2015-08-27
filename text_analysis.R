@@ -123,12 +123,25 @@ dtm<-dtm[-docRemove,]
 seq.k<-c(25,50,100)
 
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
-if(file.exists("LDA_models2015aug24_1041.rda")){
-  load("LDA_models2015aug24_1041.rda")
+if(file.exists("LDA_models_current.rda")){
+  load("LDA_models_current.rda")
 } else{
     models<-mclapply(seq.k, mc.cores=2, function(k) LDA(dtm, k) )
     save(models, file = paste0("LDA_models",getDate(),".rda"))
+    save(models, file = paste0("LDA_models_current.rda"))
 }
+
+seq.k.fy<-c(25,50,100,250)
+fy<-levels(as.factor(meta(abstrCorpus)[,"FY"]))
+models.fy<-lapply(fy, function(y){
+    pmid<-meta(abstrCorpus)[,"FY"]==y
+    dtm.fy<-dtm[pmid,]
+    mclapply(mc.cores=2, seq.k.fy, function(k) LDA(dtm.fy,k))
+})
+
+save(models.fy, file = paste0("LDA_FY_models",getDate(),".rda"))
+save(models.fy, file = paste0("LDA_FY_models_current.rda"))
+
 
 model.lglk<-as.data.frame(as.matrix(lapply(models, logLik)))
 LogLik.df<-data.frame("topics"=seq.k, 
@@ -177,7 +190,6 @@ lapply(names(topDocDist), function(x){
     plot(hclust(topDocDist[[x]]), cex=1)
     dev.off()
 })
-
 
 topDocDist.fy<-lapply(topDocGamma, function(x){
     f<-unique(meta(abstrCorpus)[,"FY"])
