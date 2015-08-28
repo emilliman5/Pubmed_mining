@@ -183,4 +183,48 @@ getTopicAssign<-function(ids, model, corpus){
     t
 }
 
-
+dendroArc<-function(FYs=c(2009,2015), model, topicN, distFun="cosine",
+                    gamma=0.15, distThresh=0.94)
+{
+    ##FYs = the two fiscal years to compare
+    ##model = the topic model object to use
+    ##topicN = the topic to center the analysis on, i.e. only show arcs that are connected to this topic
+    
+    ##1: Make a dendrogram of topic-topic relationships using terms
+    topicTerms<-as.matrix(model@beta)
+    colnames(topicTerms)<-model@terms
+    rownames(topicTerms)<-apply(terms(model,4),2,function(z) paste(z,collapse=","))
+    topicTermsTree<-hclust(dist(topicTerms, method=distFun))
+    
+    topic<-rownames(topicTerms)[topicN]
+    ##1: Calculate distances between topics by document assigment
+    fyIdx<-lapply(FYs, function(x) meta(abstrCorpus)[,"FY"]==x)
+    topicGamma<-as.matrix(model@gamma)
+    colnames(topicGamma)<-apply(terms(model,4),2,function(z) paste(z,collapse=","))
+    topicGammaDist<-lapply(fyIdx, function(x) {
+        dist(x=t(topicGamma[x,-topicN]),y=t(topicGamma[x,topicN]) , method=distFun)
+    })
+    
+    edges<-lapply(topicGammaDist, function(x){
+        e<-x[x<distThresh,]
+        edge<-cbind(names(e),topic)
+    })
+    edges<-do.call(rbind, edges)
+    degrees<-lapply(fyIdx, function(x){
+        colSums(topicGamma[x,]>=gamma)        
+    })
+    order<-rownames(topicTerms)[as.numeric(gsub("Topic ", "", names(topicTermsTree$labels[topicTermsTree$order])))]
+    sizes<-as.numeric(cut(colSums(do.call(cbind, degrees)),10))
+    lab<-order
+    edge.col<-c(rep("blue", length(edges[[1]])),rep("red", length(edges[[2]])))
+    edge.weight<-c(rep("1", length(edges[[1]])),rep("2", length(edges[[2]])))
+    
+    png(paste0(resultsPath, "/DendroArcs_Topic",topicN,"_",paste(FYs, collapse="and"),"_",gsub("-| |:", "",Sys.time()),".png"),height=1200, width=800, units="px")
+    par(mfcol=c(1,2))
+    plot(as.phylo(topicTermsTree),show.tip.label=FALSE, main="Topic-Topic relationship by Terms")
+    arcplot(edges,vertices = lab, pch=21,cex.labels=0.75,
+            col.arcs=edge.col,main=paste("FY",paste(FYs, collapse=" and ")), cex.nodes = sizes[[1]],
+            ylim=c(0.01,.99),col.labels="black",lwd.arcs=edge.weight, ordering=order, horizontal=F,col.nodes="black", font=0)
+    legend("topright", lty=c(1,1),cex=0.75, col=c("blue", "red"), legend = FYs, bty="n")
+    dev.off()   
+}
