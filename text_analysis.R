@@ -133,15 +133,18 @@ if(file.exists("LDA_models_current.rda")){
 
 seq.k.fy<-c(25,50,100,250)
 fy<-levels(as.factor(meta(abstrCorpus)[,"FY"]))
-models.fy<-lapply(fy, function(y){
-    pmid<-meta(abstrCorpus)[,"FY"]==y
-    dtm.fy<-dtm[pmid,]
-    mclapply(mc.cores=2, seq.k.fy, function(k) LDA(dtm.fy,k))
-})
 
-save(models.fy, file = paste0("LDA_FY_models",getDate(),".rda"))
-save(models.fy, file = paste0("LDA_FY_models_current.rda"))
-
+if(file.exists("LDA_FY_models_current.rda")){
+    load("LDA_FY_models_current.rda")
+}else{
+    models.fy<-lapply(fy, function(y){
+        pmid<-meta(abstrCorpus)[,"FY"]==y
+        dtm.fy<-dtm[pmid,]
+        mclapply(mc.cores=2, seq.k.fy, function(k) LDA(dtm.fy,k))
+    })
+    save(models.fy, file=paste0("LDA_FY_models", getDate(),".rda"))
+    save(models.fy, file="LDA_FY_models_current.rda")
+}
 
 model.lglk<-as.data.frame(as.matrix(lapply(models, logLik)))
 LogLik.df<-data.frame("topics"=seq.k, 
