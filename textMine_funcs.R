@@ -186,6 +186,8 @@ getTopicAssign<-function(ids, model, corpus){
 dendroArc<-function(FYs=c(2009,2015), model, topicN, distFun="cosine",
                     gamma=0.15, distThresh=0.94)
 {
+    library(ape)
+    library(arcdiagram)
     ##FYs = the two fiscal years to compare
     ##model = the topic model object to use
     ##topicN = the topic to center the analysis on, i.e. only show arcs that are connected to this topic
@@ -214,7 +216,7 @@ dendroArc<-function(FYs=c(2009,2015), model, topicN, distFun="cosine",
         colSums(topicGamma[x,]>=gamma)        
     })
     order<-rownames(topicTerms)[as.numeric(gsub("Topic ", "", names(topicTermsTree$labels[topicTermsTree$order])))]
-    sizes<-as.numeric(cut(colSums(do.call(cbind, degrees)),10))
+    sizes<-as.numeric(cut(rowSums(do.call(cbind, degrees)),10))
     lab<-order
     edge.col<-c(rep("blue", length(edges[[1]])),rep("red", length(edges[[2]])))
     edge.weight<-c(rep("1", length(edges[[1]])),rep("2", length(edges[[2]])))
@@ -223,8 +225,16 @@ dendroArc<-function(FYs=c(2009,2015), model, topicN, distFun="cosine",
     par(mfcol=c(1,2))
     plot(as.phylo(topicTermsTree),show.tip.label=FALSE, main="Topic-Topic relationship by Terms")
     arcplot(edges,vertices = lab, pch=21,cex.labels=0.75,
-            col.arcs=edge.col,main=paste("FY",paste(FYs, collapse=" and ")), cex.nodes = sizes[[1]],
-            ylim=c(0.01,.99),col.labels="black",lwd.arcs=edge.weight, ordering=order, horizontal=F,col.nodes="black", font=0)
+            col.arcs=edge.col,main=paste("FY",paste(FYs, collapse=" and ")), cex.nodes = sizes,
+            ylim=c(0.01,.99),col.labels="black",lwd.arcs=edge.weight, ordering=order, 
+            horizontal=F,col.nodes="black", font=0)
     legend("topright", lty=c(1,1),cex=0.75, col=c("blue", "red"), legend = FYs, bty="n")
     dev.off()   
+}
+
+dist2Table<-function(x){
+    library(reshape2)
+    t<-melt(x[1:dim(x)[1],1:dim(x)[2]], varnames=c("col","row"))   
+    t<-t[t$row>t$col,]
+    t   
 }
