@@ -7,7 +7,7 @@ library(arcdiagram)
 ##EDA of LDA assignments and data reduction methods
 ###############
 
-#to determine a reasonable cutoff for "significant" assoignment of docs to topics
+#to determine a reasonable cutoff for "significant" assignment of docs to topics
 #I would expect most docs to truely contain 1-3 topics with reviews containing no more than 10ish...
 hist(rowSums(topDocGamma[[2]]>=0.15),6)
 summary(rowSums(topDocGamma[[2]]>=0.15))
@@ -120,6 +120,7 @@ z<-hclust(topTermsDist[[1]])
 d<-lapply(levels(as.factor(meta(abstrCorpus)$FY)), function(x){
     topDocDistFYtable[topDocDistFYtable[,x]<=0.94,c("to","from",as.character(x))]
 })
+
 degree<-lapply(levels(as.factor(meta(abstrCorpus)$FY)), function(x){
     pmids<-meta(abstrCorpus)[-docRemove,"FY"]==x
     colSums(topDocGamma[[1]][pmids,]>=0.15)
@@ -164,3 +165,27 @@ lapply(seq(2,8), function(x){
             main=paste("FY",names(degree)[x]), cex.nodes = sizes[[x]],ylim=c(0.01,.99),ordering=order, horizontal=F,col.nodes="black", bg.nodes= 1+colors)
         dev.off()
 })
+
+###dendroarcs for one topic between fiscal years
+lapply(seq(1,models[[2]]@k), function(x) {
+    png(paste0(resultsPath, "/DendroArcs_topic",x,"FY2009vs2015_",gsub("-| |:", "",Sys.time()),".png"),height=1200, width=800, units="px")
+        dendroArc(FYs = c(2009,2015), model = models[[2]],topicN = x)
+        dev.off()
+})
+
+####Riverplots using FY-LDA models.
+
+model1<-models.fy[[2]][[2]]
+model2<-models.fy[[3]][[2]]
+
+model1.beta<-model1@beta
+model2.beta<-model2@beta
+
+rownames(model1.beta)<-paste0("FY2009_Topic",seq(1,50))
+rownames(model2.beta)<-paste0("FY2010_Topic",seq(1,50))
+
+model.dist<-dist(model1@beta, model2@beta, method = "euclidean")
+diag(model.dist)<-0
+edges<-dist2Table(model.dist)
+
+
