@@ -171,7 +171,6 @@ lapply(names(topTermsDist), function(x){
     plot(hclust(topTermsDist[[x]]), cex=1)
     dev.off()
 })
-dev.off()
 
 topDocGamma<-lapply(models, function(x) {
     y<-as.matrix(x@gamma)
@@ -179,7 +178,7 @@ topDocGamma<-lapply(models, function(x) {
     y
 })
 
-png(paste0(resultsPath, "GammaDistbyTopic.png"), height=600, width=1400, units="px")
+png(paste0(resultsPath, "/GammaDistbyTopic.png"), height=600, width=1400, units="px")
 boxplot(log10(topDocGamma[[1]]), range = 0, las=2)
 dev.off()
 
