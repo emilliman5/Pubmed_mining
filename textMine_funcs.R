@@ -237,3 +237,11 @@ dist2Table<-function(x){
     t<-melt(x[1:dim(x)[1],1:dim(x)[2]], varnames=c("col","row"))   
     t   
 }
+
+findTerms<-function(corpus, terms){
+    library(tm)
+    f<-getFactorIdx(5, meta(corpus))
+    tdm<-TermDocumentMatrix(corpus)
+    lapply(terms, function(x,z=as.matrix(tdm)[rownames(tdm)==x,]) 
+        lapply(f, function(y) sum(z[y])))
+}
