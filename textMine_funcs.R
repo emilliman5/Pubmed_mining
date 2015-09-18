@@ -235,6 +235,5 @@ dendroArc<-function(FYs=c(2009,2015), model, topicN, distFun="cosine",
 dist2Table<-function(x){
     library(reshape2)
     t<-melt(x[1:dim(x)[1],1:dim(x)[2]], varnames=c("col","row"))   
-    t<-t[t$row>t$col,]
     t   
 }
