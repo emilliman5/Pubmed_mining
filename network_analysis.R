@@ -177,7 +177,6 @@ lapply(seq(1,models[[2]]@k), function(x) {
 
 ####Riverplots using FY-LDA models.
 
-
 edges<-lapply(2:(length(models.fy)-1), function(x){
     d<-dist(models.fy[[x]][[2]]@beta, models.fy[[(x+1)]][[2]]@beta, method="euclidean")
     e<-dist2Table(d)
@@ -193,6 +192,10 @@ nodes<-do.call(rbind, lapply(seq_along(edges), function(x) {
 
 nodes<-rbind(nodes, data.frame(data.frame(ID=unique(edges[[6]]$N2), x=7, y=seq_along(unique(edges[[6]]$N2)))))
 edges<-do.call(rbind, edges)
+
+png(paste0(resultsPath, "/FY_LDA_modeldist_score_distr.png"), height=600, width=800, units="px")
+hist(edges$Value, breaks=1000)
+dev.off()
 
 edges<-do.call(rbind,
               by(edges, edges$N1, 
