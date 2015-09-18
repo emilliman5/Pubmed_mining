@@ -2,6 +2,8 @@ library(reshape2)
 library(igraph)
 library(ape)
 library(arcdiagram)
+library(RColorBrewer)
+library(riverplot)
 
 ###############
 ##EDA of LDA assignments and data reduction methods
@@ -175,17 +177,41 @@ lapply(seq(1,models[[2]]@k), function(x) {
 
 ####Riverplots using FY-LDA models.
 
-model1<-models.fy[[2]][[2]]
-model2<-models.fy[[3]][[2]]
 
-model1.beta<-model1@beta
-model2.beta<-model2@beta
+edges<-lapply(2:(length(models.fy)-1), function(x){
+    d<-dist(models.fy[[x]][[2]]@beta, models.fy[[(x+1)]][[2]]@beta, method="euclidean")
+    e<-dist2Table(d)
+    e$col<-paste0("FY",substr(names(models.fy)[x],3,4),"_",e$col)
+    e$row<-paste0("FY",substr(names(models.fy)[(x+1)],3,4),"_",e$row)
+    colnames(e)<-c("N1","N2","Value")
+    e
+})
 
-rownames(model1.beta)<-paste0("FY2009_Topic",seq(1,50))
-rownames(model2.beta)<-paste0("FY2010_Topic",seq(1,50))
+nodes<-do.call(rbind, lapply(seq_along(edges), function(x) {
+    n<-data.frame(ID=unique(edges[[x]]$N1), x=x, y=seq_along(unique(edges[[x]]$N1)))
+}))
 
-model.dist<-dist(model1@beta, model2@beta, method = "euclidean")
-diag(model.dist)<-0
-edges<-dist2Table(model.dist)
+nodes<-rbind(nodes, data.frame(data.frame(ID=unique(edges[[6]]$N2), x=7, y=seq_along(unique(edges[[6]]$N2)))))
+edges<-do.call(rbind, edges)
 
+edges<-do.call(rbind,
+              by(edges, edges$N1, 
+              function(x) x[order(x$Value)[1:5],], simplify = T))
+
+
+edges<-edges[edges$Value<49000,]
+edges$Value<-edges$Value/1000
+
+palette<-paste0(brewer.pal(9, "Set1"), "60")
+styles<-lapply(nodes$y, function(n){
+    list(col=palette[ceiling(n/6)+1], lty=0, textcol="black")
+})
+names(styles)<-nodes$ID
+
+rp<-list(nodes=nodes, edges=edges, styles=styles)
+class(rp)<-c(class(rp), "riverplot")
+png(paste0(resultsPath,"/RiverPlot_",timeStamp(),".png"), height=1600, width=3500, units="px")
+par(cex.lab = 0.25)
+plot(rp, plot_area=0.95, yscale=0.06)
+dev.off()
 
