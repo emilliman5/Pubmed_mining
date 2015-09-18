@@ -142,6 +142,7 @@ if(file.exists("LDA_FY_models_current.rda")){
         dtm.fy<-dtm[pmid,]
         mclapply(mc.cores=2, seq.k.fy, function(k) LDA(dtm.fy,k))
     })
+    names(models.fy)<-c(fy)
     save(models.fy, file=paste0("LDA_FY_models", getDate(),".rda"))
     save(models.fy, file="LDA_FY_models_current.rda")
 }
