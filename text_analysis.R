@@ -163,7 +163,7 @@ topTermBeta<-lapply(models, function(x){
 })
 
 topTermsDist<-lapply( topTermBeta, function(x) {
-    dist(x,method = "cosine")
+    dist(exp(x),method = "bhjattacharyya")
 })
 
 names(topTermsDist)<-lapply(models, function(x) x@k)
@@ -179,12 +179,13 @@ topDocGamma<-lapply(models, function(x) {
     y
 })
 
-png(paste0(resultsPath, "/GammaDistbyTopic.png"), height=600, width=1400, units="px")
-boxplot(log10(topDocGamma[[1]]), range = 0, las=2)
+png(paste0(resultsPath, "/GammaDistbyTopic.png"), height=2400, width=1600, units="px")
+par(mar=c(22,4,4,2), mfrow=c(3,1))
+lapply(topDocGamma, function(x) boxplot(x, range = 0, las=2, main="Distribution of Gammas by Topic", ylab="Gamma", cex.axis=1.5))
 dev.off()
 
 topDocDist<-lapply(topDocGamma, function(x){
-    dist(t(x),method="correlation")
+    dist(t(x),method="bhjattacharyya")
 })
 names(topDocDist)<-lapply(models, function(x) x@k)
 
@@ -199,7 +200,7 @@ topDocDist.fy<-lapply(topDocGamma, function(x){
     idx<-lapply(f, function(x) which(meta(abstrCorpus)[,"FY"]==x) )
     lapply(idx, function(y) {
         f<-meta(abstrCorpus)[y[1],"FY"]
-        dist(t(x[y,]),method="correlation")
+        dist(t(x[y,]),method="bhjattacharyya")
         })
     })
 
@@ -230,7 +231,7 @@ lapply(dends, function(x){
     l<-length(labels(x[[y]]))
     png(paste0(resultsPath,"/","DendroCompare",l,"FY",y,".png"), height=1200, width=2400, units="px")
     d %>% untangle(method= "DendSer") %>% 
-      tanglegram(common_subtrees_color_branches=TRUE, hang=T,lab.cex=2, xlim=c(1,0.5))
+      tanglegram(common_subtrees_color_branches=TRUE, hang=T,lab.cex=2)
     dev.off()
   })
   d<-dendlist(x[[2]],x[[8]])
