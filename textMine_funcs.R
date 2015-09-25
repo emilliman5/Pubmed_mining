@@ -184,7 +184,7 @@ getTopicAssign<-function(ids, model, corpus){
     t
 }
 
-dendroArc<-function(FYs=c(2009,2015), model, topicN, distFun="cosine",
+dendroArc<-function(FYs=c(2009,2012,2015), model, topicN, distFun="cosine",
                     gamma=0.15, distThresh=0.94)
 {
     library(ape)
@@ -210,18 +210,19 @@ dendroArc<-function(FYs=c(2009,2015), model, topicN, distFun="cosine",
     
     edges<-lapply(topicGammaDist, function(x){
         e<-x[x<distThresh,]
-        edge<-cbind(names(e),topic)
+        cbind(names(e),topic)
     })
-    edges<-do.call(rbind, edges)
+    
     degrees<-lapply(fyIdx, function(x){
         colSums(topicGamma[x,]>=gamma)        
     })
     order<-rownames(topicTerms)[as.numeric(gsub("Topic ", "", names(topicTermsTree$labels[topicTermsTree$order])))]
     sizes<-as.numeric(cut(rowSums(do.call(cbind, degrees)),10))
     lab<-order
-    edge.col<-c(rep("blue", length(edges[[1]])),rep("red", length(edges[[2]])))
-    edge.weight<-c(rep("1", length(edges[[1]])),rep("2", length(edges[[2]])))
-    
+    pal<-rainbow(7)[c(1,3,6)]
+    edge.col<-do.call(c, lapply(seq_along(edges), function(x) rep(pal[x], length(edges[[x]][,1]))))
+    edge.weight<-do.call(c, lapply(rev(seq_along(edges)), function(x) rep(x/2+.5, length(edges[[x]][,1]))))
+    edges<-do.call(rbind, edges)
     png(paste0(resultsPath, "/DendroArcs_Topic",topicN,"_",paste(FYs, collapse="and"),"_",gsub("-| |:", "",Sys.time()),".png"),height=1200, width=800, units="px")
     par(mfcol=c(1,2))
     plot(as.phylo(topicTermsTree),show.tip.label=FALSE, main="Topic-Topic relationship by Terms")
@@ -229,7 +230,7 @@ dendroArc<-function(FYs=c(2009,2015), model, topicN, distFun="cosine",
             col.arcs=edge.col,main=paste("FY",paste(FYs, collapse=" and ")), cex.nodes = sizes,
             ylim=c(0.01,.99),col.labels="black",lwd.arcs=edge.weight, ordering=order, 
             horizontal=F,col.nodes="black", font=0)
-    legend("topright", lty=c(1,1),cex=0.75, col=c("blue", "red"), legend = FYs, bty="n")
+    legend("topright", lty=1,lwd=2,cex=1.25, col=pal, legend = FYs, bty="n")
     dev.off()   
 }
 
