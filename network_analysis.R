@@ -117,15 +117,15 @@ dends1<-lapply(names(topDocDist.fy), function(x){
     })
 })
 
-dendTop50<-dends[[1]]
-z<-hclust(topTermsDist[[1]])
+dendTop50<-dends[[2]]
+z<-hclust(topTermsDist[[2]])
 d<-lapply(levels(as.factor(meta(abstrCorpus)$FY)), function(x){
     topDocDistFYtable[topDocDistFYtable[,x]<=0.94,c("to","from",as.character(x))]
 })
 
 degree<-lapply(levels(as.factor(meta(abstrCorpus)$FY)), function(x){
     pmids<-meta(abstrCorpus)[-docRemove,"FY"]==x
-    colSums(topDocGamma[[1]][pmids,]>=0.15)
+    colSums(topDocGamma[[2]][pmids,]>=0.15)
 })
 names(degree)<-levels(as.factor(meta(abstrCorpus)$FY))
 names(d)<-levels(as.factor(meta(abstrCorpus)$FY))
@@ -170,15 +170,14 @@ lapply(seq(2,8), function(x){
 
 ###dendroarcs for one topic between fiscal years
 lapply(seq(1,models[[2]]@k), function(x) {
-    png(paste0(resultsPath, "/DendroArcs_topic",x,"FY2009vs2015_",gsub("-| |:", "",Sys.time()),".png"),height=1200, width=800, units="px")
-        dendroArc(FYs = c(2009,2015), model = models[[2]],topicN = x)
+        dendroArc(model = models[[2]],topicN = x)
         dev.off()
 })
 
 ####Riverplots using FY-LDA models.
 
 edges<-lapply(2:(length(models.fy)-1), function(x){
-    d<-dist(models.fy[[x]][[2]]@beta, models.fy[[(x+1)]][[2]]@beta, method="euclidean")
+    d<-dist(exp(models.fy[[x]][[2]]@beta), exp(models.fy[[(x+1)]][[2]]@beta), method="bhjattacharyya")
     e<-dist2Table(d)
     e$col<-paste0("FY",substr(names(models.fy)[x],3,4),"_",e$col)
     e$row<-paste0("FY",substr(names(models.fy)[(x+1)],3,4),"_",e$row)
@@ -191,21 +190,19 @@ nodes<-do.call(rbind, lapply(seq_along(edges), function(x) {
 }))
 
 nodes<-rbind(nodes, data.frame(data.frame(ID=unique(edges[[6]]$N2), x=7, y=seq_along(unique(edges[[6]]$N2)))))
+
 edges<-do.call(rbind, edges)
+topEdges<-do.call(rbind, by(edges,edges$N1, function(x) head(x[order(x$Value),],n=3)))
 
 png(paste0(resultsPath, "/FY_LDA_modeldist_score_distr.png"), height=600, width=800, units="px")
 hist(edges$Value, breaks=1000)
 dev.off()
 
-edges<-do.call(rbind,
-              by(edges, edges$N1, 
-              function(x) x[order(x$Value)[1:5],], simplify = T))
+edges<-edges[edges$Value<1.0,]
 
+# edges$Value<-edges$Value/1000
 
-edges<-edges[edges$Value<49000,]
-edges$Value<-edges$Value/1000
-
-palette<-paste0(brewer.pal(9, "Set1"), "60")
+palette<-paste0(brewer.pal(12, "Paired"), "80")
 styles<-lapply(nodes$y, function(n){
     list(col=palette[ceiling(n/6)+1], lty=0, textcol="black")
 })
@@ -213,8 +210,14 @@ names(styles)<-nodes$ID
 
 rp<-list(nodes=nodes, edges=edges, styles=styles)
 class(rp)<-c(class(rp), "riverplot")
-png(paste0(resultsPath,"/RiverPlot_",timeStamp(),".png"), height=1600, width=3500, units="px")
+png(paste0(resultsPath,"/RiverPlot_",timeStamp(),".png"), height=2400, width=4800, units="px")
 par(cex.lab = 0.25)
-plot(rp, plot_area=0.95, yscale=0.06)
+plot(rp, plot_area=0.95, yscale=0.06, srt=T)
 dev.off()
 
+rp1<-list(nodes=nodes, edges=topEdges, styles=styles)
+class(rp1)<-c(class(rp1), "riverplot")
+png(paste0(resultsPath,"/RiverPlot_top5edges_perNode",timeStamp(),".png"), height=1600, width=3500, units="px")
+par(cex.lab = 0.25)
+plot(rp1, plot_area=0.95, yscale=0.06, srt=T)
+dev.off()
