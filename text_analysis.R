@@ -129,6 +129,7 @@ if(file.exists("LDA_models_current.rda")){
     models<-mclapply(seq.k, mc.cores=2, function(k) LDA(dtm, k) )
     save(models, file = paste0("LDA_models",getDate(),".rda"))
     save(models, file = paste0("LDA_models_current.rda"))
+    lapply(models, function(x) write.csv2(t(terms(x, 10)), file=paste0("Top10WordsperTopic_for_",x@k,"Topics_model.txt")))
 }
 
 seq.k.fy<-c(25,50,100,250)
@@ -142,9 +143,13 @@ if(file.exists("LDA_FY_models_current.rda")){
         dtm.fy<-dtm[pmid,]
         mclapply(mc.cores=2, seq.k.fy, function(k) LDA(dtm.fy,k))
     })
-    names(models.fy)<-c(fy)
+    names(models.fy)<-fy
     save(models.fy, file=paste0("LDA_FY_models", getDate(),".rda"))
     save(models.fy, file="LDA_FY_models_current.rda")
+    lapply(1:length(models.fy), function(x) lapply(models.fy[[x]], 
+                                                   function(y) write.csv2(t(terms(y, 10)),
+                                                                          file=paste0("Top10WordsperTopic_for_",y@k,"Topics_model_",names(models.fy)[x],".txt"))))
+    
 }
 
 model.lglk<-as.data.frame(as.matrix(lapply(models, logLik)))
