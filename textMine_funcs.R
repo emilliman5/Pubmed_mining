@@ -143,6 +143,7 @@ tfHisto<-function(tdm, fact)
 getFactorIdx<-function(col, df){
     f<-unique(df[,col])
     x<-lapply(f, function(x) which(df[,col]==x) )
+    names(x)<-f
     x
 }
 
@@ -238,10 +239,12 @@ dist2Table<-function(x){
     t   
 }
 
-findTerms<-function(corpus, terms){
+findTerms<-function(corpus,tdm, terms){
+    ###Finds terms and reports freq by FY
     library(tm)
     f<-getFactorIdx(5, meta(corpus))
-    tdm<-TermDocumentMatrix(corpus)
-    lapply(terms, function(x,z=as.matrix(tdm)[rownames(tdm)==x,]) 
+    x<-lapply(terms, function(x,z=as.matrix(tdm)[rownames(tdm)==x,]) 
         lapply(f, function(y) sum(z[y])))
+    names(x)<-terms
+    x
 }
