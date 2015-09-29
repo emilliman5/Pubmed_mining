@@ -78,7 +78,7 @@ lapply(fyqs, function(x){
 ##Topic-Topic Distance by FY
 ##############
 
-topDocDistFYtable<-do.call(cbind, lapply(topDocDist.fy[[1]], function(x){
+topDocDistFYtable<-do.call(cbind, lapply(topDocDist.fy[[2]], function(x){
   x<-as.matrix(x)
   rownames(x)<-seq(1,nrow(x))
   colnames(x)<-seq(1,ncol(x))
@@ -150,7 +150,7 @@ edges<-lapply(edges, function(x) gsub("Topic","",x))
 lab<-gsub("Topic ","", names(z$labels))
 sizes<-lapply(degree, function(x) as.integer(cut(x,10)))
 colors<-cutree(z, k=6)
-edge.widths<-lapply(d, function(x) as.integer(cut(1-x[,3],5))*2)
+edge.widths<-lapply(d, function(x) as.integer(cut(1-x[,3],5)))
 
 lapply(seq(2,8), function(x){
     png(paste0(resultsPath, "/ArcDiagram",x,"_",gsub("-| |:", "",Sys.time()),".png"),height=600, width=1200, units="px")
@@ -170,8 +170,7 @@ lapply(seq(2,8), function(x){
 
 ###dendroarcs for one topic between fiscal years
 lapply(seq(1,models[[2]]@k), function(x) {
-        dendroArc(model = models[[2]],topicN = x)
-        dev.off()
+        dendroArc(model = models[[2]],topicN = x,FYs = c(2009,2015))
 })
 
 ####Riverplots using FY-LDA models.

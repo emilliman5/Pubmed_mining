@@ -168,7 +168,7 @@ topTermBeta<-lapply(models, function(x){
 })
 
 topTermsDist<-lapply( topTermBeta, function(x) {
-    dist(exp(x),method = "bhjattacharyya")
+    dist(x,method = "cosine")
 })
 
 names(topTermsDist)<-lapply(models, function(x) x@k)
@@ -190,7 +190,7 @@ lapply(topDocGamma, function(x) boxplot(x, range = 0, las=2, main="Distribution 
 dev.off()
 
 topDocDist<-lapply(topDocGamma, function(x){
-    dist(t(x),method="bhjattacharyya")
+    dist(t(x),method="cosine")
 })
 names(topDocDist)<-lapply(models, function(x) x@k)
 
@@ -205,7 +205,7 @@ topDocDist.fy<-lapply(topDocGamma, function(x){
     idx<-lapply(f, function(x) which(meta(abstrCorpus)[,"FY"]==x) )
     lapply(idx, function(y) {
         f<-meta(abstrCorpus)[y[1],"FY"]
-        dist(t(x[y,]),method="bhjattacharyya")
+        dist(t(x[y,]),method="cosine")
         })
     })
 
@@ -219,7 +219,6 @@ lapply(names(topDocDist.fy), function(x){
     }) 
 })
 
-dev.off()
 ######
 #FY dendrogram comparisons
 ######

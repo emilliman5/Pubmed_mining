@@ -209,7 +209,7 @@ dendroArc<-function(FYs=c(2009,2012,2015), model, topicN, distFun="cosine",
     })
     
     edges<-lapply(topicGammaDist, function(x){
-        e<-x[x<distThresh,]
+        e<-x[x<=distThresh,]
         cbind(names(e),topic)
     })
     
@@ -217,7 +217,7 @@ dendroArc<-function(FYs=c(2009,2012,2015), model, topicN, distFun="cosine",
         colSums(topicGamma[x,]>=gamma)        
     })
     order<-rownames(topicTerms)[as.numeric(gsub("Topic ", "", names(topicTermsTree$labels[topicTermsTree$order])))]
-    sizes<-as.numeric(cut(rowSums(do.call(cbind, degrees)),10))
+    sizes<-as.numeric(cut(rowSums(do.call(cbind, degrees)),10))[topicTermsTree$order]
     lab<-order
     pal<-rainbow(7)[c(1,3,6)]
     edge.col<-do.call(c, lapply(seq_along(edges), function(x) rep(pal[x], length(edges[[x]][,1]))))
@@ -225,7 +225,7 @@ dendroArc<-function(FYs=c(2009,2012,2015), model, topicN, distFun="cosine",
     edges<-do.call(rbind, edges)
     png(paste0(resultsPath, "/DendroArcs_Topic",topicN,"_",paste(FYs, collapse="and"),"_",gsub("-| |:", "",Sys.time()),".png"),height=1200, width=800, units="px")
     par(mfcol=c(1,2))
-    plot(as.phylo(topicTermsTree),show.tip.label=FALSE, main="Topic-Topic relationship by Terms")
+    plot(as.phylo(topicTermsTree),show.tip.label=T, main="Topic-Topic relationship by Terms")
     arcplot(edges,vertices = lab, pch=21,cex.labels=0.75,
             col.arcs=edge.col,main=paste("FY",paste(FYs, collapse=" and ")), cex.nodes = sizes,
             ylim=c(0.01,.99),col.labels="black",lwd.arcs=edge.weight, ordering=order, 
