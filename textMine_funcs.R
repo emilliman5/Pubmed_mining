@@ -225,7 +225,7 @@ dendroArc<-function(FYs=c(2009,2012,2015), model, topicN, distFun="cosine",
     edges<-do.call(rbind, edges)
     png(paste0(resultsPath, "/DendroArcs_Topic",topicN,"_",paste(FYs, collapse="and"),"_",gsub("-| |:", "",Sys.time()),".png"),height=1200, width=800, units="px")
     par(mfcol=c(1,2))
-    plot(as.phylo(topicTermsTree),show.tip.label=T, main="Topic-Topic relationship by Terms")
+    plot(as.phylo(topicTermsTree),show.tip.label=F, main="Topic-Topic relationship by Terms")
     arcplot(edges,vertices = lab, pch=21,cex.labels=0.75,
             col.arcs=edge.col,main=paste("FY",paste(FYs, collapse=" and ")), cex.nodes = sizes,
             ylim=c(0.01,.99),col.labels="black",lwd.arcs=edge.weight, ordering=order, 
