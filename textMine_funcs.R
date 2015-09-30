@@ -108,9 +108,8 @@ tfidfHisto<-function(tdm, fact, fun)
   
   lapply(x, function(y){
     f<-meta(abstrCorpus)[y[1],fact]
-    m<-as.matrix(tdm)[rowSums(as.matrix(tdm)[,y]),y]
-    s<-apply(m, 1, fun)
     m<-as.matrix(tdm[,y])
+    s<-apply(m, 1, fun)
     png(file.path(resultsPath,paste0(fact,"_",f, "_TermFreqxIDF_Distributions.png"), fsep = "/"), 
         height=800, width=1200, units="px")
     par(mfrow=c(2,1), cex=2)
