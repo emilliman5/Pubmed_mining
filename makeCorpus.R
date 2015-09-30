@@ -58,10 +58,11 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
   meta(abstrCorpus, "Date")<-abstr.df[,"pubdate.df"]
   meta(abstrCorpus, "FY.Q")<-quarter(abstr.df[,"pubdate.df"]+90, with_year=T)
   meta(abstrCorpus, "FY")<-floor(meta(abstrCorpus)[,"FY.Q"])
-  
+  names(abstrCorpus)<-abstr.df[,"PMID"]
   dir.create("Corpus")
   writeCorpus(abstrCorpus,"Corpus/")
   write.csv(meta(abstrCorpus), "CorpusMetaData.txt",row.names=F)
+  
   abstrCorpus
 } 
 
