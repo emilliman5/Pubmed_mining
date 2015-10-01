@@ -5,6 +5,13 @@ library(reshape2)
 library(arcdiagram)
 library(RColorBrewer)
 
+###Do not enter unless text_analysis.R and topic_model.R have been run to completion
+
+distFun<-"cosine"
+gammaThresh<-0.15
+distThresh<-0.94
+
+
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
     source(extraFunFile, keep.source=TRUE);
@@ -14,7 +21,7 @@ dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
-##read in corpus docs.
+##load Corpus.
 abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
 metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
 for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
@@ -27,7 +34,7 @@ spCorpus<-Corpus(DirSource("Corpus/SP/"), readerControl = list(language="english
 load("LDA_models_current.rda")
 load("LDA_FY_models_current.rda")
 
-###Analysis of Topic Modeling on entire corpus
+###Analysis of Topic Modeling on entire
 
 topTermBeta<-lapply(models, function(x){
     y<-as.matrix(x@beta)
@@ -37,12 +44,12 @@ topTermBeta<-lapply(models, function(x){
 })
 
 topTermsDist<-lapply( topTermBeta, function(x) {
-    dist(x,method = "cosine")
+    dist(x,method = distFun)
 })
-
 names(topTermsDist)<-lapply(models, function(x) x@k)
+
 lapply(names(topTermsDist), function(x){
-    png(paste0(resultsPath,"/","TopicClustering_byTerms_TopicNumber_",x,".png"), height=1200, width=2400, units="px")
+    png(paste0(resultsPath,"/","TopicClustering_byTerms_NumberofTopics_",x,".png"), height=1200, width=2400, units="px")
     plot(hclust(topTermsDist[[x]]), cex=1)
     dev.off()
 })
@@ -53,18 +60,13 @@ topDocGamma<-lapply(models, function(x) {
     y
 })
 
-png(paste0(resultsPath, "/GammaDistbyTopic.png"), height=2400, width=1600, units="px")
-par(mar=c(22,4,4,2), mfrow=c(3,1))
-lapply(topDocGamma, function(x) boxplot(x, range = 0, las=2, main="Distribution of Gammas by Topic", ylab="Gamma", cex.axis=1.5))
-dev.off()
-
 topDocDist<-lapply(topDocGamma, function(x){
-    dist(t(x),method="cosine")
+    dist(t(x),method=distFun)
 })
 names(topDocDist)<-lapply(models, function(x) x@k)
 
 lapply(names(topDocDist), function(x){
-    png(paste0(resultsPath,"/","TopicClustering_byDoc_TopicNumber_",x,".png"), height=1200, width=2400, units="px")
+    png(paste0(resultsPath,"/","TopicClustering_byDoc_NumberofTopics_",x,".png"), height=1200, width=2400, units="px")
     plot(hclust(topDocDist[[x]]), cex=1)
     dev.off()
 })
@@ -111,7 +113,7 @@ topDocDist.fy<-lapply(topDocGamma, function(x){
     idx<-lapply(f, function(x) which(meta(abstrCorpus)[,"FY"]==x) )
     lapply(idx, function(y) {
         f<-meta(abstrCorpus)[y[1],"FY"]
-        dist(t(x[y,]),method="cosine")
+        dist(t(x[y,]),method=distFun)
     })
 })
 names(topDocDist.fy)<-lapply(models, function(x) x@k)
@@ -133,17 +135,17 @@ lapply(names(topDocDist.fy), function(x){
     }) 
 })
 
-z<-hclust(topTermsDist[[2]])
-d<-lapply(levels(as.factor(meta(abstrCorpus)$FY)), function(x){
-    topDocDistFYtable[topDocDistFYtable[,x]<=0.94,c("to","from",as.character(x))]
+top50dends<-hclust(topTermsDist[[2]])
+top50edges<-lapply(levels(as.factor(meta(abstrCorpus)$FY)), function(x){
+    topDocDistFYtable[topDocDistFYtable[,x]<=distThresh,c("to","from",as.character(x))]
 })
 
 degree<-lapply(levels(as.factor(meta(abstrCorpus)$FY)), function(x){
     pmids<-meta(abstrCorpus)[-docRemove,"FY"]==x
-    colSums(topDocGamma[[2]][pmids,]>=0.15)
+    colSums(topDocGamma[[2]][pmids,]>=gammaThresh)
 })
 names(degree)<-levels(as.factor(meta(abstrCorpus)$FY))
-names(d)<-levels(as.factor(meta(abstrCorpus)$FY))
+names(top50edges)<-levels(as.factor(meta(abstrCorpus)$FY))
 topDocDegree<-do.call(rbind, degree)[-1,]
 
 png(paste0(resultsPath, "/TopicUsagebyDocumentbyFY.png"), height=1600, width=1600, units="px")
@@ -160,11 +162,11 @@ png(paste0(resultsPath, "/TopicUsagebyDocumentbyFY_lineplot.png"), height=1600, 
 dev.off()
 
 order<-gsub("Topic ", "", names(z$labels[z$order]))
-edges<-lapply(d, function(x) as.matrix(x[,1:2]))
+edges<-lapply(top50edges, function(x) as.matrix(x[,1:2]))
 edges<-lapply(edges, function(x) gsub("Topic","",x))
-lab<-gsub("Topic ","", names(z$labels))
+lab<-gsub("Topic ","", names(top50dends$labels))
 sizes<-lapply(degree, function(x) as.integer(cut(x,10)))
-colors<-cutree(z, k=6)
+colors<-cutree(top50dends, k=6)
 edge.widths<-lapply(d, function(x) as.integer(cut(1-x[,3],5)))
 
 lapply(seq(2,8), function(x){
@@ -177,7 +179,7 @@ lapply(seq(2,8), function(x){
 lapply(seq(2,8), function(x){
     png(paste0(resultsPath, "/DendroArcs",x,"_",gsub("-| |:", "",Sys.time()),".png"),height=1200, width=800, units="px")
     par(mfcol=c(1,2))
-    plot(as.phylo(z), main="Topic-Topic relationship by Terms")
+    plot(as.phylo(top50dends), main="Topic-Topic relationship by Terms")
     arcplot(edges[[x]],vertices = lab, col.labels = "black", pch=21,lwd.arcs = edge.widths[[x]],
             main=paste("FY",names(degree)[x]), cex.nodes = sizes[[x]],ylim=c(0.01,.99),ordering=order, horizontal=F,col.nodes="black", bg.nodes= 1+colors)
     dev.off()
