@@ -113,10 +113,16 @@ getTags<-function()
              WP$ Possessive whpronoun
              WRB Whadverb", sep="\n")
 }
-getTaggedWords<-function(corpus, tags)
+getTaggedWords<-function(corpus, tags=c("NN","NNS","NNP","NNPS","FW"))
 {
-  
-  
+  ##Provide tags as vector
+  text<-lapply(corpus, function(x){
+    unlist(strsplit(x, " "))
+    })
+  words<-lapply(text, function(x){
+    
+    
+  })
   
   
 }
