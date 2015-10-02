@@ -5,7 +5,8 @@ library(reshape2)
 library(arcdiagram)
 library(RColorBrewer)
 
-###Do not enter unless text_analysis.R and topic_model.R have been run to completion
+###Do not enter unless text_analysis.R and topic_model.R 
+##have been run to completion
 
 distFun<-"cosine"
 gammaThresh<-0.15

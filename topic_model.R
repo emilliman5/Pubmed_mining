@@ -16,7 +16,7 @@ dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
-if(!file.exists("Corpus/1.txt") || reset){
+if(!file.exists("Corpus/") || reset){
     source("makeCorpus.R")
     abstrCorpus<-makeCorpus("ESlit.xml","stopwords.txt", 30)
 } else {
