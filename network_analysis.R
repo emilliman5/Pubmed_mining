@@ -4,6 +4,7 @@ library(ape)
 library(arcdiagram)
 library(RColorBrewer)
 library(riverplot)
+library(rCharts)
 
 ###############
 ##EDA of LDA assignments and data reduction methods
@@ -22,6 +23,61 @@ lines(density(as.vector(topDocGamma[[1]])),col="red")
 boxplot(log10(as.vector(topDocGamma[[1]])),range=0 ,
         log10(as.vector(topDocGamma[[2]])),
         log10(as.vector(topDocGamma[[3]])), names = c("25 topics","50 topics","100 topics"))
+
+
+####Riverplots using FY-LDA models.
+
+edges<-lapply(2:(length(models.fy)-1), function(x){
+    d<-dist(exp(models.fy[[x]][[2]]@beta), exp(models.fy[[(x+1)]][[2]]@beta), method="bhjattacharyya")
+    e<-dist2Table(d)
+    e$col<-paste0("FY",substr(names(models.fy)[x],3,4),"_",e$col)
+    e$row<-paste0("FY",substr(names(models.fy)[(x+1)],3,4),"_",e$row)
+    colnames(e)<-c("N1","N2","Value")
+    e
+})
+
+nodes<-do.call(rbind, lapply(seq_along(edges), function(x) {
+    n<-data.frame(ID=unique(edges[[x]]$N1), x=x, y=seq_along(unique(edges[[x]]$N1)))
+}))
+
+nodes<-rbind(nodes, data.frame(data.frame(ID=unique(edges[[6]]$N2), x=7, y=seq_along(unique(edges[[6]]$N2)))))
+
+edges<-do.call(rbind, edges)
+topEdges<-do.call(rbind, by(edges,edges$N1, function(x) head(x[order(x$Value),],n=3)))
+
+png(paste0(resultsPath, "/FY_LDA_modeldist_score_distr.png"), height=600, width=800, units="px")
+hist(edges$Value, breaks=1000)
+dev.off()
+
+edges<-edges[edges$Value<1.0,]
+
+# edges$Value<-edges$Value/1000
+
+palette<-paste0(brewer.pal(12, "Paired"), "80")
+styles<-lapply(nodes$y, function(n){
+    list(col=palette[ceiling(n/6)+1], lty=0, textcol="black")
+})
+names(styles)<-nodes$ID
+
+rp<-list(nodes=nodes, edges=edges, styles=styles)
+class(rp)<-c(class(rp), "riverplot")
+png(paste0(resultsPath,"/RiverPlot_",timeStamp(),".png"), height=2400, width=4800, units="px")
+par(cex.lab = 0.25)
+plot(rp, plot_area=0.95, yscale=0.06, srt=T)
+dev.off()
+
+rp1<-list(nodes=nodes, edges=topEdges, styles=styles)
+class(rp1)<-c(class(rp1), "riverplot")
+png(paste0(resultsPath,"/RiverPlot_top5edges_perNode",timeStamp(),".png"), height=1600, width=3500, units="px")
+par(cex.lab = 0.25)
+plot(rp1, plot_area=0.95, yscale=0.06, srt=T)
+dev.off()
+
+
+
+
+
+
 
 ############
 ##Static Network Output
@@ -108,115 +164,83 @@ matplot(x=colnames(k$centers), t(k$centers), type="l")
 legend("bottomleft", lty=1, legend=paste("Cluster", 1:length(k$size), sep=" "), col=1:length(k$size), bty="n")
 dev.off()
 
-##############
-##DendroArc plots
-##############
-dends1<-lapply(names(topDocDist.fy), function(x){
-    lapply(seq(1,length(topDocDist.fy[[x]])), function(y){
-        hclust(topDocDist.fy[[x]][[y]])
-    })
+###Write network data to files...
+path<-paste0(resultsPath,"/Network/")
+dir.create(path)
+
+meta(abstrCorpus, "Type")<-"Abstract"
+write.table(file =paste0(path,"/AbstrNodeAttrs.csv"), x=meta(abstrCorpus)[,c("PMID","FY","FY.Q","Type")],sep=",",
+            quote=F, row.names=F, col.names=T)
+
+spMeta<-as.data.frame(cbind(names(spCorpus), "StrategicPlan"))
+colnames(spMeta)<-c("ID","Type")
+write.table(spMeta, paste0(path,"/SpNodeAttrs.csv"),sep=",",
+            quote=F, row.names=F, col.names=T)
+
+lapply(models, function(x) {
+    p<-paste0(path,"/Topics", x@k)
+    dir.create(p)    
+    topicNodes<-as.data.frame(apply(terms(x,4),2,function(z) paste(z,collapse="|")))
+    colnames(topicNodes)<-"TopicWords"
+    topicNodes$ID<-rownames(topicNodes)
+    topicNodes$ID<-gsub(" ", "", topicNodes$ID)
+    topicNodes$Type<-"Topic"
+    write.table(topicNodes, paste0(p,"/TopicNodes.csv"), row.names=F,sep=",", quote=F)
 })
 
-dendTop50<-dends[[2]]
-z<-hclust(topTermsDist[[2]])
-d<-lapply(levels(as.factor(meta(abstrCorpus)$FY)), function(x){
-    topDocDistFYtable[topDocDistFYtable[,x]<=0.94,c("to","from",as.character(x))]
+mclapply(topDocGamma, mc.cores=4,function(x){
+    p<-paste0(path,"/Topics", ncol(x))
+    colnames(x)<-paste(rep("Topic",ncol(x)),seq(1,ncol(x)), sep="")
+    x<-as.data.frame(x)
+    x$id<-c(meta(abstrCorpus)[-docRemove,"PMID"], names(spCorpus))
+    t<-reshape(x, times = colnames(x)[-ncol(x)], varying = colnames(x)[-ncol(x)], direction="long",v.names ="Weight",idvar = "id" ,ids = rownames(x),timevar = "Topic")
+    t<-t[t$Weight>0.01,]
+    t$Weight<--t$Weight
+    t$Type<-rep("Undirected")
+    colnames(t)<-c("Source","Target","Weight","Type")
+    write.table(t, paste0(p, "/TopicDocumentProbEdges.csv"), sep=",",
+                row.names=F, col.names=T,quote=F)
 })
 
-degree<-lapply(levels(as.factor(meta(abstrCorpus)$FY)), function(x){
-    pmids<-meta(abstrCorpus)[-docRemove,"FY"]==x
-    colSums(topDocGamma[[2]][pmids,]>=0.15)
-})
-names(degree)<-levels(as.factor(meta(abstrCorpus)$FY))
-names(d)<-levels(as.factor(meta(abstrCorpus)$FY))
-topDocDegree<-do.call(rbind, degree)[-1,]
-
-png(paste0(resultsPath, "/TopicUsagebyDocumentbyFY.png"), height=1600, width=1600, units="px")
-par(mfrow=c(2,1),oma=c(4,1,1,1), mar=c(15,4,2,2))
-barplot(topDocDegree, las=2, col=2:7, ylab="Number of Citations Assigned to Topic")
-barplot(t(t(topDocDegree)/colSums(topDocDegree)), las=2, col=2:7, ylab="Percentage of Citations Assigned to Topic")
-dev.off()
-barplot(t(topDocDegree/rowSums(topDocDegree)))
-
-png(paste0(resultsPath, "/TopicUsagebyDocumentbyFY_lineplot.png"), height=1600, width=1600, units="px")
-par(mfrow=c(2,1),mar=c(6,8,2,2))
-matplot(x=c(2009:2015),topDocDegree/rowSums(topDocDegree),cex.lab=2, cex.axis=2, type="l", xlab="Fiscal Year", ylab="Proportion of Citations in Topic")
-matplot(xlim=c(1,50), xlab="Topic Number",cex.lab=2, cex.axis=2, ylab="Proportion of Citations Assigned to Topic",t(topDocDegree/rowSums(topDocDegree)), type="l")
-dev.off()
-
-order<-gsub("Topic ", "", names(z$labels[z$order]))
-edges<-lapply(d, function(x) as.matrix(x[,1:2]))
-edges<-lapply(edges, function(x) gsub("Topic","",x))
-lab<-gsub("Topic ","", names(z$labels))
-sizes<-lapply(degree, function(x) as.integer(cut(x,10)))
-colors<-cutree(z, k=6)
-edge.widths<-lapply(d, function(x) as.integer(cut(1-x[,3],5)))
-
-lapply(seq(2,8), function(x){
-    png(paste0(resultsPath, "/ArcDiagram",x,"_",gsub("-| |:", "",Sys.time()),".png"),height=600, width=1200, units="px")
-    arcplot(edges[[x]],vertices = lab, col.labels = "black", pch=21,
-            main=names(degree)[x],cex.nodes = sizes[[x]],ordering=order, col.nodes="black", bg.nodes= 1+colors)
-    dev.off()
+mclapply(topTermBeta,mc.cores=2, function(x){
+    p<-paste0(path,"/Topics", nrow(x))
+    x<-as.data.frame(x)
+    x$Topics<-paste(rep("Topic",nrow(x)),seq(1,nrow(x)), sep="")
+    t<-reshape(x, times = colnames(x)[-ncol(x)], varying = colnames(x)[-ncol(x)], direction="long",v.names ="Weight",idvar = "Topics" ,ids = rownames(x),timevar = "Term")
+    t<-t[t$Weight>-250,]
+    t$Type<-rep("Undirected")
+    colnames(t)<-c("Source","Target","Weight","Type")
+    write.table(t, paste0(p, "/TopicTermWeightEdges.csv"), sep=",",
+                row.names=F, col.names=T,quote=F)
 })
 
-lapply(seq(2,8), function(x){
-    png(paste0(resultsPath, "/DendroArcs",x,"_",gsub("-| |:", "",Sys.time()),".png"),height=1200, width=800, units="px")
-    par(mfcol=c(1,2))
-    plot(as.phylo(z), main="Topic-Topic relationship by Terms")
-    arcplot(edges[[x]],vertices = lab, col.labels = "black", pch=21,lwd.arcs = edge.widths[[x]],
-            main=paste("FY",names(degree)[x]), cex.nodes = sizes[[x]],ylim=c(0.01,.99),ordering=order, horizontal=F,col.nodes="black", bg.nodes= 1+colors)
-        dev.off()
+library(reshape2)
+
+lapply(topDocDist, function(x){
+    p<-paste0(path,"/Topics", nrow(x))
+    x<-as.matrix(x)
+    rownames(x)<-seq(1,nrow(x))
+    colnames(x)<-seq(1,ncol(x))
+    t<-melt(as.matrix(x), varnames=c("col","row"))   
+    t<-t[t$row>t$col,]
+    t$col<-paste(rep("Topic", nrow(x)), t$col, sep="")
+    t$row<-paste(rep("Topic", nrow(x)), t$row, sep="")
+    t$Type<-rep("Undirected")
+    colnames(t)<-c("Source", "Target","Weight", "Type")
+    write.table(t,paste0(p,"/TopicTopicbyDocSimilarity.csv"), sep=",", row.names=F, quote=F, col.names=T)    
 })
 
-###dendroarcs for one topic between fiscal years
-lapply(seq(1,models[[2]]@k), function(x) {
-        dendroArc(model = models[[2]],topicN = x,FYs = c(2009,2015))
+lapply(topTermsDist, function(x){
+    p<-paste0(path,"/Topics", nrow(x))
+    x<-as.matrix(x)
+    rownames(x)<-seq(1,nrow(x))
+    colnames(x)<-seq(1,ncol(x))
+    t<-melt(as.matrix(x), varnames=c("col","row"))   
+    t<-t[t$row>t$col,]
+    t$col<-paste(rep("Topic", nrow(x)), t$col, sep="")
+    t$row<-paste(rep("Topic", nrow(x)), t$row, sep="")
+    colnames(t)<-c("Source", "Target","Weight")
+    t$Type<-rep("Undirected")
+    write.table(t,paste0(p,"/TopicTopicbyTermSimilarity.csv"), sep=",", row.names=F, quote=F, col.names=T)        
 })
 
-####Riverplots using FY-LDA models.
-
-edges<-lapply(2:(length(models.fy)-1), function(x){
-    d<-dist(exp(models.fy[[x]][[2]]@beta), exp(models.fy[[(x+1)]][[2]]@beta), method="bhjattacharyya")
-    e<-dist2Table(d)
-    e$col<-paste0("FY",substr(names(models.fy)[x],3,4),"_",e$col)
-    e$row<-paste0("FY",substr(names(models.fy)[(x+1)],3,4),"_",e$row)
-    colnames(e)<-c("N1","N2","Value")
-    e
-})
-
-nodes<-do.call(rbind, lapply(seq_along(edges), function(x) {
-    n<-data.frame(ID=unique(edges[[x]]$N1), x=x, y=seq_along(unique(edges[[x]]$N1)))
-}))
-
-nodes<-rbind(nodes, data.frame(data.frame(ID=unique(edges[[6]]$N2), x=7, y=seq_along(unique(edges[[6]]$N2)))))
-
-edges<-do.call(rbind, edges)
-topEdges<-do.call(rbind, by(edges,edges$N1, function(x) head(x[order(x$Value),],n=3)))
-
-png(paste0(resultsPath, "/FY_LDA_modeldist_score_distr.png"), height=600, width=800, units="px")
-hist(edges$Value, breaks=1000)
-dev.off()
-
-edges<-edges[edges$Value<1.0,]
-
-# edges$Value<-edges$Value/1000
-
-palette<-paste0(brewer.pal(12, "Paired"), "80")
-styles<-lapply(nodes$y, function(n){
-    list(col=palette[ceiling(n/6)+1], lty=0, textcol="black")
-})
-names(styles)<-nodes$ID
-
-rp<-list(nodes=nodes, edges=edges, styles=styles)
-class(rp)<-c(class(rp), "riverplot")
-png(paste0(resultsPath,"/RiverPlot_",timeStamp(),".png"), height=2400, width=4800, units="px")
-par(cex.lab = 0.25)
-plot(rp, plot_area=0.95, yscale=0.06, srt=T)
-dev.off()
-
-rp1<-list(nodes=nodes, edges=topEdges, styles=styles)
-class(rp1)<-c(class(rp1), "riverplot")
-png(paste0(resultsPath,"/RiverPlot_top5edges_perNode",timeStamp(),".png"), height=1600, width=3500, units="px")
-par(cex.lab = 0.25)
-plot(rp1, plot_area=0.95, yscale=0.06, srt=T)
-dev.off()
