@@ -41,6 +41,7 @@ dtm<-t(t(as.matrix(dtm))[as.vector(apply(t(as.matrix(dtm)), 1, sum)>15),])
 
 docRemove<-which(rowSums(dtm)==0)
 dtm<-dtm[-docRemove,]
+rownames(dtm)<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
 
 seq.k<-c(25,50,100)
 
