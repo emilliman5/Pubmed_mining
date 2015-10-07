@@ -41,3 +41,13 @@ lapply(seq_along(pmids), function(x){
     }
 })
 
+x<-do.call(rbind, lapply(seq_along(pmids), function(x){
+    colSums(models[[2]]@gamma[which(models[[2]]@documents %in% meta(abstrCorpus)[pmids[[x]],1]),])
+}))
+
+png(paste0(resultsPath, "/Ones_grantees_topicsSum.png"), height=800, width=1400, units="px")
+par(lty=0,mar=c(15,4,2,1))
+barplot(x, las=3, 
+        names=apply(terms(models[[2]],3),2,function(z) paste(z,collapse=",")), 
+        col=palette(rainbow(18)),ylab="Sum Topic Probility" )
+dev.off()
