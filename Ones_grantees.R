@@ -1,4 +1,10 @@
 library(tm)
+library(topicmodels)
+library(reshape2)
+library(proxy)
+library(ape)
+library(igraph)
+library(gplots)
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
@@ -28,7 +34,9 @@ ones$V2<-substr(ones$V1, 5,12)
 pmids<-lapply(ones$V2, function(x) grep(x,meta(abstrCorpus)[,"GrantID"]))
 names(pmids)<-ones$V2
 
+png("~/Desktop/Ones_pub_number.png", height=800, width=1400, units="px")
 barplot(unlist(lapply(pmids, length)), names=names(pmids), las=3)
+dev.off()
 
 models[[2]]@gamma[1:5,1:5]
 lapply(seq_along(pmids), function(x){
@@ -46,8 +54,35 @@ x<-do.call(rbind, lapply(seq_along(pmids), function(x){
 }))
 
 png(paste0(resultsPath, "/Ones_grantees_topicsSum.png"), height=800, width=1400, units="px")
-par(lty=0,mar=c(15,4,2,1))
+par(mar=c(15,4,2,1))
 barplot(x, las=3, 
         names=apply(terms(models[[2]],3),2,function(z) paste(z,collapse=",")), 
         col=palette(rainbow(18)),ylab="Sum Topic Probility" )
+dev.off()
+
+rownames(x)<-ones$V2
+colnames(x)<-apply(terms(models[[2]],3),2, function(z) paste(z, collapse=","))
+
+x.dist<-dist(t(x), method="cosine")
+png(paste0(resultsPath, "/Ones_grantees_topicMap.png"), height=1600, width=1600, units="px")
+par(mar=c(15,15,15,15))
+heatmap.2(as.matrix(x.dist),lmat=matrix(c(4,2,3,1), nrow = 2), lhei=c(1,4.5), lwid=c(1,4), trace="none", mar=c(18,18), cexRow=1.25, cexCol=1.25, symkey=F)
+dev.off()
+
+edges<-melt(x)
+edges<-edges[edges$value>0.01,]
+nodes<-as.data.frame(c(unlist(lapply(pmids, length))/3, colSums(x)))
+colnames(nodes)<-"size"
+nodes$color<-"green"
+nodes[grep("ES",rownames(nodes)),]$color<-"red"
+nodes<-nodes[nodes$size>0,]
+
+g<-graph.data.frame(edges, directed=F)
+E(g)$width<-edges$value
+E(g)$Weight<-edges$value
+V(g)$size<-nodes$size
+V(g)$color<-nodes$color
+
+png(paste0(resultsPath, "/Ones_grantees_topicNetwork.png"), height=1600, width=1600, units="px")
+plot(g, layout=layout_with_fr)
 dev.off()
