@@ -55,6 +55,10 @@ if(file.exists("LDA_models_current.rda") & !model){
     lapply(models, function(x) write.csv2(t(terms(x, 10)), file=paste0("Top10WordsperTopic_for_",x@k,"Topics_model.txt")))
 }
 
+#models[[2]]@documents<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
+#rownames(models[[2]]@gamma)<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
+
+
 seq.k.fy<-c(25,50,100,250)
 fy<-levels(as.factor(meta(abstrCorpus)[,"FY"]))
 
