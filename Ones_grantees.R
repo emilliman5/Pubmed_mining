@@ -5,6 +5,7 @@ library(proxy)
 library(ape)
 library(igraph)
 library(gplots)
+library(rCharts)
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
@@ -34,6 +35,12 @@ ones$V2<-substr(ones$V1, 5,12)
 pmids<-lapply(ones$V2, function(x) grep(x,meta(abstrCorpus)[,"GrantID"]))
 names(pmids)<-ones$V2
 
+##this is a workaround until new models are made
+docRemove<-1377
+models[[2]]@documents<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
+rownames(models[[2]]@gamma)<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
+
+
 png("~/Desktop/Ones_pub_number.png", height=800, width=1400, units="px")
 barplot(unlist(lapply(pmids, length)), names=names(pmids), las=3)
 dev.off()
@@ -52,6 +59,9 @@ lapply(seq_along(pmids), function(x){
 x<-do.call(rbind, lapply(seq_along(pmids), function(x){
     colSums(models[[2]]@gamma[which(models[[2]]@documents %in% meta(abstrCorpus)[pmids[[x]],1]),])
 }))
+rownames(x)<-ones$V2
+colnames(x)<-apply(terms(models[[2]],3),2, function(z) paste(z, collapse=","))
+
 
 png(paste0(resultsPath, "/Ones_grantees_topicsSum.png"), height=800, width=1400, units="px")
 par(mar=c(15,4,2,1))
@@ -59,9 +69,6 @@ barplot(x, las=3,
         names=apply(terms(models[[2]],3),2,function(z) paste(z,collapse=",")), 
         col=palette(rainbow(18)),ylab="Sum Topic Probility" )
 dev.off()
-
-rownames(x)<-ones$V2
-colnames(x)<-apply(terms(models[[2]],3),2, function(z) paste(z, collapse=","))
 
 x.dist<-dist(t(x), method="cosine")
 png(paste0(resultsPath, "/Ones_grantees_topicMap.png"), height=1600, width=1600, units="px")
@@ -79,10 +86,30 @@ nodes<-nodes[nodes$size>0,]
 
 g<-graph.data.frame(edges, directed=F)
 E(g)$width<-edges$value
-E(g)$Weight<-edges$value
+E(g)$weight<-edges$value
 V(g)$size<-nodes$size
 V(g)$color<-nodes$color
 
 png(paste0(resultsPath, "/Ones_grantees_topicNetwork.png"), height=1600, width=1600, units="px")
 plot(g, layout=layout_with_fr)
 dev.off()
+
+edgelist<-get.data.frame(g)
+edgelist<-edgelist[,c("to","from","weight")]
+colnames(edgelist)<-c("source","target","value")
+edgelist[,"source"]<-as.character(edgelist[,"source"])
+edgelist[,"target"]<-as.character(edgelist[,"target"])
+
+sankeyPlot<-rCharts$new()
+sankeyPlot$setLib("./d3/rCharts_d3_sankey-gh-pages/")
+sankeyPlot$setTemplate(script="./d3/rCharts_d3_sankey-gh-pages/layouts/chart.html")
+sankeyPlot$set(
+    data=edgelist,
+    nodewidth=10,
+    nodePadding=10,
+    layout=32,
+    width=1200,
+    height=1200)
+
+sankeyPlot$print(chartId="sankey1")
+sankeyPlots
