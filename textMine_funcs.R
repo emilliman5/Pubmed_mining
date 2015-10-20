@@ -1,3 +1,5 @@
+library(tm)
+
 getDate<-function()
 {
   ## Purpose is to define a data in the format
