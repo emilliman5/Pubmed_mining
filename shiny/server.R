@@ -37,10 +37,15 @@ shinyServer(function(input,output) {
     output$text<-renderText({str(models)})
     output$wordcloud<-renderPlot({
      terms<-rowSums(as.matrix(tdm[currentIds(),]))
-     wordcloud(names(terms), freq=terms,max.words = 50, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order = F)
+     wordcloud(names(terms), freq=terms,max.words = input$slider, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order = F)
     })
     output$topics<-renderPlot(height=800, width=1400, {
         par(mar=c(20,8,5,2))
         barplot(colSums(models[[as.integer(input$topicK)]]@gamma[currentIds(),]), las=2,names.arg = topicNames(), col=rainbow(10), ylab="Sum of Topic Probability")
-    })
+        #gamma<-data.frame()
+        #p1<-nPlot(sum~topic, group="fy", data=gamma, type="multiBarChart")
+        #p1$addParams(dom="topics")
+        #return(p1)
+        
+        })
 })
