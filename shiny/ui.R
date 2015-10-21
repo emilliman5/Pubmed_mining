@@ -16,9 +16,13 @@ shinyUI(fluidPage(
                                                      "FY2011"=2011,"FY2012"=2012,
                                                      "FY2013"=2013,"FY2014"=2014,
                                                      "FY2015"=2015)),
-                     radioButtons("topicK",label = "Topic Model Selection",choices = list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,"250 Topics"=4,"500 Topics"=5,"1000 Topics"=6))
+                     radioButtons("topicK",label = "Topic Model Selection",choices = 
+                                      list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
+                                           "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6)),
+                     textInput("words",label = "Enter keywords here:")
                      ),
         mainPanel(
+            sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=75),
             plotOutput("wordcloud"),
             plotOutput("topics")
             ))
