@@ -32,20 +32,23 @@ load("../LDA_models_current.rda")
     
 shinyServer(function(input,output) {
     
-    currentIds<-reactive({which(meta(abstrCorpus)$FY %in% input$fy)})
-    topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})
-    output$text<-renderText({str(models)})
+    currentIds<-reactive({
+        lapply(input$fy, function(x)
+            which(meta(abstrCorpus)$FY == x))})
+    topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
     output$wordcloud<-renderPlot({
-     terms<-rowSums(as.matrix(tdm[currentIds(),]))
-     wordcloud(names(terms), freq=terms,max.words = input$slider, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order = F)
+        terms<-rowSums(as.matrix(tdm[,unlist(currentIds())]))
+        terms<-terms[order(terms, decreasing = T)]
+        wordcloud(names(terms), freq=terms,max.words = input$slider, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order = F)
     })
     output$topics<-renderPlot(height=800, width=1400, {
-        par(mar=c(20,8,5,2))
-        barplot(colSums(models[[as.integer(input$topicK)]]@gamma[currentIds(),]), las=2,names.arg = topicNames(), col=rainbow(10), ylab="Sum of Topic Probability")
-        #gamma<-data.frame()
-        #p1<-nPlot(sum~topic, group="fy", data=gamma, type="multiBarChart")
-        #p1$addParams(dom="topics")
-        #return(p1)
-        
+        #par(mar=c(20,8,5,2))
+        #barplot(colSums(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]), las=2,names.arg = topicNames(), col=rainbow(10), ylab="Sum of Topic Probability")
+        gamma<-data.frame(topic=topicNames(), 
+                          sum=unlist(lapply(currentIds(), 
+                                            function(x) colSums(models[[as.integer(input$topicK)]]@gamma[x,]) )), fy=rep(input$fy, each=models[[as.integer(input$topicK)]]@k))
+        p1<-nPlot(sum~topic, group="fy", data=gamma, type="multiBarChart")
+        p1$addParams(dom="topics")
+        return(p1) 
         })
 })
