@@ -13,3 +13,6 @@ d3/*
 shiny/data/*
 *tar.gz
 *.RData
+sankey/*
+data/*
+TopicModel_Keywords/*
