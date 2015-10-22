@@ -26,7 +26,8 @@ shinyUI(fluidPage(
             sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=25),
             plotOutput("wordcloud"),
             showOutput("topics", "Nvd3"),
-            tableOutput("assoc"),
-            sliderInput("corr",label=h3("Minimum Correlation for Term associations"), min=0, max=1, value=0.3)
+            forceNetworkOutput("network")
+#             tableOutput("assoc"),
+#             sliderInput("corr",label=h3("Minimum Correlation for Term associations"), min=0, max=1, value=0.3)
             ))
     ))

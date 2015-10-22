@@ -38,7 +38,15 @@ shinyServer(function(input,output) {
         p1$xAxis(rotateLabels=-45)
         return(p1) 
         })
-    output$assoc<-renderText({
-        findAssocs(tdm[,unlist(currentIds())], input$words, input$corr)
+#     output$assoc<-renderText({
+#         findAssocs(tdm[,unlist(currentIds())], input$words, input$corr)
+#        })
+    output$network<-renderForceNetwork({
+        gamma2<-dist(t(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]), method = "correlation")
+        edges<-melt(as.matrix(gamma2))
+        edges<-edges[edges$Var2>edges$Var1,]
+        colnames(edges)<-c("source","target","value")
+        nodes<-data.frame(name=unique(c(edges$source, edges$target)), size=colSums(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]))
+        forceNetwork(Links = edges, Nodes = nodes, Source = "source", Target = "target",Nodesize = "size", Value = "value", NodeID = "name", Group = "name")
     })
 })
