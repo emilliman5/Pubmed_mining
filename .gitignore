@@ -9,3 +9,7 @@ results/mallet/
 results/
 *.Rout
 TopicKeywords/
+d3/*
+shiny/data/*
+*tar.gz
+*.RData
