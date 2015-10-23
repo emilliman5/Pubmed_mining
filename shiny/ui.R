@@ -1,6 +1,7 @@
 library(shiny)
 library(rCharts)
-options(RCHART_LIB = 'polycharts')
+#library(networkD3)
+options(RCHART_LIB = 'nvd3')
 
 shinyUI(fluidPage(
     titlePanel("Kelly and Eric's super-awesome data mining adventure"),
@@ -25,8 +26,8 @@ shinyUI(fluidPage(
         mainPanel(
             sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=25),
             plotOutput("wordcloud"),
-            showOutput("topics", "Nvd3"),
-            forceNetworkOutput("network")
+            showOutput("topics", "nvd3")
+#            forceNetworkOutput("force")
 #             tableOutput("assoc"),
 #             sliderInput("corr",label=h3("Minimum Correlation for Term associations"), min=0, max=1, value=0.3)
             ))
