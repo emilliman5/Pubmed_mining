@@ -1,7 +1,7 @@
 library(tm)
 library(topicmodels)
 
-extraFunFile<-"textMine_funcs.R"
+extraFunFile<-"../textMine_funcs.R"
 if (file.exists(extraFunFile)) {
     source(extraFunFile, keep.source=TRUE);
 }
