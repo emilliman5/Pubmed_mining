@@ -1,5 +1,6 @@
 library(shiny)
 library(rCharts)
+library(visNetwork)
 #library(networkD3)
 options(RCHART_LIB = 'nvd3')
 
@@ -26,8 +27,9 @@ shinyUI(fluidPage(
         mainPanel(
             sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=25),
             plotOutput("wordcloud"),
-            showOutput("topics", "nvd3")
-#            forceNetworkOutput("force")
+            showOutput("topics", "nvd3"),
+            visNetworkOutput("force"),
+            sliderInput("dist",label=h3("Distance Measure Threshold"),min=0, max=1, value=0.5)
 #             tableOutput("assoc"),
 #             sliderInput("corr",label=h3("Minimum Correlation for Term associations"), min=0, max=1, value=0.3)
             ))

@@ -3,7 +3,7 @@ library(reshape2)
 library(RColorBrewer)
 library(rCharts)
 library(wordcloud)
-#library(networkD3)
+library(visNetwork)
 library(proxy)
 library(htmlwidgets)
 
@@ -39,14 +39,21 @@ shinyServer(function(input,output) {
     output$assoc<-renderText({
         findAssocs(tdm[,unlist(currentIds())], input$words, input$corr)
        })
-#     output$force<-renderForceNetwork({
-#         gamma2<-dist(t(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]), method = "correlation")
-#         edges<-melt(as.matrix(gamma2))
-#         edges<-edges[edges$Var2>edges$Var1,]
-#         colnames(edges)<-c("source","target","value")
-#         nodes<-data.frame(name=unique(c(edges$source, edges$target)), size=colSums(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]))
-#         forceNetwork(Links = edges, Nodes = nodes, Source = "source", 
-#                      Target = "target",Nodesize = "size", Value = "value", 
-#                      NodeID = "name", Group = "name", opacity=0.8)
-#     })
+    
+    nodes<-reactive({
+      nodes<-data.frame(id=seq(models[[as.integer(input$topicK)]]@k), group=1, size=colSums(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]))
+      nodes<-nodes[order(nodes$id),]
+      nodes$label<-topicNames()
+      })
+    
+    edges<-reactive({
+      edges<-melt(as.matrix(gamma2))
+      edges<-edges[edges$Var2>edges$Var1,]
+      colnames(edges)<-c("to","from","width")
+      edges$length<-100
+      edges[edges$value>quantile(edges$value,input$dist),]
+    })
+    output$force<-renderVisNetwork({
+        visNetwork(nodes = nodes(), edges = edges(), width="100%")
+    })
 })
