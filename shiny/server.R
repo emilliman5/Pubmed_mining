@@ -8,8 +8,6 @@ library(proxy)
 library(htmlwidgets)
 
 #sankey<-function(){}
-
-#network<-function(){}
     
 shinyServer(function(input,output) {
     
@@ -24,8 +22,6 @@ shinyServer(function(input,output) {
         wordcloud(names(terms), freq=terms,max.words = input$slider, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order = F)
     })
     output$topics<-renderChart({
-        #par(mar=c(20,8,5,2))
-        #barplot(colSums(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]), las=2,names.arg = topicNames(), col=rainbow(10), ylab="Sum of Topic Probability")
         gamma<-data.frame(topic=rep(topicNames(),length(input$fy)), 
                           sum=unlist(lapply(currentIds(), 
                                             function(x) colSums(models[[as.integer(input$topicK)]]@gamma[x,]) )), 
@@ -41,19 +37,34 @@ shinyServer(function(input,output) {
        })
     
     nodes<-reactive({
-      nodes<-data.frame(id=seq(models[[as.integer(input$topicK)]]@k), group=1, size=colSums(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]))
-      nodes<-nodes[order(nodes$id),]
-      nodes$label<-topicNames()
+      nodes<-data.frame(id=seq(models[[as.integer(input$topicK)]]@k), group=rep(1, models[[as.integer(input$topicK)]]@k), 
+                        value=as.integer(cut(colSums(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]),5)), label=topicNames())
       })
     
     edges<-reactive({
+      gamma2<-dist(t(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]), method = "cosine")
       edges<-melt(as.matrix(gamma2))
       edges<-edges[edges$Var2>edges$Var1,]
-      colnames(edges)<-c("to","from","width")
-      edges$length<-100
-      edges[edges$value>quantile(edges$value,input$dist),]
+      colnames(edges)<-c("to","from","value")
+      edges$length<-50
+      edges[edges$value<quantile(edges$value,input$dist),]
     })
     output$force<-renderVisNetwork({
-        visNetwork(nodes = nodes(), edges = edges(), width="100%")
+        visNetwork(nodes = nodes(), edges = edges()) %>% visOptions(highlightNearest = TRUE)
+    })
+    output$sankey<-renderChart({
+      sankeyPlot<-rCharts$new()
+      sankeyPlot$setLib("./d3/rCharts_d3_sankey-gh-pages/")
+      sankeyPlot$setTemplate(script="./d3/rCharts_d3_sankey-gh-pages/layouts/chart.html")
+      sankeyPlot$set(
+        data=edgelist,
+        nodewidth=10,
+        nodePadding=10,
+        layout=32,
+        width=1200,
+        height=1200)
+      
+      sankeyPlot$print(chartId="sankey1")
+      sankeyPlots
     })
 })
