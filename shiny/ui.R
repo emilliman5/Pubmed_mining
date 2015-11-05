@@ -29,7 +29,7 @@ shinyUI(fluidPage(
             plotOutput("wordcloud"),
             showOutput("topics", "nvd3"),
             visNetworkOutput("force"),
-            sliderInput("dist",label=h3("Distance Measure Threshold"),min=0, max=1, value=0.5)
+            sliderInput("dist",label=h3("Distance Measure Threshold"),min=0, max=1, value=0.25)
 #             tableOutput("assoc"),
 #             sliderInput("corr",label=h3("Minimum Correlation for Term associations"), min=0, max=1, value=0.3)
             ))
