@@ -29,7 +29,11 @@ shinyServer(function(input,output) {
         p1<-nPlot(sum~topic, group="fy", data=gamma, type="multiBarChart")
         p1$addParams(dom="topics")
         p1$chart(reduceXTicks = FALSE)
+        p1$yAxis(axisLabel="Sum of Topic Proportion across Corpus")
         p1$xAxis(rotateLabels=-45)
+        p1$chart(margin=list(bottom=200))
+        p1$params$height<-600
+        p1$params$width<-1200
         return(p1) 
         })
     output$assoc<-renderText({

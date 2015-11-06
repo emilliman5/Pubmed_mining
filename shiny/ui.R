@@ -28,8 +28,8 @@ shinyUI(fluidPage(
             sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=25),
             plotOutput("wordcloud"),
             showOutput("topics", "nvd3"),
-            visNetworkOutput("force"),
-            sliderInput("dist",label=h3("Distance Measure Threshold"),min=0, max=1, value=0.25)
+            sliderInput("dist",label=h3("Distance Measure Threshold"),min=0, max=1, value=0.15),
+            visNetworkOutput("force",height="800px")
 #             tableOutput("assoc"),
 #             sliderInput("corr",label=h3("Minimum Correlation for Term associations"), min=0, max=1, value=0.3)
             ))
