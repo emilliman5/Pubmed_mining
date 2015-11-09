@@ -20,18 +20,18 @@ shinyServer(function(input,output) {
             which(meta(abstrCorpus)$FY == x))
     })
     
-    fileParse<-reactive({
-      
-      inFile <- input$file
-      if (is.null(inFile))
-        return(NULL)
-      f<-scan(inFile$datapath, header=F)
-      if (f[1]=="\d+"){
-        ids<-list("Type"="PMID",ids=f)
-      } else{
-        ids<-list("Type"="GrantID",ids=f)
-        }
-      })
+#     ids<-reactive({
+#       
+#       inFile <- input$file
+#       if (is.null(inFile))
+#         return(NULL)
+#       f<-scan(inFile$datapath, header=F)
+#       if (f[1]=="\d+"){
+#         ids<-list("Type"="PMID",ids=f)
+#       } else{
+#         ids<-list("Type"="GrantID",ids=f)
+#         }
+#       })
     
     topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
     words<-reactive({unlist(strsplit(input$words, "\\s|,|;|\\t"))})
