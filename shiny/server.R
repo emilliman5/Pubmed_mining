@@ -8,12 +8,31 @@ library(proxy)
 library(htmlwidgets)
 
 #sankey<-function(){}
-    
+
+createLink <- function(val) {
+  sprintf('<a href="http://www.ncbi.nlm.nih.gov/pubmed/%s" target="_blank">%s</a>',val, val)
+}
+
 shinyServer(function(input,output) {
     
     currentIds<-reactive({
         lapply(input$fy, function(x)
-            which(meta(abstrCorpus)$FY == x))})
+            which(meta(abstrCorpus)$FY == x))
+    })
+    
+    fileParse<-reactive({
+      
+      inFile <- input$file
+      if (is.null(inFile))
+        return(NULL)
+      f<-scan(inFile$datapath, header=F)
+      if (f[1]=="\d+"){
+        ids<-list("Type"="PMID",ids=f)
+      } else{
+        ids<-list("Type"="GrantID",ids=f)
+        }
+      })
+    
     topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
     words<-reactive({unlist(strsplit(input$words, "\\s|,|;|\\t"))})
     output$wordcloud<-renderPlot({
@@ -56,6 +75,12 @@ shinyServer(function(input,output) {
     output$force<-renderVisNetwork({
         visNetwork(nodes = nodes(), edges = edges()) %>% visOptions(highlightNearest = TRUE)
     })
+    
+    output$papers<-renderDataTable({
+      df<-meta(abstrCorpus)[unlist(currentIds()),]
+      df$PMID<-createLink(df$PMID)
+      df
+    }, escape=FALSE)
     output$sankey<-renderChart({
       sankeyPlot<-rCharts$new()
       sankeyPlot$setLib("./d3/rCharts_d3_sankey-gh-pages/")
