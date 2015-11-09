@@ -25,12 +25,18 @@ shinyUI(fluidPage(
                      textInput("words",label = "Enter keywords here:",value = "")
                      ),
         mainPanel(
-            sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=25),
-            plotOutput("wordcloud"),
-            showOutput("topics", "nvd3"),
-            sliderInput("dist",label=h3("Distance Measure Threshold"),min=0, max=1, value=0.15),
-            visNetworkOutput("force",height="800px")
+          tabsetPanel(
+            tabPanel("plots",
+              sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=25),
+              plotOutput("wordcloud"),
+              showOutput("topics", "nvd3"),
+              sliderInput("dist",label=h3("Distance Measure Threshold"),min=0, max=1, value=0.15),
+              visNetworkOutput("force",height="800px")),
+            tabPanel("pubs",
+                     dataTableOutput("papers")
+            )
 #             tableOutput("assoc"),
-#             sliderInput("corr",label=h3("Minimum Correlation for Term associations"), min=0, max=1, value=0.3)
-            ))
+#             sliderInput("corr",label=h3("Minimum Correlation for Term associations"), min=0, max=1, value=0.3))
+          )            
+))
     ))
