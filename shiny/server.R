@@ -16,22 +16,26 @@ createLink <- function(val) {
 shinyServer(function(input,output) {
     
     currentIds<-reactive({
+        if(sum(input$fy=="ALL")){
+            1:length(meta(abstrCorpus)$FY)
+        }else{
         lapply(input$fy, function(x)
             which(meta(abstrCorpus)$FY == x))
+        }
     })
     
-#     ids<-reactive({
-#       
-#       inFile <- input$file
-#       if (is.null(inFile))
-#         return(NULL)
-#       f<-scan(inFile$datapath, header=F)
-#       if (f[1]=="\d+"){
-#         ids<-list("Type"="PMID",ids=f)
-#       } else{
-#         ids<-list("Type"="GrantID",ids=f)
-#         }
-#       })
+    Ids<-reactive({
+        inFile <- input$file
+        if (is.null(inFile))
+            return(NULL)
+        ids<-scan(inFile$datapath)
+        field<-"PMID"
+        if(grep("ES",ids[1])>0){
+            field<-"GRANT"
+        }
+        unlist(lapply(ids, function(x)
+            which(meta[,field] == x)))
+    })
     
     topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
     words<-reactive({unlist(strsplit(input$words, "\\s|,|;|\\t"))})
