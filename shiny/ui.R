@@ -15,7 +15,7 @@ shinyUI(fluidPage(
                      fileInput("file",label=h3("File Upload"),accept="txt"),
                      checkboxGroupInput("fy",selected = 2010,
                                         label=h3("Fiscal Years"),
-                                        choices=list("ALL"=c(2009,2010,2011,2012,2013,2014,2015),"FY2009"=2009, "FY2010"=2010,
+                                        choices=list("ALL"="ALL","FY2009"=2009, "FY2010"=2010,
                                                      "FY2011"=2011,"FY2012"=2012,
                                                      "FY2013"=2013,"FY2014"=2014,
                                                      "FY2015"=2015)),
