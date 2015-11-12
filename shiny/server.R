@@ -25,16 +25,14 @@ shinyServer(function(input,output) {
     })
     
     Ids<-reactive({
-        inFile <- input$file
-        if (is.null(inFile))
-            return(NULL)
-        ids<-scan(inFile$datapath)
+      ids<-unlist(strsplit(input$ids, "\\s|,|:|;"))
+      if(length(grep("ES",ids))>0){
+        field<-"GRANT"
+      }else{
         field<-"PMID"
-        if(grep("ES",ids[1])>0){
-            field<-"GRANT"
-        }
-        unlist(lapply(ids, function(x)
-            which(meta[,field] == x)))
+      }
+      unlist(lapply(ids, function(x)
+        which(meta[,field] == x)))
     })
     
     topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
