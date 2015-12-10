@@ -23,6 +23,7 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
   pmid<-do.call("rbind", xpathApply(top, "//PubmedArticle/MedlineCitation/PMID", function(node)
       xmlValue(node)))
   
+  journal<-xmlSApply(getNodeSet(top,"//Article/Journal/ISSN"), xmlValue)
   grantNodes<-getNodeSet(top, "//GrantList")
   grantID<-xmlSApply(grantNodes, function(x) xmlSApply(x, function(y)
       xmlValue(y[['GrantID']])))
@@ -35,7 +36,7 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
     data.frame("Title"=title, "Abstract"=abstr, stringsAsFactors=F)
   } ))
   
-  abstr.df<-cbind(as.data.frame(pmid),as.data.frame(grantID),pubdate.df, abstr.df)
+  abstr.df<-cbind(as.data.frame(pmid),as.data.frame(grantID),pubdate.df,journal, abstr.df)
   abstr.df[,"pubdate.df"]<-as.Date(abstr.df[,"pubdate.df"], format = "%Y-%m-%d")
   colnames(abstr.df)[1:2]<-c("PMID","GrantID")
   abstrCorpus<-Corpus(DataframeSource(abstr.df[,c("Title","Abstract")]))
@@ -58,6 +59,8 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
   meta(abstrCorpus, "Date")<-abstr.df[,"pubdate.df"]
   meta(abstrCorpus, "FY.Q")<-quarter(abstr.df[,"pubdate.df"]+90, with_year=T)
   meta(abstrCorpus, "FY")<-floor(meta(abstrCorpus)[,"FY.Q"])
+  meta(abstrCorpus, "Journal")<-abstr.df[,"journal"]
+  meta(abstrCorpus, "Title")<-abstr.df[,"Title"]
   names(abstrCorpus)<-abstr.df[,"PMID"]
   dir.create("Corpus")
   writeCorpus(abstrCorpus,"Corpus/")
