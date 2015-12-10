@@ -24,8 +24,8 @@ dir.create(resultsPath)
 
 ##load Corpus.
 abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
-metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
-for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
+metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','character','Date','numeric','integer','character', 'factor'))
+for (x in colnames(metaData)) {
     meta(abstrCorpus, x)<-metaData[,x]
 }
 
