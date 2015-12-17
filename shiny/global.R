@@ -8,7 +8,7 @@ if (file.exists(extraFunFile)) {
 
 abstrCorpus<-Corpus(DirSource("data/Corpus/"), readerControl = list(language="english"))
 metaData<-read.csv("data/CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
-for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
+for (x in colnames(metaData)) {
     meta(abstrCorpus, x)<-metaData[,x]
 }
 rm(metaData)
