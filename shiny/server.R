@@ -16,7 +16,7 @@ createLink <- function(val) {
 shinyServer(function(input,output) {
     
     currentIds<-reactive({
-        if(sum(input$fy=="ALL")){
+        if(input$fy %in% "ALL"){
             1:length(meta(abstrCorpus)$FY)
         }else{
         lapply(input$fy, function(x)
