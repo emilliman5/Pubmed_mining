@@ -31,28 +31,28 @@ shinyServer(function(input,output) {
         }
     })
     
-    fileIDs<-reactive({
+    currentIds<-reactive({
         inFile<-input$file
-        ids<-1:length(abstrCorpus)
+        ids<-fyIDs()
         if(is.null(inFile)){
             return(ids)
         }else{
         x<-read.table(inFile$datapath, header=F,)
         if(grepl("ES", x[1,])){
-            ids<-unlist(lapply(x[,1], function(x)
-                which(meta(abstrCorpus)[,"GrantID"] == x))) 
+            ids<-lapply(x[,1], function(x)
+                which(meta(abstrCorpus)[unlist(ids),"GrantID"] == x)) 
         } else{
-            ids<-unlist(lapply(x[,1], function(x)
-                which(meta(abstrCorpus)[,"PMID"] == x))) 
+            ids<-lapply(x[,1], function(x)
+                which(meta(abstrCorpus)[unlist(ids),"PMID"] == x)) 
             }
         }
         ids
     })
-    currentIds<-reactive({
-        fyid<-fyIDs()
-        grantIds<-fileIDs()        
-        fyid[fyid %in% grantIds]
-    })
+#     currentIds<-reactive({
+#         fyid<-fyIDs()
+#         grantIds<-fileIDs()        
+#         fyid[fyid %in% grantIds]
+#     })
     
     topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
     words<-reactive({unlist(strsplit(input$words, "\\s|,|;|\\t"))})
