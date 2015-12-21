@@ -15,8 +15,15 @@ createLink <- function(val) {
 
 shinyServer(function(input,output) {
     
-    currentIds<-reactive({
-        if(input$fy %in% "ALL"){
+    fys<-reactive({
+        if("ALL" %in% input$fy){
+            c(2008,2009,2010,2011,2012,2013,2014,2015)   
+        } else{
+            input$fy
+        }
+    })
+    fyIDs<-reactive({
+        if("ALL" %in% input$fy){
             1:length(meta(abstrCorpus)$FY)
         }else{
         lapply(input$fy, function(x)
@@ -24,29 +31,43 @@ shinyServer(function(input,output) {
         }
     })
     
-    Ids<-reactive({
-      ids<-unlist(strsplit(input$ids, "\\s|,|:|;"))
-      if(length(grep("ES",ids))>0){
-        field<-"GRANT"
-      }else{
-        field<-"PMID"
-      }
-      unlist(lapply(ids, function(x)
-        which(meta[,field] == x)))
+    fileIDs<-reactive({
+        inFile<-input$file
+        ids<-1:length(abstrCorpus)
+        if(is.null(inFile)){
+            return(ids)
+        }else{
+        x<-read.table(inFile$datapath, header=F,)
+        if(grepl("ES", x[1,])){
+            ids<-unlist(lapply(x[,1], function(x)
+                which(meta(abstrCorpus)[,"GrantID"] == x))) 
+        } else{
+            ids<-unlist(lapply(x[,1], function(x)
+                which(meta(abstrCorpus)[,"PMID"] == x))) 
+            }
+        }
+        ids
+    })
+    currentIds<-reactive({
+        fyid<-fyIDs()
+        grantIds<-fileIDs()        
+        fyid[fyid %in% grantIds]
     })
     
     topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
     words<-reactive({unlist(strsplit(input$words, "\\s|,|;|\\t"))})
+    
     output$wordcloud<-renderPlot({
         terms<-rowSums(as.matrix(tdm[,unlist(currentIds())]))
         terms<-terms[order(terms, decreasing = T)]
         wordcloud(names(terms), freq=terms,max.words = input$slider, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order = F)
     })
+    
     output$topics<-renderChart({
-        gamma<-data.frame(topic=rep(topicNames(),length(input$fy)), 
+        gamma<-data.frame(topic=rep(topicNames(),length(fys())), 
                           sum=unlist(lapply(currentIds(), 
                                             function(x) colSums(models[[as.integer(input$topicK)]]@gamma[x,]) )), 
-                          fy=rep(input$fy, each=models[[as.integer(input$topicK)]]@k))
+                          fy=rep(fys(), each=models[[as.integer(input$topicK)]]@k))
         p1<-nPlot(sum~topic, group="fy", data=gamma, type="multiBarChart")
         p1$addParams(dom="topics")
         p1$chart(reduceXTicks = FALSE)
@@ -57,9 +78,10 @@ shinyServer(function(input,output) {
         p1$params$width<-1200
         return(p1) 
         })
-    output$assoc<-renderText({
-        findAssocs(tdm[,unlist(currentIds())], input$words, input$corr)
-       })
+    
+#     output$assoc<-renderText({
+#         findAssocs(tdm[,unlist(currentIds())], input$words, input$corr)
+#        })
     
     nodes<-reactive({
       nodes<-data.frame(id=seq(models[[as.integer(input$topicK)]]@k), group=rep(1, models[[as.integer(input$topicK)]]@k), 
@@ -83,19 +105,19 @@ shinyServer(function(input,output) {
       df$PMID<-createLink(df$PMID)
       df
     }, escape=FALSE)
-    output$sankey<-renderChart({
-      sankeyPlot<-rCharts$new()
-      sankeyPlot$setLib("./d3/rCharts_d3_sankey-gh-pages/")
-      sankeyPlot$setTemplate(script="./d3/rCharts_d3_sankey-gh-pages/layouts/chart.html")
-      sankeyPlot$set(
-        data=edgelist,
-        nodewidth=10,
-        nodePadding=10,
-        layout=32,
-        width=1200,
-        height=1200)
-      
-      sankeyPlot$print(chartId="sankey1")
-      sankeyPlots
-    })
+#     output$sankey<-renderChart({
+#       sankeyPlot<-rCharts$new()
+#       sankeyPlot$setLib("./d3/rCharts_d3_sankey-gh-pages/")
+#       sankeyPlot$setTemplate(script="./d3/rCharts_d3_sankey-gh-pages/layouts/chart.html")
+#       sankeyPlot$set(
+#         data=edgelist,
+#         nodewidth=10,
+#         nodePadding=10,
+#         layout=32,
+#         width=1200,
+#         height=1200)
+#       
+#       sankeyPlot$print(chartId="sankey1")
+#       sankeyPlots
+#     })
 })
