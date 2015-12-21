@@ -30,7 +30,7 @@ shinyUI(fluidPage(
               sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=25),
               plotOutput("wordcloud"),
               showOutput("topics", "nvd3"),
-              sliderInput("dist",label=h3("Distance Measure Threshold"),min=0, max=1, value=0.15),
+              sliderInput("dist",label=h3("Distance Measure Threshold"),min=0, max=0.5, value=0.15),
               visNetworkOutput("force",height="800px")),
             tabPanel("pubs",
                      dataTableOutput("papers")
