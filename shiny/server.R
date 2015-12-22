@@ -57,7 +57,7 @@ shinyServer(function(input,output) {
 #     })
     
     topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
-    words<-reactive({unlist(strsplit(input$words, "\\s|,|;|\\t"))})
+    words<-reactive({unlist(strsplit(input$words, "\\s|,|;|:|\\t"))})
     
     output$wordcloud<-renderPlot({
         terms<-rowSums(as.matrix(tdm[,unlist(currentIds())]))
@@ -81,9 +81,10 @@ shinyServer(function(input,output) {
         return(p1) 
         })
     
-#     output$assoc<-renderText({
-#         findAssocs(tdm[,unlist(currentIds())], input$words, input$corr)
-#        })
+    output$assoc<-renderDataTable({
+        assoc<-findAssocs(tdm, words(), input$corr)
+        do.call(rbind, lapply(1:length(assoc), function(x) data.frame(Source=words()[x], Target=names(assoc[[x]]), Correlation=assoc[[x]])))
+       }, escape=F)
     
     nodes<-reactive({
       nodes<-data.frame(id=seq(models[[as.integer(input$topicK)]]@k), group=rep(1, models[[as.integer(input$topicK)]]@k), 
@@ -107,6 +108,8 @@ shinyServer(function(input,output) {
       df$PMID<-createLink(df$PMID)
       df
     }, escape=FALSE)
+    
+    
 #     output$sankey<-renderChart({
 #       sankeyPlot<-rCharts$new()
 #       sankeyPlot$setLib("./d3/rCharts_d3_sankey-gh-pages/")
