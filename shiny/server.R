@@ -57,7 +57,9 @@ shinyServer(function(input,output) {
 #     })
     
     topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
-    words<-reactive({tolower(unlist(strsplit(input$words, "\\s|,|;|:|\\t")))})
+    words<-reactive({terms<-tolower(unlist(strsplit(input$words, "\\s|,|;|:|\\t")))
+                     terms[unlist(lapply(terms, function(x) models[[as.integer(input$K)]]@terms == x))]
+                    })
     
     output$wordcloud<-renderPlot({
         terms<-rowSums(as.matrix(tdm[,unlist(currentIds())]))
@@ -83,8 +85,10 @@ shinyServer(function(input,output) {
     
     output$assoc<-renderDataTable({
         assoc<-findAssocs(tdm, words(), input$corr)
-        assoc[unlist(lapply(assoc, function(x) length(x)>0))]
-        do.call(rbind, lapply(1:length(assoc), function(x) data.frame(Source=words()[x], Target=names(assoc[[x]]), Correlation=assoc[[x]])))
+        l<-unlist(lapply(assoc, function(x) length(x)>0))
+        word<-words()[l]
+        assoc<-assoc[l]
+        do.call(rbind, lapply(word, function(x) data.frame(Source=x, Target=names(assoc[[x]]), Correlation=assoc[[x]])))
        }, escape=F)
     
     output$keywordTopic <-renderChart({
@@ -102,9 +106,7 @@ shinyServer(function(input,output) {
         p1$params$width<-1200
         return(p1) 
     })
-    
-    
-    
+       
     nodes<-reactive({
       nodes<-data.frame(id=seq(models[[as.integer(input$topicK)]]@k), group=rep(1, models[[as.integer(input$topicK)]]@k), 
                         value=as.integer(cut(colSums(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]),5)), label=topicNames())
