@@ -17,36 +17,38 @@ shinyServer(function(input,output) {
     
     fys<-reactive({
         if("ALL" %in% input$fy){
-            c(2008,2009,2010,2011,2012,2013,2014,2015)   
+            x<-c(2008,2009,2010,2011,2012,2013,2014,2015)   
         } else{
-            input$fy
+            x<-input$fy
         }
+        x
     })
-    fyIDs<-reactive({
+    currentIds<-reactive({
         if("ALL" %in% input$fy){
-            1:length(meta(abstrCorpus)$FY)
+            lapply(fys(), function(x)
+                which(meta(abstrCorpus)[fileIds(),"FY"] == x))
         }else{
-        lapply(input$fy, function(x)
-            which(meta(abstrCorpus)$FY == x))
+            lapply(fys(), function(x)
+                which(meta(abstrCorpus)[fileIds(),"FY"] == x))
         }
     })
     
-    currentIds<-reactive({
+    fileIds<-reactive({
         inFile<-input$file
-        ids<-fyIDs()
+        ids<-1:length(abstrCorpus)
         if(is.null(inFile)){
             return(ids)
-        }else{
-        x<-read.table(inFile$datapath, header=F,)
+        } else {
+        x<-read.table(inFile$datapath, header=F)
         if(grepl("ES", x[1,])){
             ids<-lapply(x[,1], function(x)
-                which(meta(abstrCorpus)[unlist(ids),"GrantID"] == x)) 
+               grep(x, meta(abstrCorpus)[,"GrantID"])) 
         } else{
             ids<-lapply(x[,1], function(x)
-                which(meta(abstrCorpus)[unlist(ids),"PMID"] == x)) 
+                which(meta(abstrCorpus)[,"PMID"] == x)) 
             }
         }
-        ids
+        unlist(ids)
     })
 #     currentIds<-reactive({
 #         fyid<-fyIDs()
