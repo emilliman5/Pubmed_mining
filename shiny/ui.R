@@ -36,6 +36,7 @@ shinyUI(fluidPage(
                      dataTableOutput("papers")
             ),
             tabPanel("Word Assoc",
+                showOutput("keywordTopic","nvd3"),
                 sliderInput("corr",label=h3("Minimum Correlation for Term associations"), 
                             min=0, max=1, value=0.3),
                 dataTableOutput("assoc")
