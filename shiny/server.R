@@ -57,8 +57,8 @@ shinyServer(function(input,output) {
 #     })
     
     topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
-    words<-reactive({terms<-tolower(unlist(strsplit(input$words, "\\s|,|;|:|\\t")))
-                     terms[terms %in% models[[as.integer(input$topicK)]]@terms]
+    words<-reactive({keyword<-tolower(unlist(strsplit(input$words, "\\s|,|;|:|\\t")))
+                     keyword[keyword %in% models[[as.integer(input$topicK)]]@terms]
                     })
     
     output$wordcloud<-renderPlot({
