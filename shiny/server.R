@@ -57,7 +57,7 @@ shinyServer(function(input,output) {
 #     })
     
     topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
-    words<-reactive({unlist(strsplit(input$words, "\\s|,|;|:|\\t"))})
+    words<-reactive({tolower(unlist(strsplit(input$words, "\\s|,|;|:|\\t")))})
     
     output$wordcloud<-renderPlot({
         terms<-rowSums(as.matrix(tdm[,unlist(currentIds())]))
@@ -85,6 +85,24 @@ shinyServer(function(input,output) {
         assoc<-findAssocs(tdm, words(), input$corr)
         do.call(rbind, lapply(1:length(assoc), function(x) data.frame(Source=words()[x], Target=names(assoc[[x]]), Correlation=assoc[[x]])))
        }, escape=F)
+    
+    output$keywordTopic <-renderChart({
+        betad<-data.frame(topic=rep(topicNames(),length(words())), 
+                          beta=unlist(lapply(words(), 
+                                            function(x) models[[as.integer(input$topicK)]]@beta[,models[[as.integer(input$topicK)]]@terms==x])), 
+                          Term=rep(words(), each=models[[as.integer(input$topicK)]]@k))
+        p1<-nPlot(beta~topic, group="Term", data=betad, type="multiBarChart")
+        p1$addParams(dom="keywordTopic")
+        p1$chart(reduceXTicks = FALSE)
+        p1$yAxis(axisLabel="Beta weight of term per Topic")
+        p1$xAxis(rotateLabels=-45)
+        p1$chart(margin=list(bottom=200))
+        p1$params$height<-600
+        p1$params$width<-1200
+        return(p1) 
+    })
+    
+    
     
     nodes<-reactive({
       nodes<-data.frame(id=seq(models[[as.integer(input$topicK)]]@k), group=rep(1, models[[as.integer(input$topicK)]]@k), 
