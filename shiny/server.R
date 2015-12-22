@@ -83,6 +83,7 @@ shinyServer(function(input,output) {
     
     output$assoc<-renderDataTable({
         assoc<-findAssocs(tdm, words(), input$corr)
+        assoc[unlist(lapply(assoc, function(x) length(x)>0))]
         do.call(rbind, lapply(1:length(assoc), function(x) data.frame(Source=words()[x], Target=names(assoc[[x]]), Correlation=assoc[[x]])))
        }, escape=F)
     
