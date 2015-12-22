@@ -36,9 +36,6 @@ shinyUI(fluidPage(
                      dataTableOutput("papers")
             ),
             tabPanel("Word Assoc",
-                     radioButtons("K",inline=TRUE, selected = 2,label = "Topic Model Selection",choices = 
-                                      list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
-                                           "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6)),
                 showOutput("keywordTopic","nvd3"),
                 sliderInput("corr",label=h3("Minimum Correlation for Term associations"), 
                             min=0, max=1, value=0.3),
