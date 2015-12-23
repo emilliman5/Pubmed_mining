@@ -9,8 +9,8 @@ library(htmlwidgets)
 
 #sankey<-function(){}
 
-createLink <- function(val) {
-  sprintf('<a href="http://www.ncbi.nlm.nih.gov/pubmed/%s" target="_blank">%s</a>',val, val)
+createLink <- function(url, val) {
+  sprintf('<a href="%s%s" target="_blank">%s</a>',url, val, val)
 }
 
 getTopicNames<-function(K){ apply(terms(models[[as.integer(K)]],4),2,
@@ -136,11 +136,15 @@ shinyServer(function(input,output) {
     
     output$papers<-renderDataTable({
       df<-meta(abstrCorpus)[unlist(currentIds()),]
-      df$PMID<-createLink(df$PMID)
+      df$PMID<-createLink("http://www.ncbi.nlm.nih.gov/pubmed/",df$PMID)
+      df$Journal<-createLink("http://www.issn.cc/",df$Journal)
       df
     }, escape=FALSE)
     
-    
+#     output$dendroarc<-renderPlot({
+#         
+#         
+#     })
 #     output$sankey<-renderChart({
 #       sankeyPlot<-rCharts$new()
 #       sankeyPlot$setLib("./d3/rCharts_d3_sankey-gh-pages/")
