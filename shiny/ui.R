@@ -10,9 +10,10 @@ shinyUI(fluidPage(
     sidebarLayout(
         sidebarPanel(h1("Navigation"),
                      p("This will be a place to select your dataset, whether it 
-                       be by FY, date range, Topic assignment, PMID, Grant ID, 
+                       be by FY, date range, Topic assignment, PMID, Grant ID, or 
                        Journal"),
-                     fileInput("file",label=h3("File Upload"),accept="txt"),
+                     h3("File Upload:"),
+                     fileInput("file",label="You can uplod a file of PMIDs or Grant IDs (but not both) for searching the Corpus. Grant IDs need to be in the form of ES######. There should only be one ID per line. Plain text files only, no *.docx, *.xlsx, etc.",accept="txt"),
                      checkboxGroupInput("fy",selected = 2010,
                                         label=h3("Fiscal Years"),
                                         choices=list("ALL"="ALL","FY2009"=2009, "FY2010"=2010,
@@ -25,17 +26,38 @@ shinyUI(fluidPage(
                      textInput("words",label = "Enter keywords here:",value = "")
                      ),
         mainPanel(
+            #img(src="christmas.jpeg",align="center"),
           tabsetPanel(
-            tabPanel("plots",
+            tabPanel("About",
+                    h2("About"),
+                    h3("This site aims to provide access to Kelly and Eric's 
+                      super-awesome text mining adventure. This page will 
+                      contain a description of methods and the data."),
+                    h3("Please be gentle with the site. There is a lot of data behind the scenes that
+                       needs to be operated on when parameters are changed. I suggest
+                       not trying to viusalize all the data (do not select \"ALL\") without first 
+                       restricting the data by grant or PMIDs. I am a biologist that masquerades as 
+                       a programmer, which means my code works but is not necessarily efficient."),
+                    h2("The Corpus"),
+                    p("Publications were reteived from Pubmed (accessed on:2015-10-02) using their
+                      advanced search. Publications with a grant ID beginning with \"ES\" and published 
+                      between 2008-10-01 and 2015-09-30 were downloaded in XML format."),
+                    br(),
+                    p("Publication titles and abstracts were combined to create the body of text to be mined. Before mining "),
+                    plotOutput("pubs", width="100%"),                
+                    plotOutput("pubs.q", width="100%")),
+            tabPanel("Topic Plots",
               sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=25),
               plotOutput("wordcloud"),
               showOutput("topics", "nvd3"),
               sliderInput("dist",label=h3("Distance Measure Threshold"),min=0, max=0.5, value=0.15),
               visNetworkOutput("force",height="800px")),
-            tabPanel("pubs",
+            tabPanel("Publications",
                      dataTableOutput("papers")
             ),
             tabPanel("Word Assoc",
+                br(),
+                h4("The beta a term in a topic is shown as a log10 transformation. This means values closer to 0 are \"better.\" I am working on a way to visualize the beta scores so that higher bars = higher weight."),
                 showOutput("keywordTopic","nvd3"),
                 sliderInput("corr",label=h3("Minimum Correlation for Term associations"), 
                             min=0, max=1, value=0.3),
