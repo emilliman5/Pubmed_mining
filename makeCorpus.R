@@ -62,9 +62,9 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
   meta(abstrCorpus, "Journal")<-abstr.df[,"journal"]
   meta(abstrCorpus, "Title")<-abstr.df[,"Title"]
   names(abstrCorpus)<-abstr.df[,"PMID"]
-  dir.create("Corpus")
-  writeCorpus(abstrCorpus,"Corpus/")
-  write.csv(meta(abstrCorpus), "CorpusMetaData.txt",row.names=F)
+  dir.create("data/Corpus")
+  writeCorpus(abstrCorpus,"data/Corpus/")
+  write.csv(meta(abstrCorpus), "data/CorpusMetaData.txt",row.names=F)
   
   abstrCorpus
 } 
@@ -99,8 +99,8 @@ makeSPCorpus<-function(SP_path="data/Strategic_goals",
  
   meta(SP, "id")<-docs[,1]
   
-  dir.create("Corpus/SP/")
-  writeCorpus(SP,path = "Corpus/SP",filenames = meta(SP)[,1])
+  dir.create("data/Corpus/SP/")
+  writeCorpus(SP,path = "data/Corpus/SP",filenames = meta(SP)[,1])
   SP
   
 }

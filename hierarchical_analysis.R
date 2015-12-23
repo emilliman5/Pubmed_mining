@@ -23,17 +23,17 @@ resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
 ##load Corpus.
-abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
+abstrCorpus<-Corpus(DirSource("data/Corpus/"), readerControl = list(language="english"))
 metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','character','Date','numeric','integer','character', 'factor'))
 for (x in colnames(metaData)) {
     meta(abstrCorpus, x)<-metaData[,x]
 }
 
-spCorpus<-Corpus(DirSource("Corpus/SP/"), readerControl = list(language="english"))
+spCorpus<-Corpus(DirSource("data/Corpus/SP/"), readerControl = list(language="english"))
 
 ##load Topic Models
-load("LDA_models_current.rda")
-load("LDA_FY_models_current.rda")
+load("data/LDA_models_current.rda")
+load("data/LDA_FY_models_current.rda")
 
 ###Analysis of Topic Modeling on entire
 
