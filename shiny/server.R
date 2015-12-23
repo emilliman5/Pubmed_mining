@@ -13,7 +13,22 @@ createLink <- function(val) {
   sprintf('<a href="http://www.ncbi.nlm.nih.gov/pubmed/%s" target="_blank">%s</a>',val, val)
 }
 
+getTopicNames<-function(K){ apply(terms(models[[as.integer(K)]],4),2,
+                                  function(z) paste(z,collapse=","))}    
+
 shinyServer(function(input,output) {
+    
+    output$pubs<-renderPlot({
+        pub<-tapply(meta(abstrCorpus)$FY,meta(abstrCorpus)$FY, length)
+        barplot(pub, col="red3", main="Number of Publications by FY")}, height=400, width=800)
+    
+    output$pubs.q<-renderPlot({
+        pub.Q<-tapply(meta(abstrCorpus)$FY.Q,meta(abstrCorpus)$FY.Q, length)
+        barplot(pub.Q, col="darkgreen", las=2, main="Number of Publications by FY quarter")}, height=400, width=800)
+    
+    output$gamma<-renderPlot({
+        
+    })
     
     fys<-reactive({
         if("ALL" %in% input$fy){
@@ -50,11 +65,6 @@ shinyServer(function(input,output) {
         }
         unlist(ids)
     })
-#     currentIds<-reactive({
-#         fyid<-fyIDs()
-#         grantIds<-fileIDs()        
-#         fyid[fyid %in% grantIds]
-#     })
     
     topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
     words<-reactive({keyword<-tolower(unlist(strsplit(input$words, "\\s|,|;|:|\\t")))
