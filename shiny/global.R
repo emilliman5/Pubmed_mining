@@ -15,3 +15,4 @@ rm(metaData)
 
 tdm<-TermDocumentMatrix(abstrCorpus)
 load("data/LDA_models_current.rda")
+load("data/LDA_FY_models_current.rda")
