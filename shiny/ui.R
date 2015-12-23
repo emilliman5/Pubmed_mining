@@ -23,8 +23,8 @@ shinyUI(fluidPage(
                      radioButtons("topicK",selected = 2,label = "Topic Model Selection",choices = 
                                       list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
                                            "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6)),
-                     textInput("words",label = "Enter keywords here:",value = "")
-                     ),
+                     textInput("words",label = "Enter keywords here:",value = ""),
+                     width=3),
         mainPanel(
             #img(src="christmas.jpeg",align="center"),
           tabsetPanel(
@@ -36,14 +36,16 @@ shinyUI(fluidPage(
                     h3("Please be gentle with the site. There is a lot of data behind the scenes that
                        needs to be operated on when parameters are changed. I suggest
                        not trying to viusalize all the data (do not select \"ALL\") without first 
-                       restricting the data by grant or PMIDs. I am a biologist that masquerades as 
-                       a programmer, which means my code works but is not necessarily efficient."),
+                       restricting the data by grant or PMIDs."),
                     h2("The Corpus"),
                     p("Publications were reteived from Pubmed (accessed on:2015-10-02) using their
                       advanced search. Publications with a grant ID beginning with \"ES\" and published 
                       between 2008-10-01 and 2015-09-30 were downloaded in XML format."),
-                    br(),
-                    p("Publication titles and abstracts were combined to create the body of text to be mined. Before mining "),
+                    p("Publication titles and abstracts were combined to create the body of text to be mined. 
+                      Before mining a number of cleaning steps were preformed. 1) Numbers, puncuation, 
+                      non-ASCII characters,and extra white space were removed. 2) Very common words were removed. 
+                      This includes: gene, environment, cell, expression, control, chemical, etc. These words are 
+                      removed because thy do not provide any classification power because they show up in so many publications"),
                     plotOutput("pubs", width="100%"),                
                     plotOutput("pubs.q", width="100%")),
             tabPanel("Topic Plots",
@@ -55,6 +57,10 @@ shinyUI(fluidPage(
             tabPanel("Publications",
                      dataTableOutput("papers")
             ),
+#             tabPanel("DendroArcs",
+#                      
+#                      showOutput("dendroarc")
+#                      ),
             tabPanel("Word Assoc",
                 br(),
                 h4("The beta a term in a topic is shown as a log10 transformation. This means values closer to 0 are \"better.\" I am working on a way to visualize the beta scores so that higher bars = higher weight."),
