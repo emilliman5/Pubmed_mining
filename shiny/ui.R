@@ -64,9 +64,12 @@ shinyUI(fluidPage(
             tabPanel("Word Assoc",
                 br(),
                 h4("The beta a term in a topic is shown as a log10 transformation. This means values closer to 0 are \"better.\" I am working on a way to visualize the beta scores so that higher bars = higher weight."),
+                radioButtons("K",selected = 2,label = "Topic Model Selection",choices = 
+                               list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
+                                    "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T),
                 showOutput("keywordTopic","nvd3"),
                 sliderInput("corr",label=h3("Minimum Correlation for Term associations"), 
-                            min=0, max=1, value=0.3),
+                            min=0, max=1, value=0.25),
                 dataTableOutput("assoc")
             )
           )            
