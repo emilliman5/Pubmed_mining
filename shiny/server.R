@@ -71,10 +71,13 @@ shinyServer(function(input,output) {
                      keyword[keyword %in% models[[as.integer(input$K)]]@terms]
                     })
     
-    output$wordcloud<-renderPlot({
+    terms<-reactive({
         terms<-rowSums(as.matrix(tdm[,unlist(currentIds())]))
-        terms<-terms[order(terms, decreasing = T)]
-        wordcloud(names(terms), freq=terms,max.words = input$slider, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order = F)
+        terms[order(terms, decreasing = T)]
+    })
+    
+    output$wordcloud<-renderPlot({
+        wordcloud(names(terms()), freq=terms(),max.words = input$slider, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order = F)
     })
     
     output$topics<-renderChart({
