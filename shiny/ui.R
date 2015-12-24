@@ -57,18 +57,23 @@ shinyUI(fluidPage(
                 this plot is susceptible to the number of documents in each group. For example, 2015's topic discussions 
                 look lower than every other's year because it has a much smaller number of publications."),
               showOutput("topics", "nvd3"),
-              sliderInput("dist",label=h3("Distance Measure Threshold"),min=0, max=0.5, value=0.15),
+              sliderInput("dist",label=p(h4("Distance Measure Threshold"), "The slider represents the top x % of connections to retain"),min=0, max=0.5, value=0.15),
               visNetworkOutput("force",height="800px")),
             tabPanel("Publications",
                      dataTableOutput("papers")
             ),
-#             tabPanel("DendroArcs",
-#                      
-#                      showOutput("dendroarc")
-#                      ),
+#              tabPanel("DendroArcs",
+#                       checkboxGroupInput("dendrofy",selected = 2010,inline=T,
+#                                         label=h3("Fiscal Years"),
+#                                         choices=list("ALL"="ALL","FY2009"=2009, "FY2010"=2010,
+#                                         "FY2011"=2011,"FY2012"=2012,
+#                                         "FY2013"=2013,"FY2014"=2014,
+#                                         "FY2015"=2015)),
+#                       showOutput("dendroarc")
+#                       ),
             tabPanel("Word Assoc",
                 br(),
-                h4("This chart shows the importance (or weight) a term has for each topic of a given model (known as the beta value).The beta-value is shown as a log10 transformation. This means values closer to 0 are \"better.\" I am working on a way to visualize the beta scores so that higher bars = higher weight."),
+                h4("This chart shows the importance (or weight/probability) a term has for each topic of a given model (known as the beta value).The beta-value is shown as a log10 transformation. This means values closer to 0 are \"better.\" I am working on a way to visualize the beta scores so that higher bars = higher weight."),
                 radioButtons("K",selected = 2,label = "Topic Model Selection",choices = 
                                list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
                                     "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T),
