@@ -102,10 +102,10 @@ shinyServer(function(input,output) {
        }, escape=F)
     
     output$keywordTopic <-renderChart({
-        betad<-data.frame(topic=rep(getTopicNames(input$topicK),length(words())), 
+        betad<-data.frame(topic=rep(getTopicNames(input$K),length(words())), 
                           beta=unlist(lapply(words(), 
-                                            function(x) models[[as.integer(input$topicK)]]@beta[,models[[as.integer(input$topicK)]]@terms==x])), 
-                          Term=rep(words(), each=models[[as.integer(input$topicK)]]@k))
+                                            function(x) models[[as.integer(input$K)]]@beta[,models[[as.integer(input$K)]]@terms==x])), 
+                          Term=rep(words(), each=models[[as.integer(input$K)]]@k))
         p1<-nPlot(beta~topic, group="Term", data=betad, type="multiBarChart")
         p1$addParams(dom="keywordTopic")
         p1$chart(reduceXTicks = FALSE)
