@@ -68,7 +68,7 @@ shinyServer(function(input,output) {
     
     #topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
     words<-reactive({keyword<-tolower(unlist(strsplit(input$words, "\\s|,|;|:|\\t")))
-                     keyword[keyword %in% models[[as.integer(input$topicK)]]@terms]
+                     keyword[keyword %in% models[[as.integer(input$K)]]@terms]
                     })
     
     output$wordcloud<-renderPlot({
@@ -93,18 +93,27 @@ shinyServer(function(input,output) {
         return(p1) 
         })
     
-    output$assoc<-renderDataTable({
-        assoc<-findAssocs(tdm, words(), input$corr)
-        l<-unlist(lapply(assoc, function(x) length(x)>0))
-        word<-words()[l]
-        assoc<-assoc[l]
-        do.call(rbind, lapply(word, function(x) data.frame(Source=x, Target=names(assoc[[x]]), Correlation=assoc[[x]])))
-       }, escape=F)
+    findassoc<-reactive({
+        assoc<-findAssocs(tdm, words(), 0.00001)
+        if(length(words())==1){
+          data.frame(Source=rep(words()), Target=names(assoc[[1]]), Correlation=assoc[[1]])
+          } else{
+            do.call(rbind, lapply(words(), function(x) data.frame(Source=x, Target=names(assoc[[x]]), Correlation=assoc[[x]])))
+            }
+        })
+    
+    wordAssoc<-reactive({
+      findassoc()[findassoc()$Correlation>input$corr,]
+      })
+    
+    output$assoc<-renderDataTable({    
+        wordAssoc()
+        }, escape=F)
     
     output$keywordTopic <-renderChart({
         betad<-data.frame(topic=rep(getTopicNames(input$K),length(words())), 
                           beta=unlist(lapply(words(), 
-                                            function(x) models[[as.integer(input$K)]]@beta[,models[[as.integer(input$K)]]@terms==x])), 
+                            function(x) models[[as.integer(input$K)]]@beta[,models[[as.integer(input$K)]]@terms==x])), 
                           Term=rep(words(), each=models[[as.integer(input$K)]]@k))
         p1<-nPlot(beta~topic, group="Term", data=betad, type="multiBarChart")
         p1$addParams(dom="keywordTopic")
