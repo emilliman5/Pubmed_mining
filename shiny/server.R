@@ -66,7 +66,7 @@ shinyServer(function(input,output) {
         unlist(ids)
     })
     
-    topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
+    #topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
     words<-reactive({keyword<-tolower(unlist(strsplit(input$words, "\\s|,|;|:|\\t")))
                      keyword[keyword %in% models[[as.integer(input$topicK)]]@terms]
                     })
@@ -78,7 +78,7 @@ shinyServer(function(input,output) {
     })
     
     output$topics<-renderChart({
-        gamma<-data.frame(topic=rep(topicNames(),length(fys())), 
+        gamma<-data.frame(topic=rep(getTopicNames(input$topicK),length(fys())), 
                           sum=unlist(lapply(currentIds(), 
                                             function(x) colSums(models[[as.integer(input$topicK)]]@gamma[x,]) )), 
                           fy=rep(fys(), each=models[[as.integer(input$topicK)]]@k))
@@ -102,7 +102,7 @@ shinyServer(function(input,output) {
        }, escape=F)
     
     output$keywordTopic <-renderChart({
-        betad<-data.frame(topic=rep(topicNames(),length(words())), 
+        betad<-data.frame(topic=rep(getTopicNames(input$topicK),length(words())), 
                           beta=unlist(lapply(words(), 
                                             function(x) models[[as.integer(input$topicK)]]@beta[,models[[as.integer(input$topicK)]]@terms==x])), 
                           Term=rep(words(), each=models[[as.integer(input$topicK)]]@k))
@@ -119,17 +119,21 @@ shinyServer(function(input,output) {
        
     nodes<-reactive({
       nodes<-data.frame(id=seq(models[[as.integer(input$topicK)]]@k), group=rep(1, models[[as.integer(input$topicK)]]@k), 
-                        value=as.integer(cut(colSums(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]),5)), label=topicNames())
+                        value=as.integer(cut(colSums(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]),5)), label=getTopicNames(input$topicK))
       })
     
-    edges<-reactive({
+    makeEdges<-reactive({
       gamma2<-dist(t(models[[as.integer(input$topicK)]]@gamma[unlist(currentIds()),]), method = "cosine")
       edges<-melt(as.matrix(gamma2))
       edges<-edges[edges$Var2>edges$Var1,]
       colnames(edges)<-c("to","from","value")
       edges$length<-50
-      edges[edges$value<quantile(edges$value,input$dist),]
-    })
+      edges
+      })
+    
+    edges<-reactive({makeEdges()[makeEdges()$value<quantile(makeEdges()$value,input$dist),]
+      })
+    
     output$force<-renderVisNetwork({
         visNetwork(nodes = nodes(), edges = edges()) %>% visOptions(highlightNearest = TRUE)
     })
