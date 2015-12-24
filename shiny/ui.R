@@ -29,7 +29,7 @@ shinyUI(fluidPage(
             #img(src="christmas.jpeg",align="center"),
           tabsetPanel(
             tabPanel("About",
-                    h2("About"),
+                    h2("Notes"),
                     h3("This site aims to provide access to Kelly and Eric's 
                       super-awesome text mining adventure. This page will 
                       contain a description of methods and the data."),
@@ -51,6 +51,11 @@ shinyUI(fluidPage(
             tabPanel("Topic Plots",
               sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=25),
               plotOutput("wordcloud"),
+              h3("Topic Usage"),
+              p("This plot shows how much a topic was discussed in the dataset selected. This was 
+                calculated by summing each documents topic probability for a given topic. As it stands 
+                this plot is susceptible to the number of documents in each group. For example, 2015's topic discussions 
+                look lower than every other's year because it has a much smaller number of publications."),
               showOutput("topics", "nvd3"),
               sliderInput("dist",label=h3("Distance Measure Threshold"),min=0, max=0.5, value=0.15),
               visNetworkOutput("force",height="800px")),
@@ -63,7 +68,7 @@ shinyUI(fluidPage(
 #                      ),
             tabPanel("Word Assoc",
                 br(),
-                h4("The beta a term in a topic is shown as a log10 transformation. This means values closer to 0 are \"better.\" I am working on a way to visualize the beta scores so that higher bars = higher weight."),
+                h4("This chart shows the importance (or weight) a term has for each topic of a given model (known as the beta value).The beta-value is shown as a log10 transformation. This means values closer to 0 are \"better.\" I am working on a way to visualize the beta scores so that higher bars = higher weight."),
                 radioButtons("K",selected = 2,label = "Topic Model Selection",choices = 
                                list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
                                     "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T),
