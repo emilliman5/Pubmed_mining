@@ -27,10 +27,10 @@ betaDist<-lapply(models, function(x){
 gammaDist<-lapply(models, function(x){
     fys<-getFactorIdx("FY",meta(abstrCorpus))
     lapply(fys, function(y){
-        simil(t(x@beta)[y,], method="cosine")
+        simil(t(x@gamma)[,y], method="cosine")
     })    
 })
 
 betatrees<-lapply(betaDist, function(x){
-    hclust(x,method = "ward.d2")
+    hclust(x,method = "ward.D2")
 })
