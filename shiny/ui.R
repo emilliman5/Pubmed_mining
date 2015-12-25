@@ -53,10 +53,10 @@ shinyUI(fluidPage(
                       This includes: gene, environment, cell, expression, control, chemical, etc. These words are 
                       removed because thy do not provide any classification power because they show up in so many publications"),
                     plotOutput("pubs", width="100%"),                
-                    plotOutput("pubs.q", width="100%")),
+                    plotOutput("pubs.q", width="100%"),
+                    sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=50),
+                    plotOutput("wordcloud",height = "100%")),
             tabPanel("Topic Plots",
-              sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=25),
-              plotOutput("wordcloud",height = "100%"),
               h3("Topic Usage"),
               p("This plot shows how much a topic was discussed in the dataset selected. This was 
                 calculated by summing each documents topic probability (gamma value) for a given topic and then divided by 
