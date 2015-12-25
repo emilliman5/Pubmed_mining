@@ -8,19 +8,25 @@ shinyUI(fluidPage(
     titlePanel("Kelly and Eric's super-awesome data mining adventure"),
     
     sidebarLayout(
-        sidebarPanel(h1("Navigation"),
+        sidebarPanel(h1("Search"),
                      p("This will be a place to select your dataset, whether it 
                        be by FY, date range, Topic assignment, PMID, Grant ID, or 
                        Journal"),
                      h3("File Upload:"),
-                     fileInput("file",label="You can uplod a file of PMIDs or Grant IDs (but not both) for searching the Corpus. Grant IDs need to be in the form of ES######. There should only be one ID per line. Plain text files only, no *.docx, *.xlsx, etc.",accept="txt"),
+                     fileInput("file",label="You can uplod a file of PMIDs or Grant IDs (but not both) for searching the 
+                               Corpus. Grant IDs need to be in the form of ES######. There should only be one ID per line. 
+                               Plain text files only, no *.docx, *.xlsx, etc.",accept="txt"),
                      checkboxGroupInput("fy",selected = 2010,
-                                        label=h3("Fiscal Years"),
+                                        label=p(h3("Fiscal Years"),"Selection of FYs will select the data used to make plots 
+                                                in the \"Topic Plots\" tab."),
                                         choices=list("ALL"="ALL","FY2009"=2009, "FY2010"=2010,
                                                      "FY2011"=2011,"FY2012"=2012,
                                                      "FY2013"=2013,"FY2014"=2014,
                                                      "FY2015"=2015)),
-                     radioButtons("topicK",selected = 2,label = "Topic Model Selection",choices = 
+                     radioButtons("topicK",selected = 2,label = p(h3("Topic Model Selection"),"This will select the 
+                                                                  topic model for viewing topic usage and topic-topic 
+                                                                  connections in the network, both on the \"Topic Plots\"
+                                                                  tab."), choices = 
                                       list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
                                            "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6)),
                      textInput("words",label = "Enter keywords here:",value = ""),
@@ -50,12 +56,11 @@ shinyUI(fluidPage(
                     plotOutput("pubs.q", width="100%")),
             tabPanel("Topic Plots",
               sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=25),
-              plotOutput("wordcloud"),
+              plotOutput("wordcloud",height = "100%"),
               h3("Topic Usage"),
               p("This plot shows how much a topic was discussed in the dataset selected. This was 
-                calculated by summing each documents topic probability for a given topic. As it stands 
-                this plot is susceptible to the number of documents in each group. For example, 2015's topic discussions 
-                look lower than every other's year because it has a much smaller number of publications."),
+                calculated by summing each documents topic probability (gamma value) for a given topic and then divided by 
+                the number documents in the corpus group (number of publications in the FY)."),
               showOutput("topics", "nvd3"),
               sliderInput("dist",label=p(h4("Distance Measure Threshold"), "The slider represents the top x % of connections to retain"),min=0, max=0.5, value=0.15),
               visNetworkOutput("force",height="800px")),
@@ -73,7 +78,8 @@ shinyUI(fluidPage(
 #                       ),
             tabPanel("Word Assoc",
                 br(),
-                h4("This chart shows the importance (or weight/probability) a term has for each topic of a given model (known as the beta value).The beta-value is shown as a log10 transformation. This means values closer to 0 are \"better.\" I am working on a way to visualize the beta scores so that higher bars = higher weight."),
+                h4("This chart shows the importance (or weight/probability) a term has for each topic
+                   of a given model (known as the beta value)."),
                 radioButtons("K",selected = 2,label = "Topic Model Selection",choices = 
                                list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
                                     "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T),
