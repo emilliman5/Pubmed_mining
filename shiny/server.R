@@ -68,7 +68,7 @@ shinyServer(function(input,output) {
     
     #topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
     words<-reactive({keyword<-tolower(unlist(strsplit(input$words, "\\s|,|;|:|\\t")))
-                     keyword[keyword %in% models[[as.integer(input$K)]]@terms]
+                     keyword[keyword %in% dict]
                     })
     
     terms<-reactive({
@@ -78,26 +78,26 @@ shinyServer(function(input,output) {
     
     output$wordcloud<-renderPlot({
         wordcloud(names(terms()), freq=terms(),max.words = input$slider, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order = F)
-    })
+    },height = 600)
     
     output$topics<-renderChart({
         gamma<-data.frame(topic=rep(getTopicNames(input$topicK),length(fys())), 
                           sum=unlist(lapply(currentIds(), 
-                                            function(x) colSums(models[[as.integer(input$topicK)]]@gamma[x,]) )), 
+                                            function(x) 100*(colSums(models[[as.integer(input$topicK)]]@gamma[x,])/length(x)) )), 
                           fy=rep(fys(), each=models[[as.integer(input$topicK)]]@k))
         p1<-nPlot(sum~topic, group="fy", data=gamma, type="multiBarChart")
         p1$addParams(dom="topics")
         p1$chart(reduceXTicks = FALSE)
         p1$yAxis(axisLabel="Sum of Topic Proportion across Corpus")
         p1$xAxis(rotateLabels=-45)
-        p1$chart(margin=list(bottom=200))
+        p1$chart(margin=list(left=125,bottom=240))
         p1$params$height<-600
         p1$params$width<-1200
         return(p1) 
         })
     
     findassoc<-reactive({
-        assoc<-findAssocs(tdm, words(), 0.00001)
+        assoc<-findAssocs(tdm, words(), 0.000001)
         if(length(words())==1){
           data.frame(Source=rep(words()), Target=names(assoc[[1]]), Correlation=assoc[[1]])
           } else{
@@ -106,7 +106,11 @@ shinyServer(function(input,output) {
         })
     
     wordAssoc<-reactive({
-      findassoc()[findassoc()$Correlation>input$corr,]
+      x<-findassoc()[findassoc()$Correlation>input$corr,]
+      if(length(words())>1){
+        rbind(x, do.call(rbind, lapply(words(), function(z) findassoc()[(findassoc()$Target==z && findassoc()$Source!=z), ])))
+      }
+      return(x)
       })
     
     output$assoc<-renderDataTable({    
@@ -115,15 +119,15 @@ shinyServer(function(input,output) {
     
     output$keywordTopic <-renderChart({
         betad<-data.frame(topic=rep(getTopicNames(input$K),length(words())), 
-                          beta=unlist(lapply(words(), 
+                          beta=10**unlist(lapply(words(), 
                             function(x) models[[as.integer(input$K)]]@beta[,models[[as.integer(input$K)]]@terms==x])), 
                           Term=rep(words(), each=models[[as.integer(input$K)]]@k))
         p1<-nPlot(beta~topic, group="Term", data=betad, type="multiBarChart")
         p1$addParams(dom="keywordTopic")
         p1$chart(reduceXTicks = FALSE)
-        p1$yAxis(axisLabel="Beta weight of term per Topic")
+        p1$yAxis(axisLabel="Beta weight of term per Topic",tickFormat = "#! function(d) {return d3.format(',.5f')(d)} !#")
         p1$xAxis(rotateLabels=-45)
-        p1$chart(margin=list(bottom=200))
+        p1$chart(margin=list(left=125, bottom=240))
         p1$params$height<-600
         p1$params$width<-1200
         return(p1) 
