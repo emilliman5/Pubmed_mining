@@ -46,12 +46,33 @@ shinyUI(fluidPage(
                     h2("The Corpus"),
                     p("Publications were reteived from Pubmed (accessed on:2015-10-02) using their
                       advanced search. Publications with a grant ID beginning with \"ES\" and published 
-                      between 2008-10-01 and 2015-09-30 were downloaded in XML format."),
+                      between 2008-10-01 and 2015-09-30 were downloaded in XML format. This has resulted 
+			in ~25,000 publications incorporated into our text collection (the corpus)."),
                     p("Publication titles and abstracts were combined to create the body of text to be mined. 
                       Before mining a number of cleaning steps were preformed. 1) Numbers, puncuation, 
                       non-ASCII characters,and extra white space were removed. 2) Very common words were removed. 
                       This includes: gene, environment, cell, expression, control, chemical, etc. These words are 
-                      removed because thy do not provide any classification power because they show up in so many publications"),
+                      removed because thy do not provide any classification power because they show up in so many 
+		      publications. 3) Words that show up in less than 10% of the documents were also 
+			removed because they are too sparse.", br(), "The corpus was then explored using 
+			word clouds and various plots of vocabulary complexiety to assess cleanliness and processing.", br(), 
+			"Topics were modeled across the corpus in tow ways. 1) Using the entire corpus various numbers 
+			of topics were modeled (25, 50, 10, 250 ,500, and 1000). 2) For each fiscal year represented 
+			topics were modeled at various levels (25, 50, 100, 250, 250, 500, 1000).", br(), "Topics were 
+			modeled using Latent Dirichlet Allocation. (Blei _et al_ 2003) This machine learning algorithm 
+			is a mixture model, mixed membership classification. That means in a collection of documents there 
+			exists multiple groups (topics) and that each document can be a member of multiple groups 
+			(a document discusses more than one topic). Model fit was assessed by plotting the logliklihood 
+			across the number of topics modeled as well as using our pre-existing domain knowledge (human sanity check).
+			The alpha and beta parameters were optimized using variational expectation maximization (VEM). LDA \
+			topic modeling produces two distributions: 1) the distribution of topics for each document (gamma), 
+			this represents the probability a topic exists in the document. 2) the word distribution for each 
+			topic, this assigens the importance of each word to a topic. LDA assigns a non-zero value for each 
+			combination of document-topic and word-topic distributions. Thus cutoffs need to be applied to 
+			both beta and gamma based on the distributions across the entire corpus. For example, gamma distributions 
+			for 50 topics may have generally higher values than for 1000 topics, because the pie has to be distributed 
+			more with 1000 topics. Generally we set the gamma threshold such that each document is assigned 2-3 topics 
+			with few documents being assigened up to 7. This seems intuitive for scientific literature, but is arbitrary."),
                     plotOutput("pubs", width="100%"),                
                     plotOutput("pubs.q", width="100%"),
                     sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=50),
