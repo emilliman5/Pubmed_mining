@@ -1,7 +1,6 @@
 library(shiny)
 library(rCharts)
 library(visNetwork)
-#library(networkD3)
 options(RCHART_LIB = 'nvd3')
 
 shinyUI(fluidPage(
@@ -32,7 +31,6 @@ shinyUI(fluidPage(
                      textInput("words",label = "Enter keywords here:",value = ""),
                      width=3),
         mainPanel(
-            #img(src="christmas.jpeg",align="center"),
           tabsetPanel(
             tabPanel("About",
                     h2("Notes"),
@@ -47,19 +45,19 @@ shinyUI(fluidPage(
                     p("Publications were reteived from Pubmed (accessed on:2015-10-02) using their
                       advanced search. Publications with a grant ID beginning with \"ES\" and published 
                       between 2008-10-01 and 2015-09-30 were downloaded in XML format. This has resulted 
-			                in ~25,000 publications incorporated into our text collection (the corpus)."),
+			          in ~25,000 publications incorporated into our text collection (the corpus)."),
                     p("Publication titles and abstracts were combined to create the body of text to be mined. 
                       Before mining a number of cleaning steps were preformed. 1) Numbers, puncuation, 
                       non-ASCII characters,and extra white space were removed. 2) Very common words were removed. 
                       This includes: gene, environment, cell, expression, control, chemical, etc. These words are 
                       removed because thy do not provide any classification power because they show up in so many 
-		                  publications. 3) Words that show up in less than 10% of the documents were also 
-			                removed because they are too sparse.", br(),br(), "The corpus was then explored using 
+		              publications. 3) Words that show up in less than 10% of the documents were also 
+			          removed because they are too sparse.", br(),br(), "The corpus was then explored using 
 			                word clouds and various plots of vocabulary complexiety to assess cleanliness and processing.", br(), 
 			                "Topics were modeled across the corpus in tow ways. 1) Using the entire corpus various numbers 
 			                of topics were modeled (25, 50, 10, 250 ,500, and 1000). 2) For each fiscal year represented 
 			                topics were modeled at various levels (25, 50, 100, 250, 250, 500, 1000).", br(),br(), "Topics were 
-			                modeled using Latent Dirichlet Allocation. (Blei _et al_ 2003) This machine learning algorithm 
+			                modeled using Latent Dirichlet Allocation. (Blei", tags$i("et al")," 2003) This machine learning algorithm 
 			                is a mixture model, mixed membership classification. That means in a collection of documents there 
 			                exists multiple groups (topics) and that each document can be a member of multiple groups 
 			                (a document discusses more than one topic). Model fit was assessed by plotting the logliklihood 
@@ -83,20 +81,12 @@ shinyUI(fluidPage(
                 calculated by summing each documents topic probability (gamma value) for a given topic and then divided by 
                 the number documents in the corpus group (number of publications in the FY)."),
               showOutput("topics", "nvd3"),
+              htmlOutput("edgeThreshold", container=pre),
               sliderInput("dist",label=p(h4("Distance Measure Threshold"), "The slider represents the top x % of connections to retain"),min=0, max=0.5, value=0.15),
               visNetworkOutput("force",height="800px")),
             tabPanel("Publications",
                      dataTableOutput("papers")
             ),
-#              tabPanel("DendroArcs",
-#                       checkboxGroupInput("dendrofy",selected = 2010,inline=T,
-#                                         label=h3("Fiscal Years"),
-#                                         choices=list("ALL"="ALL","FY2009"=2009, "FY2010"=2010,
-#                                         "FY2011"=2011,"FY2012"=2012,
-#                                         "FY2013"=2013,"FY2014"=2014,
-#                                         "FY2015"=2015)),
-#                       showOutput("dendroarc")
-#                       ),
             tabPanel("Word Assoc",
                 br(),
                 h4("This chart shows the importance (or weight/probability) a term has for each topic
