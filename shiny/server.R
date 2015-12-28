@@ -7,14 +7,13 @@ library(visNetwork)
 library(proxy)
 library(htmlwidgets)
 
-#sankey<-function(){}
-
 createLink <- function(url, val) {
   sprintf('<a href="%s%s" target="_blank">%s</a>',url, val, val)
 }
 
 getTopicNames<-function(K){ apply(terms(models[[as.integer(K)]],4),2,
                                   function(z) paste(z,collapse=","))}    
+dict<-rownames(tdm)
 
 shinyServer(function(input,output) {
     
@@ -25,11 +24,7 @@ shinyServer(function(input,output) {
     output$pubs.q<-renderPlot({
         pub.Q<-tapply(meta(abstrCorpus)$FY.Q,meta(abstrCorpus)$FY.Q, length)
         barplot(pub.Q, col="darkgreen", las=2, main="Number of Publications by FY quarter")}, height=400, width=800)
-    
-    output$gamma<-renderPlot({
-        
-    })
-    
+     
     fys<-reactive({
         if("ALL" %in% input$fy){
             x<-c(2009,2010,2011,2012,2013,2014,2015)   
@@ -115,7 +110,7 @@ shinyServer(function(input,output) {
     
     output$assoc<-renderDataTable({    
         wordAssoc()
-        }, escape=F)
+        },escape=F)
     
     output$keywordTopic <-renderChart({
         betad<-data.frame(topic=rep(getTopicNames(input$K),length(words())), 
@@ -147,9 +142,18 @@ shinyServer(function(input,output) {
       edges
       })
     
-    edges<-reactive({makeEdges()[makeEdges()$value<quantile(makeEdges()$value,input$dist),]
+    edges<-reactive({
+        makeEdges()[makeEdges()$value<edgeThresh(),]
       })
     
+    edgeThresh<-reactive({
+        quantile(makeEdges()$value,input$dist)
+    })
+    
+    output$edgeTreshold<-renderUI({
+        x<-edgeThresh()
+        HTML(paste("Absolute distance threshold: ",x, sep = ""))
+    })
     output$force<-renderVisNetwork({
         visNetwork(nodes = nodes(), edges = edges()) %>% visOptions(highlightNearest = TRUE)
     })
@@ -159,25 +163,8 @@ shinyServer(function(input,output) {
       df$PMID<-createLink("http://www.ncbi.nlm.nih.gov/pubmed/",df$PMID)
       df$Journal<-createLink("http://www.issn.cc/",df$Journal)
       df
-    }, escape=FALSE)
-    
-#     output$dendroarc<-renderPlot({
-#         
-#         
-#     })
-#     output$sankey<-renderChart({
-#       sankeyPlot<-rCharts$new()
-#       sankeyPlot$setLib("./d3/rCharts_d3_sankey-gh-pages/")
-#       sankeyPlot$setTemplate(script="./d3/rCharts_d3_sankey-gh-pages/layouts/chart.html")
-#       sankeyPlot$set(
-#         data=edgelist,
-#         nodewidth=10,
-#         nodePadding=10,
-#         layout=32,
-#         width=1200,
-#         height=1200)
-#       
-#       sankeyPlot$print(chartId="sankey1")
-#       sankeyPlots
-#     })
+    },options = list(autoWidth = FALSE,
+                columnDefs = list(list(width = '25px', targets = "_all")
+                    )
+        ), escape=FALSE)
 })
