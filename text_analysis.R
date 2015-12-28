@@ -1,15 +1,9 @@
 library(tm)
 library(wordcloud)
-library(graph)
-library(Rgraphviz)
-library(topicmodels)
+library(slam)
 library(lubridate)
 library(parallel)
-library(igraph)
-library(class)
-library(cluster)
-library(gplots)
-library(RColorBrewer)
+library(proxy)
 
 #library(networktools)
 #If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
@@ -30,8 +24,8 @@ if(!file.exists("Corpus/1.txt") || reset){
 } else {
   ##read in corpus docs.
   abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
-  metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','Date','character','numeric'))
-  for (x in c("GrantID","Date", "FY", "FY.Q")) {
+  metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
+  for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
     meta(abstrCorpus, x)<-metaData[,x]
   }
 }
@@ -43,6 +37,16 @@ if(!file.exists("Corpus/SP/SP_Goal1") || reset){
 } else {
   spCorpus<-Corpus(DirSource("Corpus/SP/"), readerControl = list(language="english"))
 }
+
+####Extra Corpus cleaning
+
+
+###Descriptives of Corpus
+png(paste0(resultsPath, "/Abstracts_per_FY.png"), height=1000, width=1200, units="px")
+    par(mfrow=c(2,1), cex=2)
+    barplot(tapply(meta(abstrCorpus)[,"FY"], meta(abstrCorpus)[,"FY.Q"],length), main="Abstracts per FY.Q", las=2)
+    barplot(tapply(meta(abstrCorpus)[,"FY"], meta(abstrCorpus)[,"FY"],length ), main="Abstracts per FY", las=2)
+dev.off()
 
 ################
 ##Term Document Matrix Creation
@@ -66,8 +70,8 @@ tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTok
 ##tdm.bigram are two term frequencies
 
 tdm<-tdm.monogram
-tdm<-tdm.monogram.tfidf
-tdm<-tdm.bigram
+#tdm<-tdm.monogram.tfidf
+#tdm<-tdm.bigram
 
 tdm.sp<-TermDocumentMatrix(spCorpus)
 tdm.sp.tfidf<-TermDocumentMatrix(spCorpus, control=list(weighting=weightTfIdf))
@@ -77,159 +81,36 @@ tdm.sp.tfidf<-TermDocumentMatrix(spCorpus, control=list(weighting=weightTfIdf))
 ###########
 
 tfidfHisto(tdm.monogram.tfidf ,fact = "FY", "mean")
-
 tfHisto(tdm,"FY")
 
-wordCloud(tdm.monogram.tfidf,fact="FY", 75, "mean","tfidf")
-wordCloud(tdm.monogram.tfidf,fact="FY.Q", 75, "mean","tfidf")
+tf<-rowSums(as.matrix(tdm))
+tf<-tf[order(-tf)]
+
+#tf.bi<-do.call(rbind, mclapply(seq(1,dim(tdm.bigram)[1]), mc.cores=16, function(x){
+#    rowSums(as.matrix(tdm.bigram[x,]))
+#}))
+
+tf.bi<-row_sums(tdm.bigram)
+
+tf.bi<-tf.bi[order(-tf.bi)]
+
+png(paste0(resultsPath,"/Zipfs_plots.png"), height=3000, width=3000, units="px")
+    par(mfrow=c(2,1), cex=4)
+    plot(tf.bi, ylim=c(0,12500),lwd=2,type="l", xlab="Rank Ordered Terms", ylab="Term Count", main="Zipf's Law plot")
+    lines(tf, col="blue", lwd=2)
+    legend("topright",lty=c(1,1), col=c("black","blue"), legend=c("Bigrams", "Unigrams"), bty="n")
+
+    plot(tf.bi, xlim=c(0,10000),lwd=2,ylim=c(0,1000), type="l", xlab="Rank Ordered Terms", ylab="Term Count", main="Zipf's Law plot")
+    lines(tf, col="blue",lwd=2)
+dev.off()
+
+##This is probably an inappropriate graphic as tf-idf does not summarize well across the corpus
+##tf-idf is really a measure of a words importance in a document
+#wordCloud(tdm.monogram.tfidf,fact="FY", 75, "mean","tfidf")
+#wordCloud(tdm.monogram.tfidf,fact="FY.Q", 75, "mean","tfidf")
 
 wordCloud(tdm,fact="FY", 75, pre="tf")
 wordCloud(tdm,fact="FY.Q", 75, pre="tf")
 
 wordCloudMontage(tdm = tdm.sp,file = "SP_TF_wordcloud.png", path = resultsPath)
-wordCloudMontage(tdm = tdm.sp.tfidf,file = "SP_TfIdf_wordcloud.png", path = resultsPath)
-
-
-#############
-##Topic Modelling
-#############
-library(mallet)
-options(java.parameters="-Xmx48g")
-corp<-mallet.read.dir("Corpus/")
-corp$id<-gsub("Corpus//", "", corp$id)
-sp<-mallet.read.dir("data/Strategic_goals/")
-sp$id<-gsub("data//Strategic_goals//","", sp$id)
-
-corp<-rbind(corp,sp)
-mallet.instance<-mallet.import(corp$id,corp$text, "stopwords.txt")
-
-topic.model<-MalletLDA(250)
-topic.model$loadDocuments(mallet.instance)
-topic.model$setAlphaOptimization(20, 50)
-topic.model$model$setNumThreads(as.integer(20))
-topic.model$train(100)     
-   
-doc.topics<-mallet.doc.topics(topic.model,normalized = T,T)        
-topic.words<-mallet.topic.words(topic.model,normalized = T,smoothed = T)
-colnames(topic.words)<-topic.model$getVocabulary()
-
-plot(mallet.topic.hclust(doc.topics, topic.words,1), cex=0.5)
-
-top.words<-lapply(seq(1,250), function(x) 
-    mallet.top.words(topic.model,topic.words[x,],5))
-
-############
-##Abstract SP goals correlations
-############
-
-corp<-c(abstrCorpus,spCorpus)
-
-tail(meta(corp), 15)
-
-dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTfIdf))
-dtm.m<-dtm[,apply(as.matrix(dtm)[1296:1306,],2, sum)>0]
-
-dtm.d<-dist(dtm.m, method="euclidean")
-l<-dim(dtm)[1]-11
-m<-do.call(cbind, lapply(1:l, function(x) dtm.d[(x+(l)):(x+(l+10))]))
-#rownames(m)<-rownames(dtm)[1296:1306]
-rownames(m)<-c("SP1","SP2","SP3","SP4","SP5","SP6","SP7","SP8","SP9","SP10","SP11")
-sp.d<-dist(m)
-
-
-################
-##Parameters
-################
-
-#Correlation Threshold for association rule mining and Word grapgh plot
-corLimit<-0.1
-
-#Sparsity removes terms that appear infrequently in the matrix must be <1
-sparsity<-0.9
-
-#Number of clusters to seed for kmeans clustering.
-k<-10
-
-################
-##Keywords Dictionary
-################
-keywords.SP<-read.csv("Keywords_by_SP_Goals.csv", stringsAsFactors=F)
-findAssocs(tdm,terms = c("exposome","ewass"), corlimit = corLimit)
-
-#######
-##Network of word correlations
-#######
-
-sp.tdm<-DocumentTermMatrix(spCorpus,control = list(weighting=weightTfIdf))
-g<-similarity.graph(m=dtm.m, vertex.grouping.vars =list(Goal=rownames(dtm.m)),
-                    similarity.measure="correlation", min.similarity=0.15)
-
-  
-###########
-##Hierchical Clustering and Dendrogram
-###########
-
-tdm2<-removeSparseTerms(tdm, sparse = sparsity)
-tdm2.m<-t(as.matrix(tdm))
-distMatrix<-dist(dist(scale(tdm2.m)))
-fit<-hclust(distMatrix,method = "ward.D")
-
-png(paste0(resultsPath,"/Word_dendrogram.png"), height=4500, width=9000, units="px")
-plot(fit, cex=0.75)
-dev.off()
-
-############
-##K-means clustering
-############
-k<-11
-l<-dim(as.matrix(dtm))[1]
-tdm.t<-t(tdm.monogram.tfidf)
-dtm<-DocumentTermMatrix(corp,control=list(weighting=weightTfIdf))
-dtm<-dtm[,apply(as.matrix(dtm)[(l-10):l,],2, sum)>0]
-kmeansResults<-kmeans(dtm, k)
-round(kmeansResults$centers, digits=3)
-
-kResults<-aggregate(as.matrix(dtm), by=list(kmeansResults$cluster), mean)
-kClusterResult<-do.call(cbind, lapply(getFactorIdx("FY",meta(corp)),function(x){
-    tapply(kmeansResults$cluster[x], kmeansResults$cluster[x], length)    
-            }
-    )
-)
-colnames(kClusterResult)<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
-barplot((kClusterResult/colSums(kClusterResult)), names.arg = colnames(kClusterResult))
-barplot(t(t(kClusterResult)/colSums(kClusterResult)))
-
-clusplot(as.matrix(dtm), kmeansResults$cluster, color=TRUE, shade=TRUE, labels=TRUE, lines=0)
-
-
-for (i in 1:k) {
-  cat(paste("cluster ", i, ": ", sep = ""))
-  s <- sort(kmeansResults$centers[i, ], decreasing = T) 
-  cat(names(s)[1:8], "\n")
-  # print the tweets of every cluster
-  # print(tweets[which(kmeansResult$cluster==i)])
-}
-
-##K nearest Neighbors Analysis
-corp<-c(abstrCorpus,spCorpus)
-dtm<-DocumentTermMatrix(corp, control=list(weigthing=weightTfIdf))
-
-l<-dim(as.matrix(dtm))[1]
-dtm.m<-dtm[,apply(as.matrix(dtm)[(l-10):l,],2, sum)>0]
-
-knnResults<-lapply(getFactorIdx("FY", meta(abstrCorpus)),
-    function(x){    
-        knn(as.matrix(dtm.m)[(l-10):l,],as.matrix(dtm.m)[x,], 
-          rownames(as.matrix(dtm.m)[(l-10):l,]))
-    })
-
-FYs<-do.call(c, lapply(getFactorIdx("FY", meta(abstrCorpus)), function(x) meta(abstrCorpus)[x[1],"FY"]))
-knnSummary<-do.call(rbind, lapply(knnResults, function(x) tapply(x, x, length)))          
-rownames(knnSummary)<-FYs       
-          
-          
-          
-          
-          
-          
-          
+#wordCloudMontage(tdm = tdm.sp.tfidf,f=0.001,file = "SP_TfIdf_wordcloud.png", path = resultsPath)

@@ -4,3 +4,15 @@
 *.Rhistory
 Corpus/
 /CorpusMetaData.txt
+results/mallet/
+*.rda
+results/
+*.Rout
+TopicKeywords/
+d3/*
+shiny/data/*
+*tar.gz
+*.RData
+sankey/*
+data/*
+TopicModel_Keywords/*
