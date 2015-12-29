@@ -5,7 +5,6 @@ library(rCharts)
 library(wordcloud)
 library(visNetwork)
 library(proxy)
-library(htmlwidgets)
 
 createLink <- function(url, val) {
   sprintf('<a href="%s%s" target="_blank">%s</a>',url, val, val)
@@ -33,14 +32,11 @@ shinyServer(function(input,output) {
         }
         x
     })
+    
     currentIds<-reactive({
-        if("ALL" %in% input$fy){
-            lapply(fys(), function(x)
-                which(meta(abstrCorpus)[fileIds(),"FY"] == x))
-        }else{
-            lapply(fys(), function(x)
-                which(meta(abstrCorpus)[fileIds(),"FY"] == x))
-        }
+        ids<-lapply(fys(), function(x)
+                which(meta(abstrCorpus)[,"FY"] == x))
+        lapply(ids, function(x) x[x %in% fileIds()])
     })
     
     fileIds<-reactive({
@@ -51,8 +47,8 @@ shinyServer(function(input,output) {
         } else {
         x<-read.table(inFile$datapath, header=F)
         if(grepl("ES", x[1,])){
-            ids<-lapply(x[,1], function(x)
-               grep(x, meta(abstrCorpus)[,"GrantID"])) 
+            ids<-lapply(x[,1], function(z)
+               grep(z, meta(abstrCorpus)[,"GrantID"])) 
         } else{
             ids<-lapply(x[,1], function(x)
                 which(meta(abstrCorpus)[,"PMID"] == x)) 
@@ -61,7 +57,6 @@ shinyServer(function(input,output) {
         unlist(ids)
     })
     
-    #topicNames<-reactive({apply(terms(models[[as.integer(input$topicK)]],4),2,function(z) paste(z,collapse=","))})    
     words<-reactive({keyword<-tolower(unlist(strsplit(input$words, "\\s|,|;|:|\\t")))
                      keyword[keyword %in% dict]
                     })
@@ -150,9 +145,9 @@ shinyServer(function(input,output) {
         quantile(makeEdges()$value,input$dist)
     })
     
-    output$edgeTreshold<-renderUI({
+    output$text<-renderText({
         x<-edgeThresh()
-        HTML(paste("Absolute distance threshold: ",x, sep = ""))
+        paste("Absolute distance threshold: ",x, sep = "")
     })
     output$force<-renderVisNetwork({
         visNetwork(nodes = nodes(), edges = edges()) %>% visOptions(highlightNearest = TRUE)

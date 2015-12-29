@@ -81,10 +81,10 @@ shinyUI(fluidPage(
                 calculated by summing each documents topic probability (gamma value) for a given topic and then divided by 
                 the number documents in the corpus group (number of publications in the FY)."),
               showOutput("topics", "nvd3"),
-              htmlOutput("edgeThreshold", container=pre),
               sliderInput("dist",label=p(h4("Distance Measure Threshold"), "The slider represents the top x % of connections to retain"),min=0, max=0.5, value=0.15),
+              h4(textOutput("text")),
               visNetworkOutput("force",height="800px")),
-            tabPanel("Publications",
+            tabPanel("Publications Table",
                      dataTableOutput("papers")
             ),
             tabPanel("Word Assoc",
