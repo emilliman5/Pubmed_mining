@@ -1,20 +1,20 @@
-makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
+library(XML)
+library(tm)
+library(SnowballC)
+library(lubridate)
+library(parallel)
 
-  library(XML)
-  library(tm)
-  library(SnowballC)
-  library(lubridate)
-  library(parallel)
+process_NIH_reporter<-function(file){
   
-  extraFunFile<-"textMine_funcs.R"
-  if (file.exists(extraFunFile)) {
-    source(extraFunFile, keep.source=TRUE);
-  } else{ break }
+  table<-read.csv(file, skip = 4, stringsAsFactors = F)
+  table<-table[,c(2,3,4,6,9,10,37,42,46)] 
+  table[,1]<-gsub("DESCRIPTION \\(provided by applicant\\):","", table[,1])
+  table[,1]<-gsub("Public Health Relevance:","", table[,1],ignore.case = T)
   
-  stopWords<-read.table(stopwordList, colClasses = c("character"))
-  myStopwords<-c(stopwords('english'), stopWords$V1)
-  myStopwords<-tolower(myStopwords)
-  
+}
+
+pubmedParse<-function(pub.file){
+
   pubmed<-xmlParse(pub.file,useInternalNodes = T)
   top<-xmlRoot(pubmed)
   
@@ -39,6 +39,21 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
   abstr.df<-cbind(as.data.frame(pmid),as.data.frame(grantID),pubdate.df,journal, abstr.df)
   abstr.df[,"pubdate.df"]<-as.Date(abstr.df[,"pubdate.df"], format = "%Y-%m-%d")
   colnames(abstr.df)[1:2]<-c("PMID","GrantID")
+}
+
+makeCorpus<-function(df, stopwordsList="stopwords.txt", cores=8){
+  
+  extraFunFile<-"textMine_funcs.R"
+  if (file.exists(extraFunFile)) {
+    source(extraFunFile, keep.source=TRUE);
+  } else{ break }
+  
+  stopWords<-read.table(stopwordList, colClasses = c("character"))
+  myStopwords<-c(stopwords('english'), stopWords$V1)
+  myStopwords<-tolower(myStopwords)
+  
+  abstr.df<-
+  
   abstrCorpus<-Corpus(DataframeSource(abstr.df[,c("Title","Abstract")]))
   
   abstrCorpus<-tm_map(abstrCorpus, content_transformer(tolower), mc.cores=cores)
