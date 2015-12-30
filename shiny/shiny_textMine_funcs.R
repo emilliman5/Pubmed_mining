@@ -1,19 +1,18 @@
 library(tm)
-
-makeCorpus<-function(df, stopwordsList="stopwords.txt", cores=4){
+library(parallel)
+makeCorpus<-function(text, cores=4){
            
-    df.Corpus<-Corpus(DataframeSource(df[,c("Title","Abstract")]))
+    df.Corpus<-Corpus(VectorSource(text))
     
     df.Corpus<-tm_map(df.Corpus, content_transformer(tolower), mc.cores=cores)
     df.Corpus<-tm_map(df.Corpus, toSpace, "/|@|\\||-|_|\\\\", mc.cores=cores)
     df.Corpus<-tm_map(df.Corpus, removePunctuation, mc.cores=cores)
     df.Corpus<-tm_map(df.Corpus, removeNumbers, mc.cores=cores)
     df.Corpus<-tm_map(df.Corpus, toSpace, "[^[:alnum:] ]", perl=T, mc.cores=cores)
-    df.Corpus<-tm_map(dfCorpus, toSpace, "[\\s\\t][A-z]{1,2}[\\s\\t]", perl=T, mc.cores=cores)
-    dictCorpus<-abstrCorpus
+    df.Corpus<-tm_map(df.Corpus, toSpace, "[\\s\\t][A-z]{1,2}[\\s\\t]", perl=T, mc.cores=cores)
     df.Corpus<-tm_map(df.Corpus, stemDocument, mc.cores=cores)
     df.Corpus<-tm_map(df.Corpus, stripWhitespace, mc.cores=cores)
-    df.Corpus<-mclapply(df.Corpus, stemCompletion2, dictionary=dictCorpus, mc.cores=cores)
+    df.Corpus<-mclapply(df.Corpus, stemCompletion2, dictionary=abstrCorpus, mc.cores=cores)
     df.Corpus<-Corpus(VectorSource(df.Corpus))
     return(df.Corpus)
 }
