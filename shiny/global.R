@@ -2,7 +2,7 @@ library(tm)
 library(topicmodels)
 library(proxy)
 
-extraFunFile<-"textMine_funcs.R"
+extraFunFile<-"shiny_textMine_funcs.R"
 if (file.exists(extraFunFile)) {
     source(extraFunFile, keep.source=TRUE);
 }
@@ -17,4 +17,4 @@ rm(metaData)
 tdm<-TermDocumentMatrix(abstrCorpus)
 
 load("data/LDA_models_current.rda")
-load("data/LDA_FY_models_current.rda")
+#load("data/LDA_FY_models_current.rda")
