@@ -15,15 +15,21 @@ getTopicNames<-function(K){ apply(terms(models[[as.integer(K)]],4),2,
 dict<-rownames(tdm)
 
 shinyServer(function(input,output) {
+         
+    text<-reactive({
+        input$submit
+        x<-isolate(input$abstract)
+        makeCorpus(x)        
+    })
     
-    output$pubs<-renderPlot({
-        pub<-tapply(meta(abstrCorpus)$FY,meta(abstrCorpus)$FY, length)
-        barplot(pub, col="red3", main="Number of Publications by FY")}, height=400, width=800)
+    dtm<-reactive({
+        DocumentTermMatrix(text())
+    })
     
-    output$pubs.q<-renderPlot({
-        pub.Q<-tapply(meta(abstrCorpus)$FY.Q,meta(abstrCorpus)$FY.Q, length)
-        barplot(pub.Q, col="darkgreen", las=2, main="Number of Publications by FY quarter")}, height=400, width=800)
-     
+    posteriors<-reactive({
+        posterior(models[[as.integer(input$Ktopic)]], newdata=dtm())
+    })
+    
     fys<-reactive({
         if("ALL" %in% input$fy){
             x<-c(2009,2010,2011,2012,2013,2014,2015)   
@@ -65,6 +71,14 @@ shinyServer(function(input,output) {
         terms<-rowSums(as.matrix(tdm[,unlist(currentIds())]))
         terms[order(terms, decreasing = T)]
     })
+    
+    output$pubs<-renderPlot({
+        pub<-tapply(meta(abstrCorpus)$FY,meta(abstrCorpus)$FY, length)
+        barplot(pub, col="red3", main="Number of Publications by FY")}, height=400, width=800)
+    
+    output$pubs.q<-renderPlot({
+        pub.Q<-tapply(meta(abstrCorpus)$FY.Q,meta(abstrCorpus)$FY.Q, length)
+        barplot(pub.Q, col="darkgreen", las=2, main="Number of Publications by FY quarter")}, height=400, width=800)
     
     output$wordcloud<-renderPlot({
         wordcloud(names(terms()), freq=terms(),max.words = input$slider, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order = F)
@@ -149,6 +163,22 @@ shinyServer(function(input,output) {
         x<-edgeThresh()
         paste("Absolute distance threshold: ",x, sep = "")
     })
+    
+    output$classify<-renderChart({
+        p<-data.frame(topicProb=as.vector(posteriors()[["topics"]]), topics=getTopicNames(input$Ktopic), color=1)
+        p<-p[order(p$topicProb,decreasing = T),]
+        w<-18*length(p$topicProb)
+        p1<-nPlot(topicProb~topics, data=p, type="multiBarChart", color="color")
+        p1$addParams(dom="classify")
+        p1$chart(reduceXTicks = FALSE)
+        p1$yAxis(axisLabel="Topic Probabilty (gamma)",tickFormat = "#! function(d) {return d3.format(',.5f')(d)} !#")
+        p1$xAxis(rotateLabels=-45)
+        p1$chart(margin=list(left=125, bottom=240))
+        p1$params$height<-600
+        p1$params$width<-paste(w)
+        return(p1) 
+    })
+    
     output$force<-renderVisNetwork({
         visNetwork(nodes = nodes(), edges = edges()) %>% visOptions(highlightNearest = TRUE)
     })
