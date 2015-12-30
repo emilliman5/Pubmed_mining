@@ -4,9 +4,20 @@ library(slam)
 library(lubridate)
 library(parallel)
 library(proxy)
+library(docopt)
+
+"This is the first script in our text mining workflow. It will read, clean and perform some basic exploratory analyses.
+
+Usage: Rscript text_analysis.R [options]
+
+Options:
+    -x --xml <pubmed>   Pubmed results in XML format
+    -r --reporter <nih> NIH Reporter export in CSV format
+    --reset             Force a reprocessing of the Corpus"
+
+opts<-docopts(doc)
 
 #If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
-reset<-FALSE
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
@@ -17,9 +28,11 @@ dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
-if(!file.exists("Corpus/1.txt") || reset){
+if(length("data/Corpus/")==0 || reset){
   source("makeCorpus.R")
-  abstrCorpus<-makeCorpus("ESlit.xml","stopwords.txt", 30)
+  pubmed.df<-pubmedParse("")
+  nihreporter<-do.call(rbind, lapply( process_NIH_reporter()
+ 
 } else {
   ##read in corpus docs.
   abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
