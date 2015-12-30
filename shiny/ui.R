@@ -98,7 +98,19 @@ shinyUI(fluidPage(
                 sliderInput("corr",label=h3("Minimum Correlation for Term associations"), 
                             min=0, max=1, value=0.25),
                 dataTableOutput("assoc")
-            )
-          )            
-        ))
-))
+            ),
+            tabPanel("Classifications",
+                     h3("Classify a document based on our exisiting topic models"),
+                     radioButtons("Ktopic",selected = 2,label = "Topic Model Selection",choices = 
+                                      list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
+                                           "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T),
+                     h4("Copy and paste document text and press submit. This will likely work best with abstracts or abstract-length texts."),
+                     tags$textarea(id="abstract",value = "", cols=150, rows=5),
+                     actionButton("submit", "Submit"),
+                     showOutput("classify", "polycharts")
+                )            
+            )#tabset panel
+        ) #Main Panel
+    ) #sidebar Layout
+    ) #Fluid Page
+)#ShinyUI
