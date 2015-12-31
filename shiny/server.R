@@ -75,17 +75,18 @@ shinyServer(function(input,output) {
     
     output$pubs<-renderChart({
         pub.Q<-tapply(meta(abstrCorpus)$FY.Q,meta(abstrCorpus)$FY.Q, length)
-        pubs<-data.frame(FY=as.factor(floor(as.numeric(names(pub.Q)))), 
-                         Quarter=as.numeric(unlist(lapply(strsplit(as.character(names(pub.Q)), "\\."), 
-                                                   function(x) x[2]))), 
-                          count=as.vector(pub.Q))
+        pubs<-data.frame(FY=floor(as.numeric(names(pub.Q))), 
+                         Quarter=paste0("Q",as.numeric(unlist(lapply(strsplit(as.character(names(pub.Q)), "\\."), 
+                                                   function(x) x[2])))), 
+                          count=as.integer(pub.Q))
+        pubs<-pubs[pubs$FY>2008,]
         p1<-nPlot(count~FY, group="Quarter", data=pubs, type="multiBarChart")
         p1$addParams(dom="pubs")
         p1$chart(reduceXTicks = FALSE)
         p1$yAxis(axisLabel="Number of Publications")
         p1$xAxis(rotateLabels=-45)
-        #p1$chart(margin=list(left=125, bottom=240))
-        p1$params$height<-600
+        p1$chart(margin=list(left=125))
+        p1$params$height<-500
         p1$params$width<-1000
         return(p1) 
         
