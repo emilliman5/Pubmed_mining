@@ -72,7 +72,7 @@ shinyUI(fluidPage(
 			                more with 1000 topics. Generally we set the gamma threshold such that each document is assigned 2-3 topics 
 			                with few documents being assigened up to 7. This seems intuitive for scientific literature, but is arbitrary."),
                     showOutput("pubs", "nvd3"),                
-                    sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=50),
+                    sliderInput("slider",label=h3("Number of Words to Display"),min=10, max=500, value=100),
                     plotOutput("wordcloud",height = "100%")),
             tabPanel("Topic Plots",
               h3("Topic Usage"),
@@ -80,7 +80,7 @@ shinyUI(fluidPage(
                 calculated by summing each documents topic probability (gamma value) for a given topic and then divided by 
                 the number documents in the corpus group (number of publications in the FY)."),
               showOutput("topics", "nvd3"),
-              sliderInput("dist",label=p(h4("Distance Measure Threshold"), "The slider represents the top x % of connections to retain"),min=0, max=0.5, value=0.15),
+              sliderInput("dist",label=p(h4("Distance Measure Threshold"), "The slider represents the top x % of connections to retain"),min=0, max=0.25, value=0.1),
               h4(textOutput("text")),
               visNetworkOutput("force",height="800px")),
             tabPanel("Publications Table",
