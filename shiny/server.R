@@ -5,30 +5,25 @@ library(rCharts)
 library(wordcloud)
 library(visNetwork)
 library(proxy)
-
-createLink <- function(url, val) {
-  sprintf('<a href="%s%s" target="_blank">%s</a>',url, val, val)
-}
-
-topicLength<-function(K){ models[[as.integer(K)]]@k }
-getTopicNames<-function(K){ apply(terms(models[[as.integer(K)]],4),2,
-                                  function(z) paste(z,collapse=","))}    
+#library(ape, lib.loc="/ddn/gs1/home/millimanej/R/library/ape/libs")
+library(ape)
+ 
 dict<-rownames(tdm)
 
 shinyServer(function(input,output) {
          
     text<-reactive({
-        input$submit
+        if(input$submit==0){
+            return()
+        }
         x<-isolate(input$abstract)
-        makeCorpus(x)        
-    })
-    
-    dtm<-reactive({
-        DocumentTermMatrix(text())
+        z<-makeCorpus(x)
+        DocumentTermMatrix(z)
     })
     
     posteriors<-reactive({
-        posterior(models[[as.integer(input$Ktopic)]], newdata=dtm())
+        input$submit
+        isolate(posterior(models[[as.integer(input$Ktopic)]], newdata=text()))
     })
     
     fys<-reactive({
@@ -83,7 +78,7 @@ shinyServer(function(input,output) {
         p1<-nPlot(count~FY, group="Quarter", data=pubs, type="multiBarChart")
         p1$addParams(dom="pubs")
         p1$chart(reduceXTicks = FALSE)
-        p1$yAxis(axisLabel="Number of Publications")
+        p1$yAxis(axisLabel="Number of Publications",tickFormat = "#! function(d) {return d3.format(',.0f')(d)} !#")
         p1$xAxis(rotateLabels=-45)
         p1$chart(margin=list(left=125))
         p1$params$height<-500
@@ -99,14 +94,15 @@ shinyServer(function(input,output) {
     output$topics<-renderChart({
         gamma<-data.frame(topic=rep(getTopicNames(input$topicK),length(fys())), 
                           sum=unlist(lapply(currentIds(), 
-                                            function(x) 100*(colSums(models[[as.integer(input$topicK)]]@gamma[x,])/length(x)) )), 
+                                            function(x) colSums(t(apply(models[[as.integer(input$topicK)]]@gamma[x,], 1, 
+                                                                      function(z) z*(z>=z[order(z,decreasing = T)][5])) )))), 
                           fy=rep(fys(), each=models[[as.integer(input$topicK)]]@k))
         p1<-nPlot(sum~topic, group="fy", data=gamma, type="multiBarChart")
         p1$addParams(dom="topics")
         p1$chart(reduceXTicks = FALSE)
-        p1$yAxis(axisLabel="Sum of Topic Proportion across Corpus")
+        p1$yAxis(axisLabel="Topic Probability",tickFormat = "#! function(d) {return d3.format(',.0f')(d)} !#")
         p1$xAxis(rotateLabels=-45)
-        p1$chart(margin=list(left=125,bottom=240))
+        p1$chart(margin=list(left=100,bottom=240))
         p1$params$height<-600
         p1$params$width<-22*topicLength(input$topicK)
         return(p1) 
@@ -182,11 +178,11 @@ shinyServer(function(input,output) {
         p1<-nPlot(topicProb~topics, data=p, type="multiBarChart", color="color")
         p1$addParams(dom="classify")
         p1$chart(reduceXTicks = FALSE)
-        p1$yAxis(axisLabel="Topic Probabilty (gamma)",tickFormat = "#! function(d) {return d3.format(',.5f')(d)} !#")
+        p1$yAxis(axisLabel="Topic Probabilty (gamma)",tickFormat = "#! function(d) {return d3.format(',.3f')(d)} !#")
         p1$xAxis(rotateLabels=-45)
         p1$chart(margin=list(left=125, bottom=240))
         p1$params$height<-600
-        p1$params$width<-18*topicLength(input$Ktopic)
+        p1$params$width<-20*topicLength(input$Ktopic)
         return(p1) 
     })
     
@@ -203,4 +199,10 @@ shinyServer(function(input,output) {
                 columnDefs = list(list(width = '25px', targets = "_all")
                     )
         ), escape=FALSE)
+    
+    output$dendroArc<-renderPlot({   
+        dendroArc(FYs = fys(), modelK = as.integer(input$treeK),distThresh = input$treeDist, 
+                  ids=currentIds(),betaTree = beta.tree[[as.integer(input$treeK)]],
+                  topicN = as.integer(input$topicN), distFun = input$proxy, gamma = 0.15)
+    })
 })
