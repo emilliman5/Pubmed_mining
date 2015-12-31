@@ -54,7 +54,7 @@ shinyUI(fluidPage(
 		              publications. 3) Words that show up in less than 10% of the documents were also 
 			          removed because they are too sparse.", br(),br(), "The corpus was then explored using 
 			                word clouds and various plots of vocabulary complexiety to assess cleanliness and processing.", br(), 
-			                "Topics were modeled across the corpus in tow ways. 1) Using the entire corpus various numbers 
+			                "Topics were modeled across the corpus in two ways. 1) Using the entire corpus various numbers 
 			                of topics were modeled (25, 50, 10, 250 ,500, and 1000). 2) For each fiscal year represented 
 			                topics were modeled at various levels (25, 50, 100, 250, 250, 500, 1000).", br(),br(), "Topics were 
 			                modeled using Latent Dirichlet Allocation. (Blei", tags$i("et al")," 2003) This machine learning algorithm 
@@ -77,8 +77,7 @@ shinyUI(fluidPage(
             tabPanel("Topic Plots",
               h3("Topic Usage"),
               p("This plot shows how much a topic was discussed in the dataset selected. This was 
-                calculated by summing each documents topic probability (gamma value) for a given topic and then divided by 
-                the number documents in the corpus group (number of publications in the FY)."),
+                calculated by summing the topic probabilities (gamma value) for a given topic. Only the top 5 topics per document were used, in an effort to capture only the significant topic assigents. This plot may still be sensitive to the number of documents in the the selected corpus"),
               showOutput("topics", "nvd3"),
               sliderInput("dist",label=p(h4("Distance Measure Threshold"), "The slider represents the top x % of connections to retain"),min=0, max=0.25, value=0.1),
               h4(textOutput("text")),
@@ -86,6 +85,18 @@ shinyUI(fluidPage(
             tabPanel("Publications Table",
                      dataTableOutput("papers")
             ),
+            tabPanel("DendroArcs",
+                     sliderInput("treeDist",,label=h4("Minimum Distance for Topic-Topic Associations"), 
+                                 min=0, max=1, value=0.80), 
+                     selectInput("proxy", label=h4("Distance calculation Method:"), 
+                                                                        selected="cosine", choices=list("cosine","hellinger","euclidean","bhjattacharyya")),
+                     radioButtons("treeK",selected = 2,label = "Topic Model Selection",choices = 
+                                      list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
+                                           "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T),
+                     selectInput("topicN", label=h4("Anchor Topic"),selected=1, choices=list(Topic1=1, Topic2=3)),
+                     plotOutput("dendroArc")
+                     
+                     ),
             tabPanel("Word Assoc",
                 br(),
                 h4("This chart shows the importance (or weight/probability) a term has for each topic
