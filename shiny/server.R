@@ -73,13 +73,23 @@ shinyServer(function(input,output) {
         terms[order(terms, decreasing = T)]
     })
     
-    output$pubs<-renderPlot({
-        pub<-tapply(meta(abstrCorpus)$FY,meta(abstrCorpus)$FY, length)
-        barplot(pub, col="red3", main="Number of Publications by FY")}, height=400, width=800)
-    
-    output$pubs.q<-renderPlot({
+    output$pubs<-renderChart({
         pub.Q<-tapply(meta(abstrCorpus)$FY.Q,meta(abstrCorpus)$FY.Q, length)
-        barplot(pub.Q, col="darkgreen", las=2, main="Number of Publications by FY quarter")}, height=400, width=800)
+        pubs<-data.frame(FY=as.factor(floor(as.numeric(names(pub.Q)))), 
+                         Quarter=as.numeric(unlist(lapply(strsplit(as.character(names(pub.Q)), "\\."), 
+                                                   function(x) x[2]))), 
+                          count=as.vector(pub.Q))
+        p1<-nPlot(count~FY, group="Quarter", data=pubs, type="multiBarChart")
+        p1$addParams(dom="pubs")
+        p1$chart(reduceXTicks = FALSE)
+        p1$yAxis(axisLabel="Number of Publications")
+        p1$xAxis(rotateLabels=-45)
+        #p1$chart(margin=list(left=125, bottom=240))
+        p1$params$height<-600
+        p1$params$width<-1000
+        return(p1) 
+        
+        })
     
     output$wordcloud<-renderPlot({
         wordcloud(names(terms()), freq=terms(),max.words = input$slider, colors=brewer.pal(9, "BuGn")[-(1:4)], random.order = F)
