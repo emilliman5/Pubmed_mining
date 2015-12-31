@@ -71,8 +71,7 @@ shinyUI(fluidPage(
 			                for 50 topics may have generally higher values than for 1000 topics, because the pie has to be distributed 
 			                more with 1000 topics. Generally we set the gamma threshold such that each document is assigned 2-3 topics 
 			                with few documents being assigened up to 7. This seems intuitive for scientific literature, but is arbitrary."),
-                    plotOutput("pubs", width="100%"),                
-                    plotOutput("pubs.q", width="100%"),
+                    showOutput("pubs", "nvd3"),                
                     sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=50),
                     plotOutput("wordcloud",height = "100%")),
             tabPanel("Topic Plots",
