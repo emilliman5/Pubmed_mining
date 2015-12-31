@@ -10,6 +10,7 @@ createLink <- function(url, val) {
   sprintf('<a href="%s%s" target="_blank">%s</a>',url, val, val)
 }
 
+topicLength<-function(K){ models[[as.integer(K)]]@k }
 getTopicNames<-function(K){ apply(terms(models[[as.integer(K)]],4),2,
                                   function(z) paste(z,collapse=","))}    
 dict<-rownames(tdm)
@@ -96,7 +97,7 @@ shinyServer(function(input,output) {
         p1$xAxis(rotateLabels=-45)
         p1$chart(margin=list(left=125,bottom=240))
         p1$params$height<-600
-        p1$params$width<-1200
+        p1$params$width<-22*topicLength(input$topicK)
         return(p1) 
         })
     
@@ -133,7 +134,7 @@ shinyServer(function(input,output) {
         p1$xAxis(rotateLabels=-45)
         p1$chart(margin=list(left=125, bottom=240))
         p1$params$height<-600
-        p1$params$width<-1200
+        p1$params$width<-22*topicLength(input$K)
         return(p1) 
     })
        
@@ -167,7 +168,6 @@ shinyServer(function(input,output) {
     output$classify<-renderChart({
         p<-data.frame(topicProb=as.vector(posteriors()[["topics"]]), topics=getTopicNames(input$Ktopic), color=1)
         p<-p[order(p$topicProb,decreasing = T),]
-        w<-18*length(p$topicProb)
         p1<-nPlot(topicProb~topics, data=p, type="multiBarChart", color="color")
         p1$addParams(dom="classify")
         p1$chart(reduceXTicks = FALSE)
@@ -175,7 +175,7 @@ shinyServer(function(input,output) {
         p1$xAxis(rotateLabels=-45)
         p1$chart(margin=list(left=125, bottom=240))
         p1$params$height<-600
-        p1$params$width<-paste(w)
+        p1$params$width<-18*topicLength(input$Ktopic)
         return(p1) 
     })
     
