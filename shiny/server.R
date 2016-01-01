@@ -10,7 +10,7 @@ library(ape)
  
 dict<-rownames(tdm)
 
-shinyServer(function(input,output) {
+shinyServer(function(input,output, session) {
          
     text<-reactive({
         if(input$submit==0){
@@ -26,17 +26,8 @@ shinyServer(function(input,output) {
         isolate(posterior(models[[as.integer(input$Ktopic)]], newdata=text()))
     })
     
-    fys<-reactive({
-        if("ALL" %in% input$fy){
-            x<-c(2009,2010,2011,2012,2013,2014,2015)   
-        } else{
-            x<-input$fy
-        }
-        x
-    })
-    
     currentIds<-reactive({
-        ids<-lapply(fys(), function(x)
+        ids<-lapply(fys(input$fy), function(x)
                 which(meta(abstrCorpus)[,"FY"] == x))
         lapply(ids, function(x) x[x %in% fileIds()])
     })
@@ -92,11 +83,11 @@ shinyServer(function(input,output) {
     },height = 600)
     
     output$topics<-renderChart({
-        gamma<-data.frame(topic=rep(getTopicNames(input$topicK),length(fys())), 
+        gamma<-data.frame(topic=rep(getTopicNames(input$topicK),length(fys(input$fy))), 
                           sum=unlist(lapply(currentIds(), 
                                             function(x) colSums(t(apply(models[[as.integer(input$topicK)]]@gamma[x,], 1, 
                                                                       function(z) z*(z>=z[order(z,decreasing = T)][5])) )))), 
-                          fy=rep(fys(), each=models[[as.integer(input$topicK)]]@k))
+                          fy=rep(fys(input$fy), each=models[[as.integer(input$topicK)]]@k))
         p1<-nPlot(sum~topic, group="fy", data=gamma, type="multiBarChart")
         p1$addParams(dom="topics")
         p1$chart(reduceXTicks = FALSE)
@@ -201,8 +192,25 @@ shinyServer(function(input,output) {
         ), escape=FALSE)
     
     output$dendroArc<-renderPlot({   
-        dendroArc(FYs = fys(), modelK = as.integer(input$treeK),distThresh = input$treeDist, 
+        dendroArc(FYs = fys(input$fy), modelK = as.integer(input$treeK),distThresh = input$treeDist, 
                   ids=currentIds(),betaTree = beta.tree[[as.integer(input$treeK)]],
                   topicN = as.integer(input$topicN), distFun = input$proxy, gamma = 0.15)
+    })
+    
+    output$dendroArc.ui<-renderUI({
+      plotOutput("dendroArc", height=paste0(topicLength(input$treeK)*18, "px"))
+    })
+    
+    topicChoices<-reactive({
+      z<-lapply(1:topicLength(input$treeK), function(x) x)
+      names(z)<-getTopicNames(input$treeK)
+      return(z)
+      })
+    
+    observe({
+      # This will change the value of input$partnerName to searchResult()[,1]
+      updateSelectInput(session, "topicN", 
+                      label = "Anchor Topic:", 
+                      choices = topicChoices())
     })
 })
