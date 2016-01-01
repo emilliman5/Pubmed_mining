@@ -5,6 +5,16 @@ createLink <- function(url, val) {
     sprintf('<a href="%s%s" target="_blank">%s</a>',url, val, val)
 }
 
+fys<-function(z)
+  {
+  if("ALL" %in% z){
+    x<-c(2009,2010,2011,2012,2013,2014,2015)   
+  } else{
+    x<-z
+  }
+  x
+}
+
 topicLength<-function(K){ models[[as.integer(K)]]@k }
 
 getTopicNames<-function(K){ apply(terms(models[[as.integer(K)]],4),2,
@@ -86,17 +96,17 @@ dendroArc<-function(FYs, modelK, topicN, ids, distFunc, gamma=0.15, distThresh, 
     
     order<-getTopicNames(modelK)[beta.tree[[modelK]]$order]
     sizes<-as.numeric(cut(rowSums(do.call(cbind, degrees)),10))[betaTree$order]
-    pal<-rainbow(7)[length(FYs)]
+    pal<-rainbow(7)[1:length(FYs)]
     edge.col<-do.call(c, lapply(seq_along(edges), function(x) rep(pal[x], length(edges[[x]][,1]))))
     edge.weight<-do.call(c, lapply(rev(seq_along(edges)), function(x) rep(x/2+.5, length(edges[[x]][,1]))))
     edges<-do.call(rbind, edges)
     
     par(mfcol=c(1,2))
-    plot(as.phylo(beta.tree[[modelK]]),show.tip.label=F, main="Topic-Topic relationship by Terms")
-    arcplot(edges, vertices = order, pch=21,cex.labels=0.75,
-            col.arcs=edge.col,main=paste("FY",paste(FYs, collapse=" and ")), cex.nodes = sizes,
-            ylim=c(0.01,.99),col.labels="black",lwd.arcs=edge.weight, ordering=order, 
-            horizontal=F,col.nodes="black", font=0)
+    plot(as.phylo(beta.tree[[modelK]]),show.tip.label=F, main="Topic-Topic relationship by Word Usage")
+    arcplot(edges, vertices = order, pch=21, cex.labels=1,
+            col.arcs=edge.col, main=paste("FY",paste(FYs, collapse=" and ")), cex.nodes = sizes,
+            ylim=c(0.00,1),col.labels="black",lwd.arcs=edge.weight, ordering=order, 
+            horizontal=F,col.nodes="black")
     legend("topright", lty=1,lwd=2,cex=1.25, col=pal, legend = FYs, bty="n")  
 }
 
