@@ -14,14 +14,11 @@ for (x in colnames(metaData)) {
     meta(abstrCorpus, x)<-metaData[,x]
 }
 rm(metaData)
-
 tdm<-TermDocumentMatrix(abstrCorpus)
 
 load("data/LDA_models_current.rda")
-#load("data/LDA_FY_models_current.rda")
 load("data/beta.tree.rda")
 
+#load("data/LDA_FY_models_current.rda")
 # beta.tree<-lapply(models, function(x) hclust(dist(x@beta, "Hellinger")))
-# beta.tree<-lapply(seq_along(beta.tree), function(x) {beta.tree[[x]]$labels<-getTopicNames(x)
-#                                                     beta.tree[[x]]})
 # save(beta.tree, file = "data/beta.tree.rda")
