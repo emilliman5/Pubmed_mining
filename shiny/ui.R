@@ -86,15 +86,22 @@ shinyUI(fluidPage(
                      dataTableOutput("papers")
             ),
             tabPanel("DendroArcs",
-                     sliderInput("treeDist",,label=h4("Minimum Distance for Topic-Topic Associations"), 
-                                 min=0, max=1, value=0.80), 
+                     sliderInput("treeDist",label=h4("Minimum Distance for Topic-Topic Associations"), 
+                                 min=0.5, max=1, value=0.90), 
                      selectInput("proxy", label=h4("Distance calculation Method:"), 
                                                                         selected="cosine", choices=list("cosine","hellinger","euclidean","bhjattacharyya")),
                      radioButtons("treeK",selected = 2,label = "Topic Model Selection",choices = 
                                       list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
                                            "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T),
+#                      checkboxGroupInput("treefy",selected = 2010,
+#                                         label=p(h3("Fiscal Years"),"Selection of FYs will select the data used to make plots 
+#                                                 in the \"Topic Plots\" tab."),
+#                                         choices=list("ALL"="ALL","FY2009"=2009, "FY2010"=2010,
+#                                                      "FY2011"=2011,"FY2012"=2012,
+#                                                      "FY2013"=2013,"FY2014"=2014,
+#                                                      "FY2015"=2015),inline = T),
                      selectInput("topicN", label=h4("Anchor Topic"),selected=1, choices=list(Topic1=1, Topic2=3)),
-                     plotOutput("dendroArc")
+                     uiOutput("dendroArc.ui")
                      
                      ),
             tabPanel("Word Assoc",
