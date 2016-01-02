@@ -72,7 +72,7 @@ getTopicAssign<-function(ids, model, corpus){
     t
 }
 
-dendroArc<-function(FYs, modelK, topicN, ids, distFunc, gamma=0.15, distThresh, betaTree)
+dendroArc<-function(FYs, modelK, topicN, ids, distFunc, gamma=0.15, distThresh, betaTree, y_lim)
 {
     ##FYs = the two fiscal years to compare
     ##model = the topic model object to use
@@ -102,10 +102,10 @@ dendroArc<-function(FYs, modelK, topicN, ids, distFunc, gamma=0.15, distThresh, 
     edges<-do.call(rbind, edges)
     
     par(mfcol=c(1,2))
-    plot(as.phylo(beta.tree[[modelK]]),show.tip.label=F, main="Topic-Topic relationship by Word Usage")
+    plot(as.phylo(beta.tree[[modelK]]),show.tip.label=F)
     arcplot(edges, vertices = order, pch=21, cex.labels=1,
             col.arcs=edge.col, main=paste("FY",paste(FYs, collapse=" and ")), cex.nodes = sizes,
-            ylim=c(0.00,1),col.labels="black",lwd.arcs=edge.weight, ordering=order, 
+            ylim=y_lim, col.labels="black",lwd.arcs=edge.weight, ordering=order, 
             horizontal=F,col.nodes="black")
     legend("topright", lty=1,lwd=2,cex=1.25, col=pal, legend = FYs, bty="n")  
 }
