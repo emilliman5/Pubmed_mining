@@ -9,6 +9,12 @@ library(proxy)
 library(ape)
  
 dict<-rownames(tdm)
+limits<-list(c(0.02,0.99),
+             c(0.01,0.99),
+             c(0.005,0.995),
+             c(0.0025,0.9975),
+             c(0.00125,0.99875),
+             c(0.0006,0.9994))
 
 shinyServer(function(input,output, session) {
          
@@ -194,7 +200,7 @@ shinyServer(function(input,output, session) {
     output$dendroArc<-renderPlot({   
         dendroArc(FYs = fys(input$fy), modelK = as.integer(input$treeK),distThresh = input$treeDist, 
                   ids=currentIds(),betaTree = beta.tree[[as.integer(input$treeK)]],
-                  topicN = as.integer(input$topicN), distFun = input$proxy, gamma = 0.15)
+                  y_lim=limits[[as.integer(input$treeK)]],topicN = as.integer(input$topicN), distFun = input$proxy, gamma = 0.15)
     })
     
     output$dendroArc.ui<-renderUI({
