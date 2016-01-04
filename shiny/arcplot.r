@@ -382,7 +382,7 @@ arcplot <- function(
   lend = 1, ljoin = 2, lmitre = 1, show.nodes = TRUE, pch.nodes = 19, 
   cex.nodes = 1, col.nodes = "gray80", bg.nodes = "gray80", lwd.nodes = 1,
   show.labels = TRUE, col.labels = "gray55",
-  cex.labels = 0.9, las = 2, font = 1, line = 0, 
+  cex.labels = 0.9, las = 2, font = 0, line = 0, 
   outer = FALSE, adj = NA, padj = NA, axes = FALSE, xlim = NULL, ylim = NULL, ...)
 {
   # Get graph information
