@@ -30,9 +30,14 @@ dir.create(resultsPath)
 
 if(length("data/Corpus/")==0 || reset){
   source("makeCorpus.R")
-  pubmed.df<-pubmedParse("")
-  nihreporter<-do.call(rbind, lapply( process_NIH_reporter()
- 
+  if(xml){
+    pubmed.df<-pubmedParse("")
+  }
+  if(reporter){
+    nihreporter<-do.call(rbind, lapply( process_NIH_reporter()
+  }
+  
+  makeCorpus(c())
 } else {
   ##read in corpus docs.
   abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
