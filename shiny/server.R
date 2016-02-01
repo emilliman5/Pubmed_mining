@@ -81,7 +81,6 @@ shinyServer(function(input,output, session) {
         p1$params$height<-500
         p1$params$width<-1000
         return(p1) 
-        
         })
     
     output$wordcloud<-renderPlot({
@@ -169,6 +168,15 @@ shinyServer(function(input,output, session) {
         paste("Absolute distance threshold: ",x, sep = "")
     })
     
+    posterior.dist<-reactive({
+      x<-dist(models[[as.integer(input$Ktopic)]]@gamma, t(posteriors()[["topics"]]), method="cosine")
+      meta(abstrCorpus)[order(x)[1:15],]
+    })
+    
+    output$closestPubs<-renderTable({
+      posterior.dist()
+    }, escape=F)
+    
     output$classify<-renderChart({
         p<-data.frame(topicProb=as.vector(posteriors()[["topics"]]), topics=getTopicNames(input$Ktopic), color=1)
         p<-p[order(p$topicProb,decreasing = T),]
@@ -199,8 +207,9 @@ shinyServer(function(input,output, session) {
     
     output$dendroArc<-renderPlot({   
         dendroArc(FYs = fys(input$fy), modelK = as.integer(input$treeK),distThresh = input$treeDist, 
-                  ids=currentIds(),betaTree = beta.tree[[as.integer(input$treeK)]],
-                  y_lim=limits[[as.integer(input$treeK)]],topicN = as.integer(input$topicN), distFun = input$proxy, gamma = 0.15)
+                  ids=currentIds(),betaTree = beta.tree[[as.integer(input$treeK)]][[as.integer(input$topicTree)]],
+                  y_lim=limits[[as.integer(input$treeK)]],topicN = as.integer(input$topicN), 
+                  distFun = input$proxy, gamma = 0.15)
     })
     
     output$dendroArc.ui<-renderUI({
