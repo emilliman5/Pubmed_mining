@@ -39,7 +39,7 @@ shinyUI(fluidPage(
                       contain a description of methods and the data."),
                     h3("Please be gentle with the site. There is a lot of data behind the scenes that
                        needs to be operated on when parameters are changed. I suggest
-                       not trying to viusalize all the data (do not select \"ALL\") without first 
+                       not trying to visualize all the data (do not select \"ALL\") without first 
                        restricting the data by grant or PMIDs."),
                     h2("The Corpus"),
                     p("Publications were reteived from Pubmed (accessed on:2015-10-02) using their
