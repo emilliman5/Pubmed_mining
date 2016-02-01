@@ -94,7 +94,7 @@ dendroArc<-function(FYs, modelK, topicN, ids, distFunc, gamma=0.15, distThresh, 
         colSums(topicGamma[x,]>=gamma)        
     })
     
-    order<-getTopicNames(modelK)[beta.tree[[modelK]]$order]
+    order<-getTopicNames(modelK)[betaTree$order]
     sizes<-as.numeric(cut(rowSums(do.call(cbind, degrees)),10))[betaTree$order]
     pal<-rainbow(7)[1:length(FYs)]
     edge.col<-do.call(c, lapply(seq_along(edges), function(x) rep(pal[x], length(edges[[x]][,1]))))
@@ -102,7 +102,7 @@ dendroArc<-function(FYs, modelK, topicN, ids, distFunc, gamma=0.15, distThresh, 
     edges<-do.call(rbind, edges)
     
     par(mfcol=c(1,2))
-    plot(as.phylo(beta.tree[[modelK]]),show.tip.label=F)
+    plot(as.phylo(betaTree),show.tip.label=F)
     arcplot(edges, vertices = order, pch=21, cex.labels=1,
             col.arcs=edge.col, main=paste("FY",paste(FYs, collapse=" and ")), cex.nodes = sizes,
             ylim=y_lim, col.labels="black",lwd.arcs=edge.weight, ordering=order, 
