@@ -169,13 +169,13 @@ shinyServer(function(input,output, session) {
     })
     
     posterior.dist<-reactive({
-      x<-dist(models[[as.integer(input$Ktopic)]]@gamma, t(posteriors()[["topics"]]), method="cosine")
-      meta(abstrCorpus)[order(x)[1:15],]
+      x<-dist(models[[as.integer(input$Ktopic)]]@gamma, matrix(posteriors()[["topics"]], nrow=1,byrow = T), method="cosine")
+      cbind(meta(abstrCorpus)[order(x),], x[order(x)])
     })
     
-    output$closestPubs<-renderTable({
+    output$closestPubs<-renderDataTable({
       posterior.dist()
-    }, escape=F)
+    })
     
     output$classify<-renderChart({
         p<-data.frame(topicProb=as.vector(posteriors()[["topics"]]), topics=getTopicNames(input$Ktopic), color=1)
