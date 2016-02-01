@@ -90,6 +90,8 @@ shinyUI(fluidPage(
                                  min=0.5, max=1, value=0.90), 
                      selectInput("proxy", label=h4("Distance calculation Method:"), 
                                                                         selected="cosine", choices=list("cosine","hellinger","euclidean","bhjattacharyya")),
+                     radioButtons("topicTree", selected=1, label="Beta-term Tree Method", 
+                                  choices=list("Cosine"=1, "Hellinger"=2), inline=TRUE),
                      radioButtons("treeK",selected = 2,label = "Topic Model Selection",choices = 
                                       list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
                                            "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T),
@@ -124,7 +126,8 @@ shinyUI(fluidPage(
                      h4("Copy and paste document text and press submit. This will likely work best with abstracts or abstract-length texts."),
                      tags$textarea(id="abstract",value = "", cols=150, rows=5),
                      actionButton("submit", "Submit"),
-                     showOutput("classify", "polycharts")
+                     showOutput("classify", "polycharts"),
+                     dataTableOutput("closestPubs")
                 )            
             )#tabset panel
         ) #Main Panel
