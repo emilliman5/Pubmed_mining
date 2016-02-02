@@ -206,8 +206,9 @@ shinyServer(function(input,output, session) {
         ), escape=FALSE)
     
     output$dendroArc<-renderPlot({   
-        dendroArc(FYs = fys(input$fy), modelK = as.integer(input$treeK),distThresh = input$treeDist, 
-                  ids=currentIds(),betaTree = beta.tree[[as.integer(input$treeK)]][[as.integer(input$topicTree)]],
+        dendroArc(FYs = fys(input$fy), modelK = as.integer(input$treeK),
+                  distThresh = input$treeDist, ids=currentIds(), 
+                  betaTree = beta.tree[[as.integer(input$treeK)]][[as.integer(input$topicTree)]],
                   y_lim=limits[[as.integer(input$treeK)]],topicN = as.integer(input$topicN), 
                   distFun = input$proxy, gamma = 0.15)
     })
