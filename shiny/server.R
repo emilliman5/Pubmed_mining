@@ -202,8 +202,9 @@ shinyServer(function(input,output, session) {
       df
     },options = list(autoWidth = FALSE,
                 columnDefs = list(list(width = '25px', targets = "_all")
-                    )
-        ), escape=FALSE)
+                                )
+                    ), 
+    escape=FALSE)
     
     output$dendroArc<-renderPlot({   
         dendroArc(FYs = fys(input$fy), modelK = as.integer(input$treeK),
