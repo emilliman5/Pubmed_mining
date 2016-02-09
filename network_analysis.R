@@ -6,6 +6,15 @@ library(RColorBrewer)
 library(riverplot)
 library(rCharts)
 
+extraFunFile<-"textMine_funcs.R"
+if (file.exists(extraFunFile)) {
+    source(extraFunFile, keep.source=TRUE);
+}
+
+dir.create("results/",showWarnings = F)
+resultsPath<-paste0("results/",getDate())
+dir.create(resultsPath)
+
 ###############
 ##EDA of LDA assignments and data reduction methods
 ###############
@@ -26,7 +35,7 @@ boxplot(log10(as.vector(topDocGamma[[1]])),range=0 ,
 
 
 ####Riverplots using FY-LDA models.
-
+load("data/LDA_FY_models_current.rda")
 edges<-lapply(2:(length(models.fy)-1), function(x){
     d<-dist(exp(models.fy[[x]][[2]]@beta), exp(models.fy[[(x+1)]][[2]]@beta), method="bhjattacharyya")
     e<-dist2Table(d)
