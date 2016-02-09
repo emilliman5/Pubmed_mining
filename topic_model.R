@@ -40,6 +40,8 @@ dtm<-DocumentTermMatrix(c(abstrCorpus, spCorpus))
 dtm<-t(t(as.matrix(dtm))[as.vector(apply(t(as.matrix(dtm)), 1, sum)>15),])
 
 docRemove<-which(rowSums(dtm)==0)
+meta(abstrCorpus, "InModel")<-rowSums(dtm)[1:length(meta(abstrCorpus)$PMID)]==0
+write.csv(meta(abstrCorpus), "data/CorpusMetaData.txt",row.names=F)
 dtm<-dtm[-docRemove,]
 rownames(dtm)<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
 
