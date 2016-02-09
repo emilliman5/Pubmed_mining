@@ -17,26 +17,26 @@ resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
 ##load Corpus.
-abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
-metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
-for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
+abstrCorpus<-Corpus(DirSource("data/Corpus/"), readerControl = list(language="english"))
+metaData<-read.csv("data/CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric','character','character','logical'))
+for (x in c("PMID","GrantID","Date","FY.Q","FY","Journal","Title", "InModel")) {
     meta(abstrCorpus, x)<-metaData[,x]
 }
 
-spCorpus<-Corpus(DirSource("Corpus/SP/"), readerControl = list(language="english"))
+spCorpus<-Corpus(DirSource("data/Corpus/SP/"), readerControl = list(language="english"))
 
 ##load Topic Models
-load("LDA_models_current.rda")
-load("LDA_FY_models_current.rda")
+load("data/LDA_models_current.rda")
+load("data/LDA_FY_models_current.rda")
 
-ones<-read.table("data/ONES_grants_2012_present.txt")
+ones<-read.table("data/ONES_grants_ALL_from_RFAs.txt")
 ones$V2<-substr(ones$V1, 5,12)
 
 pmids<-lapply(ones$V2, function(x) grep(x,meta(abstrCorpus)[,"GrantID"]))
 names(pmids)<-ones$V2
 
 ##this is a workaround until new models are made
-docRemove<-1377
+docRemove<-which(meta(abstrCorpus)$InModel)
 models[[2]]@documents<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
 rownames(models[[2]]@gamma)<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
 
@@ -112,4 +112,4 @@ sankeyPlot$set(
     height=1200)
 
 sankeyPlot$print(chartId="sankey1")
-sankeyPlots
+sankeyPlot
