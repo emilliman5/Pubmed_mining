@@ -82,8 +82,56 @@ par(cex.lab = 0.25)
 plot(rp1, plot_area=0.95, yscale=0.06, srt=T)
 dev.off()
 
+#############
+##Riverplot 2009->2012->2015
+#############
 
+load("data/LDA_FY_models_current.rda")
+edges<-lapply(list(c(3,6),c(6,9)), function(x){
+    d<-dist(exp(models.fy[[x[1]]][[2]]@beta), exp(models.fy[[x[2]]][[2]]@beta), method="bhjattacharyya")
+    e<-dist2Table(d)
+    e$col<-paste0("FY",substr(names(models.fy)[[x[1]]],3,4),"_",e$col)
+    e$row<-paste0("FY",substr(names(models.fy)[[x[2]]],3,4),"_",e$row)
+    colnames(e)<-c("N1","N2","Value")
+    e
+})
 
+nodes<-do.call(rbind, lapply(seq_along(edges), function(x) {
+    n<-data.frame(ID=unique(edges[[x]]$N1), x=x, y=seq_along(unique(edges[[x]]$N1)))
+}))
+
+nodes<-rbind(nodes, data.frame(data.frame(ID=unique(edges[[2]]$N2), x=3, y=seq_along(unique(edges[[2]]$N2)))))
+
+edges<-do.call(rbind, edges)
+topEdges<-do.call(rbind, by(edges,edges$N1, function(x) head(x[order(x$Value),],n=3)))
+
+png(paste0(resultsPath, "/FY_LDA_modeldist_score_distr.png"), height=600, width=800, units="px")
+hist(edges$Value, breaks=1000)
+dev.off()
+
+edges<-edges[edges$Value<1.0,]
+
+# edges$Value<-edges$Value/1000
+
+palette<-paste0(brewer.pal(12, "Paired"), "80")
+styles<-lapply(nodes$y, function(n){
+    list(col=palette[ceiling(n/6)+1], lty=0, textcol="black")
+})
+names(styles)<-nodes$ID
+
+rp<-list(nodes=nodes, edges=edges, styles=styles)
+class(rp)<-c(class(rp), "riverplot")
+png(paste0(resultsPath,"/RiverPlot_",timeStamp(),".png"), height=2400, width=2400, units="px")
+par(cex.lab = 0.25)
+plot(rp, plot_area=0.95, yscale=0.06, srt=T)
+dev.off()
+
+rp1<-list(nodes=nodes, edges=topEdges, styles=styles)
+class(rp1)<-c(class(rp1), "riverplot")
+png(paste0(resultsPath,"/RiverPlot_top5edges_perNode",timeStamp(),".png"), height=1600, width=1000, units="px")
+par(cex.lab = 0.25)
+plot(rp1, plot_area=0.95, yscale=0.06, srt=T)
+dev.off()
 
 
 
