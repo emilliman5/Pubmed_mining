@@ -32,8 +32,8 @@ load("data/LDA_FY_models_current.rda")
 ones<-read.table("data/ONES_grants_ALL_from_RFAs.txt")
 ones$V2<-substr(ones$V1, 5,12)
 
-pmids<-lapply(ones$V2, function(x) grep(x,meta(abstrCorpus)[,"GrantID"]))
-names(pmids)<-ones$V2
+pmids<-lapply(unique(ones$V2), function(x) grep(x,meta(abstrCorpus)[,"GrantID"]))
+names(pmids)<-unique(ones$V2)
 
 ##this is a workaround until new models are made
 docRemove<-which(meta(abstrCorpus)$InModel)
@@ -59,7 +59,7 @@ lapply(seq_along(pmids), function(x){
 x<-do.call(rbind, lapply(seq_along(pmids), function(x){
     colSums(models[[2]]@gamma[which(models[[2]]@documents %in% meta(abstrCorpus)[pmids[[x]],1]),])
 }))
-rownames(x)<-ones$V2
+rownames(x)<-unique(ones$V2)
 colnames(x)<-apply(terms(models[[2]],3),2, function(z) paste(z, collapse=","))
 
 
@@ -78,7 +78,8 @@ dev.off()
 
 edges<-melt(x)
 edges<-edges[edges$value>0.01,]
-nodes<-as.data.frame(c(unlist(lapply(pmids, length))/3, colSums(x)))
+nodes<-data.frame(c(unlist(lapply(pmids, length))/3, colSums(x)))
+#rownames(nodes)<-c(names(pmids),colnames(x))
 colnames(nodes)<-"size"
 nodes$color<-"green"
 nodes[grep("ES",rownames(nodes)),]$color<-"red"
@@ -100,16 +101,17 @@ colnames(edgelist)<-c("source","target","value")
 edgelist[,"source"]<-as.character(edgelist[,"source"])
 edgelist[,"target"]<-as.character(edgelist[,"target"])
 
-sankeyPlot<-rCharts$new()
-sankeyPlot$setLib("./d3/rCharts_d3_sankey-gh-pages/")
-sankeyPlot$setTemplate(script="./d3/rCharts_d3_sankey-gh-pages/layouts/chart.html")
+sankeyPlot <- rCharts$new()
+sankeyPlot$setLib('http://timelyportfolio.github.io/rCharts_d3_sankey')
 sankeyPlot$set(
-    data=edgelist,
-    nodewidth=10,
-    nodePadding=10,
-    layout=32,
-    width=1200,
-    height=1200)
+    data = edgelist,
+    nodeWidth = 15,
+    nodePadding = 10,
+    layout = 32,
+    width = 1500,
+    height = 1000
+    #labelFormat = ".1%"
+)
 
-sankeyPlot$print(chartId="sankey1")
+#sankeyPlot$print(chartId="sankey1")
 sankeyPlot
