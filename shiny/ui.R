@@ -81,7 +81,7 @@ shinyUI(fluidPage(
               showOutput("topics", "nvd3"),
               sliderInput("dist",label=p(h4("Distance Measure Threshold"), "The slider represents the top x % of connections to retain"),min=0, max=0.25, value=0.1),
               h4(textOutput("text")),
-              visNetworkOutput("force",height="800px")),
+              visNetworkOutput("force",height="1600px", width="1600px")),
             tabPanel("Publications Table",
                      dataTableOutput("papers")
             ),
