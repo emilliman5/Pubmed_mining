@@ -85,31 +85,43 @@ dev.off()
 #############
 ##Riverplot 2009->2012->2015
 #############
-
+library(topicmodels)
+library(proxy)
 load("data/LDA_FY_models_current.rda")
+fy.topics<-lapply(seq_along(models.fy), function(f) apply(terms(models.fy[[f]][[2]],4),2,
+                                                          function(z) paste(z,collapse=",")))
+
 edges<-lapply(list(c(3,6),c(6,9)), function(x){
     d<-dist(exp(models.fy[[x[1]]][[2]]@beta), exp(models.fy[[x[2]]][[2]]@beta), method="bhjattacharyya")
     e<-dist2Table(d)
-    e$col<-paste0("FY",substr(names(models.fy)[[x[1]]],3,4),"_",e$col)
-    e$row<-paste0("FY",substr(names(models.fy)[[x[2]]],3,4),"_",e$row)
+    e$col<-fy.topics[[x[1]]][e$col]
+    e$row<-fy.topics[[x[2]]][e$row]
     colnames(e)<-c("N1","N2","Value")
     e
 })
 
 nodes<-do.call(rbind, lapply(seq_along(edges), function(x) {
-    n<-data.frame(ID=unique(edges[[x]]$N1), x=x, y=seq_along(unique(edges[[x]]$N1)))
+    n<-data.frame(ID=unique(edges[[x]]$N1), x=x, y=seq_along(unique(edges[[x]]$N1)), stringsAsFactors=FALSE)
 }))
 
-nodes<-rbind(nodes, data.frame(data.frame(ID=unique(edges[[2]]$N2), x=3, y=seq_along(unique(edges[[2]]$N2)))))
+nodes<-rbind(nodes, data.frame(data.frame(ID=unique(edges[[2]]$N2), x=3, y=seq_along(unique(edges[[2]]$N2))), stringsAsFactors=FALSE))
 
 edges<-do.call(rbind, edges)
 topEdges<-do.call(rbind, by(edges,edges$N1, function(x) head(x[order(x$Value),],n=3)))
+edges.1<-edges
+edges.1[[1]]<-edges.1[[1]][grep(nodes[46,1],edges.1[[1]]$N1),]
+edges.1[[1]]<-edges.1[[1]][edges.1[[1]]$Value<1.2,]
+edges.1[[2]]<-do.call(rbind, lapply(edges.1[[1]]$N2, function(x) 
+    edges.1[[2]][grep(x,edges.1[[2]]$N1),]
+    ))
+edges.1[[2]]<-edges.1[[2]][edges.1[[2]]$Value<1.1,]
+edges.1<-do.call(rbind, edges.1)
 
 png(paste0(resultsPath, "/FY_LDA_modeldist_score_distr.png"), height=600, width=800, units="px")
 hist(edges$Value, breaks=1000)
 dev.off()
 
-edges<-edges[edges$Value<1.0,]
+edges<-edges[edges$Value<1.1,]
 
 # edges$Value<-edges$Value/1000
 
@@ -119,21 +131,30 @@ styles<-lapply(nodes$y, function(n){
 })
 names(styles)<-nodes$ID
 
+
 rp<-list(nodes=nodes, edges=edges, styles=styles)
 class(rp)<-c(class(rp), "riverplot")
-png(paste0(resultsPath,"/RiverPlot_",timeStamp(),".png"), height=2400, width=2400, units="px")
-par(cex.lab = 0.25)
-plot(rp, plot_area=0.95, yscale=0.06, srt=T)
+png(paste0(resultsPath,"/RiverPlot_",timeStamp(),".png"), height=1600, width=2100, units="px")
+op<-par(cex=1.5)
+plot(rp, plot_area=0.95, srt=T)
+par(op)
 dev.off()
 
 rp1<-list(nodes=nodes, edges=topEdges, styles=styles)
 class(rp1)<-c(class(rp1), "riverplot")
-png(paste0(resultsPath,"/RiverPlot_top5edges_perNode",timeStamp(),".png"), height=1600, width=1000, units="px")
-par(cex.lab = 0.25)
-plot(rp1, plot_area=0.95, yscale=0.06, srt=T)
+png(paste0(resultsPath,"/RiverPlot_top5edges_perNode",timeStamp(),".png"), height=1600, width=2100, units="px")
+op<-par(cex=1.5)
+plot(rp1, plot_area=0.95, srt=T)
+par(op)
 dev.off()
 
-
+rp2<-list(nodes=nodes, edges=edges.1, styles=styles)
+class(rp2)<-c(class(rp2), "riverplot")
+png(paste0(resultsPath,"/RiverPlot_Topic46_evo",timeStamp(),".png"), height=1600, width=2100, units="px")
+op<-par(cex=1.5)
+plot(rp2, plot_area=0.95, srt=T)
+par(op)
+dev.off()
 
 
 ############
