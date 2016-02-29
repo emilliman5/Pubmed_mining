@@ -57,6 +57,14 @@ if(file.exists("LDA_models_current.rda") & !model){
     lapply(models, function(x) write.csv2(t(terms(x, 10)), file=paste0("Top10WordsperTopic_for_",x@k,"Topics_model.txt")))
 }
 
+if(file.exists("CTM_LDA_models.rda") & !model){
+    load("CTM_LDA_models.rda")
+} else{
+    ctm.models<-mclapply(seq.k, mc.cores=4, function(k) CTM(dtm,k))
+    save(ctm.models, file = paste0("CTM_LDA_models",getDate(),".rda"))
+    save(ctm.models, file = paste0("CTM_LDA_models_current.rda"))
+    }
+
 #models[[2]]@documents<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
 #rownames(models[[2]]@gamma)<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
 
