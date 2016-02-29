@@ -1,3 +1,4 @@
+#!/usr/bin/Rscript
 library(tm)
 library(wordcloud)
 library(slam)
@@ -6,17 +7,17 @@ library(parallel)
 library(proxy)
 library(docopt)
 
-"This is the first script in our text mining workflow. It will read, clean and perform some basic exploratory analyses.
-
-Usage: Rscript text_analysis.R [options]
+doc<-"Usage: text_analysis.R [-x pubmed] [-r nih] [-s stopwords] [-c cores] [--reset]
 
 Options:
-    -x --xml <pubmed>   Pubmed results in XML format
-    -r --reporter <nih> NIH Reporter export in CSV format
-    --reset             Force a reprocessing of the Corpus"
+    -x --xml <pubmed>           Pubmed results in XML format
+    -r --reporter <nih>         NIH Reporter export in CSV format
+    -s --stopwords <stopwords>  Stop word list, one word per line, plain text
+    -c --cores <cores>          Number of cores to use for Corpus processing
+    --reset                     Force a reprocessing of the Corpus"
 
-opts<-docopts(doc)
-
+my_opts<-docopt(doc)
+#my_opts
 #If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
 
 extraFunFile<-"textMine_funcs.R"
@@ -28,16 +29,14 @@ dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
-if(length("data/Corpus/")==0 || reset){
-  source("makeCorpus.R")
-  if(xml){
-    pubmed.df<-pubmedParse("")
-  }
-  if(reporter){
-    nihreporter<-do.call(rbind, lapply( process_NIH_reporter()
-  }
+if(length("data/Corpus/")==0 || my_opts$reset){
+    source("makeCorpus.R")
+    pubmed.df<-pubmedParse(my_opts$xml)
+#   if(reporter){
+#     nihreporter<-do.call(rbind, lapply( process_NIH_reporter()
+#   }
   
-  makeCorpus(c())
+    abstrCorpus<-makeCorpus(abstr.df = pubmed.df,stopwordsList = my_opts$stopwords, cores = my_opts$cores)
 } else {
   ##read in corpus docs.
   abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
