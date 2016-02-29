@@ -39,20 +39,19 @@ pubmedParse<-function(pub.file){
   abstr.df<-cbind(as.data.frame(pmid),as.data.frame(grantID),pubdate.df,journal, abstr.df)
   abstr.df[,"pubdate.df"]<-as.Date(abstr.df[,"pubdate.df"], format = "%Y-%m-%d")
   colnames(abstr.df)[1:2]<-c("PMID","GrantID")
+  return(abstr.df)
 }
 
-makeCorpus<-function(df, stopwordsList="stopwords.txt", cores=8){
+makeCorpus<-function(abstr.df, stopwordsList, cores){
   
   extraFunFile<-"textMine_funcs.R"
   if (file.exists(extraFunFile)) {
     source(extraFunFile, keep.source=TRUE);
   } else{ break }
   
-  stopWords<-read.table(stopwordList, colClasses = c("character"))
+  stopWords<-read.table(stopwordsList, colClasses = c("character"))
   myStopwords<-c(stopwords('english'), stopWords$V1)
   myStopwords<-tolower(myStopwords)
-  
-  abstr.df<-
   
   abstrCorpus<-Corpus(DataframeSource(abstr.df[,c("Title","Abstract")]))
   
