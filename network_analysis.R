@@ -11,6 +11,7 @@ if (file.exists(extraFunFile)) {
     source(extraFunFile, keep.source=TRUE);
 }
 
+load("data/LDA_models_current.rda")
 dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
