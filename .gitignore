@@ -16,3 +16,4 @@ shiny/data/*
 sankey/*
 data/*
 TopicModel_Keywords/*
+*.csv
