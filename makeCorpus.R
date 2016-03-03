@@ -13,6 +13,16 @@ process_NIH_reporter<-function(file){
   
 }
 
+PMCParse<-function(pmc.file){
+    pub.file<-"data/pmc_result.xml"
+    pubmed<-xmlParse(pub.file,useInternalNodes = T)
+    top<-xmlRoot(pubmed)
+    pmids.2<-getNodeSet(top, "//front/article-meta/article-id[@pub-id-type='pmid']")
+    pmids<-xmlSApply(pmids.2, xmlValue)
+ 
+    
+}
+
 pubmedParse<-function(pub.file){
 
   pubmed<-xmlParse(pub.file,useInternalNodes = T)
