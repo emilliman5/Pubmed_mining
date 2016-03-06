@@ -1,10 +1,10 @@
+library(proxy)
 library(reshape2)
 library(igraph)
 library(ape)
 library(arcdiagram)
 library(RColorBrewer)
 library(riverplot)
-library(rCharts)
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
@@ -12,7 +12,7 @@ if (file.exists(extraFunFile)) {
 }
 
 abstrCorpus<-Corpus(DirSource("data/Corpus/"), readerControl = list(language="english"))
-metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','character','Date','numeric','integer','character', 'factor'))
+metaData<-read.csv("data/CorpusMetaData.txt",colClasses=c('character','character','Date','numeric','integer','character', 'factor'))
 for (x in colnames(metaData)) {
         meta(abstrCorpus, x)<-metaData[,x]
 }
@@ -221,11 +221,46 @@ lapply(fyqs, function(x){
 
 topDocDist<-lapply(c(2009,2010,2011,2012,2013,2014,2015), function(x){
         ids<-meta(abstrCorpus)[,"FY"]==x
-        d<-dist(models@gamma[ids,], method="cosine")
+        d<-dist(t(models[[2]]@gamma[ids,]), method="cosine")
         t<-melt(as.matrix(d), varnames=c("col","row"))   
         t<-t[t$row>t$col,]
         t
 })
+
+plot(density(do.call(rbind, topDocDist)$value), main="Topic-Topic Distance Distributions", bty="n")
+lines(density(topDocDist[[1]]$value), col="red")
+lines(density(topDocDist[[7]]$value), col="blue")
+legend("topleft",bty="n", lty=c(1,1,1), lwd=c(2,2,2), col=c("black","red","blue"), legend=c("All FYs","FY 2009","FY 2015"))
+
+connections<-lapply(topDocDist, function(z) {
+        x<-z[z$value<=0.9,]
+        tapply(x$col, x$col, length)
+        })
+plot(density(unlist(connections)), main="Number of Connections per Topic", bty="n")
+lines(density(connections[[1]]), col="red")
+lines(density(connections[[7]]), col="blue")
+legend("topright",bty="n", lty=c(1,1,1), lwd=c(2,2,2), col=c("black","red","blue"), legend=c("All FYs","FY 2009","FY 2015"))
+
+png(paste0(resultsPath,"/Topic-Topic_connections.png"),height=800, width=900, units="px")
+par(mfrow=c(2,1))
+plot(density(do.call(rbind, topDocDist)$value), main="Topic-Topic Distance Distributions", bty="n")
+lines(density(topDocDist[[1]]$value), col="red")
+lines(density(topDocDist[[7]]$value), col="blue")
+abline(v=0.9)
+legend("topleft",bty="n", lty=c(1,1,1), lwd=c(2,2,2), col=c("black","red","blue"), legend=c("All FYs","FY 2009","FY 2015"))
+
+plot(density(unlist(connections)), main="Number of Connections per Topic", bty="n")
+lines(density(connections[[1]]), col="red")
+lines(density(connections[[7]]), col="blue")
+legend("topright",bty="n", lty=c(1,1,1), lwd=c(2,2,2), col=c("black","red","blue"), legend=c("All FYs","FY 2009","FY 2015"))
+dev.off()
+
+connections.1<-do.call(c, connections)
+connec<-lapply(1:10000, function(x) {
+        mean(sample(connections.1, 37, replace = T))
+        })
+hist(unlist(connec))
+sum(unlist(connec)>4.027)/10000
 
 topDocDistFYtable<-do.call(cbind, lapply(topDocDist.fy[[2]], function(x){
   x<-as.matrix(x)
