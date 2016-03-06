@@ -11,6 +11,12 @@ if (file.exists(extraFunFile)) {
     source(extraFunFile, keep.source=TRUE);
 }
 
+abstrCorpus<-Corpus(DirSource("data/Corpus/"), readerControl = list(language="english"))
+metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','character','Date','numeric','integer','character', 'factor'))
+for (x in colnames(metaData)) {
+        meta(abstrCorpus, x)<-metaData[,x]
+}
+
 load("data/LDA_models_current.rda")
 dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
@@ -212,6 +218,14 @@ lapply(fyqs, function(x){
 #############
 ##Topic-Topic Distance by FY
 ##############
+
+topDocDist<-lapply(c(2009,2010,2011,2012,2013,2014,2015), function(x){
+        ids<-meta(abstrCorpus)[,"FY"]==x
+        d<-dist(models@gamma[ids,], method="cosine")
+        t<-melt(as.matrix(d), varnames=c("col","row"))   
+        t<-t[t$row>t$col,]
+        t
+})
 
 topDocDistFYtable<-do.call(cbind, lapply(topDocDist.fy[[2]], function(x){
   x<-as.matrix(x)
