@@ -17,12 +17,11 @@ Options:
     -r --reporter=<nih>         NIH Reporter export in CSV format
     -s --stopwords=<stopwords>  Stop word list, one word per line, plain text [default: stopwords.txt]
     -c --cores=<cores>          Number of cores to use for Corpus processing [default: 16]
-    --reset                     Force a reprocessing of the Corpus
+    --reset                     Force a reprocessing of the Corpus, the default is to not reprocess the corpus if one exists
     -h --help                   This helpful message"
 
 my_opts<-docopt(doc)
-print(my_opts)
-#If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
+print(my_opts)    ##This is for testing purposes
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
@@ -39,7 +38,7 @@ if(length("data/Corpus/")==0 || my_opts$reset){
         pubmed.df<-pubmedParse(my_opts$xml)
     }
     if(!is.null(my_opts$reporter)){
-        nihreporter<-do.call(rbind, lapply( process_NIH_reporter()
+        nihreporter<-NIHreporterParse(my_opts$nih)
     }
   
     abstrCorpus<-makeCorpus(abstr.df = pubmed.df,stopwordsList = my_opts$stopwords, cores = my_opts$cores)
@@ -50,14 +49,6 @@ if(length("data/Corpus/")==0 || my_opts$reset){
   for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
     meta(abstrCorpus, x)<-metaData[,x]
   }
-}
-
-if(!file.exists("Corpus/SP/SP_Goal1") || reset){
-  source("makeCorpus.R")
-  spCorpus<-makeSPCorpus("data/Strategic_goals/",
-                         stopwordList = "stopwords.txt", "Goal",30)
-} else {
-  spCorpus<-Corpus(DirSource("Corpus/SP/"), readerControl = list(language="english"))
 }
 
 ####Extra Corpus cleaning
@@ -96,7 +87,6 @@ tdm<-tdm.monogram
 #tdm<-tdm.bigram
 
 tdm.sp<-TermDocumentMatrix(spCorpus)
-tdm.sp.tfidf<-TermDocumentMatrix(spCorpus, control=list(weighting=weightTfIdf))
 
 ###########
 ##TermFreq exploration and visualization
