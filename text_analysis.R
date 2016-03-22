@@ -1,23 +1,27 @@
 #!/usr/bin/Rscript
-library(tm)
-library(wordcloud)
-library(slam)
-library(lubridate)
-library(parallel)
-library(proxy)
-library(docopt)
+suppressMessages(library(tm))
+suppressMessages(library(wordcloud))
+suppressMessages(library(slam))
+suppressMessages(library(lubridate))
+suppressMessages(library(parallel))
+suppressMessages(library(proxy))
+suppressMessages(library(docopt))
 
-doc<-"Usage: text_analysis.R [-x pubmed] [-r nih] [-s stopwords] [-c cores] [--reset]
+doc<-"This script does an initial cleaning and analysis of a set of documents (the corpus). It will ouptut a series of plots to describe the vocabulary as well as a corpus dir that can be fed into topic_modeling.R.
+
+Usage:  text_analysis.R -x <pubmed> [-r <nih>] [-s <stopwords>] [-c <cores>] [--reset]
+        text_analysis.R [-x <pubmed>] -r <nih> [-s <stopwords>] [-c <cores>] [--reset]
 
 Options:
-    -x --xml <pubmed>           Pubmed results in XML format
-    -r --reporter <nih>         NIH Reporter export in CSV format
-    -s --stopwords <stopwords>  Stop word list, one word per line, plain text
-    -c --cores <cores>          Number of cores to use for Corpus processing
-    --reset                     Force a reprocessing of the Corpus"
+    -x --xml=<pubmed>           Pubmed results in XML format
+    -r --reporter=<nih>         NIH Reporter export in CSV format
+    -s --stopwords=<stopwords>  Stop word list, one word per line, plain text [default: stopwords.txt]
+    -c --cores=<cores>          Number of cores to use for Corpus processing [default: 16]
+    --reset                     Force a reprocessing of the Corpus
+    -h --help                   This helpful message"
 
 my_opts<-docopt(doc)
-#my_opts
+print(my_opts)
 #If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
 
 extraFunFile<-"textMine_funcs.R"
@@ -31,16 +35,18 @@ dir.create(resultsPath)
 
 if(length("data/Corpus/")==0 || my_opts$reset){
     source("makeCorpus.R")
-    pubmed.df<-pubmedParse(my_opts$xml)
-#   if(reporter){
-#     nihreporter<-do.call(rbind, lapply( process_NIH_reporter()
-#   }
+    if(!is.null(my_opts$xml)){
+        pubmed.df<-pubmedParse(my_opts$xml)
+    }
+    if(!is.null(my_opts$reporter)){
+        nihreporter<-do.call(rbind, lapply( process_NIH_reporter()
+    }
   
     abstrCorpus<-makeCorpus(abstr.df = pubmed.df,stopwordsList = my_opts$stopwords, cores = my_opts$cores)
 } else {
   ##read in corpus docs.
-  abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
-  metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
+  abstrCorpus<-Corpus(DirSource("data/Corpus/"), readerControl = list(language="english"))
+  metaData<-read.csv("data/CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
   for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
     meta(abstrCorpus, x)<-metaData[,x]
   }
