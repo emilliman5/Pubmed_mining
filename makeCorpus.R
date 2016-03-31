@@ -11,7 +11,8 @@ NIHreporterParse<-function(file){
   table<-table[,c(2,3,4,5,6,9,10,18,19,20,37,38,39,42,46,47)]
   table<-table[!is.na(table[,2]),]
   table[table[,11]=="",11]<-"NO"
-  table[is.na(table[,16]),16]<-0
+  table[table[,16]=="",16]<-0
+  table[,16]<-as.numeric(table[,16])
   table[,1]<-gsub("DESCRIPTION \\(provided by applicant\\):","", table[,1])
   table[,1]<-gsub("Public Health Relevance:","", table[,1],ignore.case = T)
   table[,4]<-gsub("Project Narrative","", table[,4],ignore.case = T)
@@ -26,8 +27,7 @@ PMCParse<-function(pmc.file){
     top<-xmlRoot(pubmed)
     pmids.2<-getNodeSet(top, "//front/article-meta/article-id[@pub-id-type='pmid']")
     pmids<-xmlSApply(pmids.2, xmlValue)
- 
-    
+
 }
 
 pubmedParse<-function(pub.file){
@@ -97,7 +97,7 @@ makeCorpus<-function(abstr.df, stopwordsList, cores){
   writeCorpus(abstrCorpus,"data/Corpus/")
   write.csv(meta(abstrCorpus), "data/CorpusMetaData.txt",row.names=F)
   
-  abstrCorpus
+  return(abstrCorpus)
 } 
 
 makeSPCorpus<-function(SP_path="data/Strategic_goals",
