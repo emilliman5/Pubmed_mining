@@ -66,8 +66,11 @@ makeCorpus<-function(abstr.df, stopwordsList, cores){
     source(extraFunFile, keep.source=TRUE);
   } else{ break }
   
-  stopWords<-read.table(stopwordsList, colClasses = c("character"))
-  myStopwords<-c(stopwords('english'), stopWords$V1)
+  myStopwords<-stopwords('english')
+  if(stopwordsList){
+      stopwordList<-read.table(stopwordsList)
+      myStopwords<-c(myStopwords,stopwordList[,1])
+  }
   myStopwords<-tolower(myStopwords)
   
   abstrCorpus<-Corpus(DataframeSource(abstr.df[,c("Title","Abstract")]))
@@ -85,17 +88,10 @@ makeCorpus<-function(abstr.df, stopwordsList, cores){
   abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=cores)
   abstrCorpus<-Corpus(VectorSource(abstrCorpus))
   abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords, mc.cores=cores)
-  meta(abstrCorpus, "PMID")<-abstr.df[,"PMID"]
-  meta(abstrCorpus, "GrantID")<-abstr.df[,"GrantID"]
-  meta(abstrCorpus, "Date")<-abstr.df[,"pubdate.df"]
-  meta(abstrCorpus, "FY.Q")<-quarter(abstr.df[,"pubdate.df"]+91, with_year=T)
-  meta(abstrCorpus, "FY")<-floor(meta(abstrCorpus)[,"FY.Q"])
-  meta(abstrCorpus, "Journal")<-abstr.df[,"journal"]
-  meta(abstrCorpus, "Title")<-abstr.df[,"Title"]
+  
   names(abstrCorpus)<-abstr.df[,"PMID"]
-  dir.create("data/Corpus")
-  writeCorpus(abstrCorpus,"data/Corpus/")
-  write.csv(meta(abstrCorpus), "data/CorpusMetaData.txt",row.names=F)
+  dir.create("data/Pubmed/Corpus")
+  writeCorpus(abstrCorpus,"data/Pubmed/Corpus/")
   
   return(abstrCorpus)
 } 
