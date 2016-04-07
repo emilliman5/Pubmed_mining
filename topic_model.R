@@ -2,6 +2,7 @@ library(tm)
 library(topicmodels)
 library(parallel)
 library(ggplot2)
+library(docopt)
 
 #If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
 reset<-FALSE
@@ -21,27 +22,29 @@ if(!file.exists("Corpus/") || reset){
     abstrCorpus<-makeCorpus("ESlit.xml","stopwords.txt", 30)
 } else {
     ##read in corpus docs.
-    abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
-    metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
+    abstrCorpus<-Corpus(DirSource("data/Corpus/Pubmed/"), readerControl = list(language="english"))
+    metaData<-read.csv("data/Corpus/CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
     for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
         meta(abstrCorpus, x)<-metaData[,x]
     }
 }
 
-if(!file.exists("Corpus/SP/SP_Goal1") || reset){
+if(!file.exists("data/Corpus/SP/SP_Goal1") || reset){
     source("makeCorpus.R")
     spCorpus<-makeSPCorpus("data/Strategic_goals/",
                            stopwordList = "stopwords.txt", "Goal",30)
 } else {
-    spCorpus<-Corpus(DirSource("Corpus/SP/"), readerControl = list(language="english"))
+    spCorpus<-Corpus(DirSource("data/Corpus/SP/"), readerControl = list(language="english"))
 }
 
 dtm<-DocumentTermMatrix(c(abstrCorpus, spCorpus))
-dtm<-t(t(as.matrix(dtm))[as.vector(apply(t(as.matrix(dtm)), 1, sum)>15),])
+TermDocFreq<-colSums(as.matrix(dtm)>0)
+TermFreq<-colSums(as.matrix(dtm))
+dtm<-as.matrix(dtm)[,TermFreq>15]
 
-docRemove<-which(rowSums(dtm)==0)
-meta(abstrCorpus, "InModel")<-rowSums(dtm)[1:length(meta(abstrCorpus)$PMID)]==0
-write.csv(meta(abstrCorpus), "data/CorpusMetaData.txt",row.names=F)
+docRemove<-rowSums(dtm)==0
+meta(abstrCorpus, "InModel")<-!docRemove[1:length(metaData$PMID)]
+write.csv(meta(abstrCorpus), "data/Corpus/CorpusMetaData.txt",row.names=F)
 dtm<-dtm[-docRemove,]
 rownames(dtm)<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
 
@@ -67,7 +70,6 @@ if(file.exists("CTM_LDA_models.rda") & !model){
 
 #models[[2]]@documents<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
 #rownames(models[[2]]@gamma)<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
-
 
 seq.k.fy<-c(25,50,100,250)
 fy<-levels(as.factor(meta(abstrCorpus)[,"FY"]))
