@@ -9,13 +9,14 @@ suppressMessages(library(docopt))
 
 doc<-"This script does an initial cleaning and analysis of a set of documents (the corpus). It will ouptut a series of plots to describe the vocabulary as well as a corpus dir that can be fed into topic_modeling.R.
 
-Usage:  text_analysis.R -x=<pubmed> [-r=<nih>] [-s=<stopwords>] [-c=<cores>] [--reset]
-        text_analysis.R [-x=<pubmed>] -r=<nih> [-s=<stopwords>] [-c=<cores>] [--reset]
+Usage:  text_analysis.R -x=<pubmed> [-r=<nih>] -d=<dir> [-s=<stopwords>] [-c=<cores>] [--reset]
+        text_analysis.R [-x=<pubmed>] -r=<nih> -d=<dir> [-s=<stopwords>] [-c=<cores>] [--reset]
 
 Options:
     -x --xml=<pubmed>           Pubmed results in XML format
     -r --reporter=<nih>         NIH Reporter export in CSV format
     -s --stopwords=<stopwords>  Stop word list, one word per line, plain text [default: stopwords.txt]
+    -d --dir=<dir>                    Directory write Corpus outputs
     -c --cores=<cores>          Number of cores to use for Corpus processing [default: 16]
     --reset                     Force a reprocessing of the Corpus, the default is to not reprocess the corpus if one exists
     -h --help                   This helpful message"
@@ -31,21 +32,22 @@ if (file.exists(extraFunFile)) {
 dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
+corpusPath<-paste0("data/",my_opts$dir)
 
-if(length("data/Corpus/")==0 || my_opts$reset){
+if(length("corpusPath")==0 || my_opts$reset){
     source("makeCorpus.R")
     if(!is.null(my_opts$xml)){
         pubmed.df<-pubmedParse(my_opts$xml)
     }
-    if(!is.null(my_opts$reporter)){
-        nihreporter<-NIHreporterParse(my_opts$nih)
-    }
+#     if(!is.null(my_opts$reporter)){
+#         nihreporter<-NIHreporterParse(my_opts$nih)
+#     }
   
     abstrCorpus<-makeCorpus(abstr.df = pubmed.df,stopwordsList = my_opts$stopwords, cores = my_opts$cores)
 } else {
   ##read in corpus docs.
-  abstrCorpus<-Corpus(DirSource("data/Corpus/"), readerControl = list(language="english"))
-  metaData<-read.csv("data/CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
+  abstrCorpus<-Corpus(DirSource(corpusPath), readerControl = list(language="english"))
+  metaData<-read.csv(paste0(corpusPath, "CorpusMetaData.txt"),colClasses=c('character','character','Date','character','numeric'))
   for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
     meta(abstrCorpus, x)<-metaData[,x]
   }
