@@ -7,7 +7,10 @@ suppressMessages(library(parallel))
 suppressMessages(library(proxy))
 suppressMessages(library(docopt))
 
-doc<-"This script does an initial cleaning and analysis of a set of documents (the corpus). It will ouptut a series of plots to describe the vocabulary as well as a corpus dir that can be fed into topic_modeling.R.
+doc<-"This script does an initial cleaning and analysis of a set of 
+        documents (the corpus). It will ouptut a series of plots to 
+        describe the vocabulary as well as a create corpus that can be used by 
+        for topicmodeling by the topic_modeling.R
 
 Usage:  text_analysis.R -x=<pubmed> [-r=<nih>] -d=<dir> [-s=<stopwords>] [-c=<cores>] [--reset]
         text_analysis.R [-x=<pubmed>] -r=<nih> -d=<dir> [-s=<stopwords>] [-c=<cores>] [--reset]
