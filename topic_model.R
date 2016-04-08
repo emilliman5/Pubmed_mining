@@ -1,12 +1,22 @@
-library(tm)
-library(topicmodels)
-library(parallel)
-library(ggplot2)
-library(docopt)
+suppressMessages(library(tm))
+suppressMessages(library(topicmodels))
+suppressMessages(library(parallel))
+suppressMessages(library(ggplot2))
+suppressMessages(library(docopt))
 
-#If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
-reset<-FALSE
-model<-FALSE
+doc<-"  This script performs topic modeling on a Corpus of documents
+
+Usage:  topic_modeling.R --corpus=<corpus> -d=<dir> [-m=<k>] [-c=<cores>] [--Remodel]
+
+Options:
+    --corpus=<corpus>           Path to corpus files [default: data/Corpus/]
+    -m --models=<k>             Number of topics to model on, separate values by a comma only [default: 50,100,250,500,1000]
+    -c --cores=<cores>          Number of cores to use for Corpus processing [default: 6] [default: 16]
+    --Remodel                   Do not perform topic modeling the corpus (Useful if you have topic models and just want some)
+    -h --help                   This helpful message"
+
+my_opts<-docopt(doc)
+print(my_opts)
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
@@ -17,24 +27,10 @@ dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
-if(!file.exists("Corpus/") || reset){
-    source("makeCorpus.R")
-    abstrCorpus<-makeCorpus("ESlit.xml","stopwords.txt", 30)
-} else {
-    ##read in corpus docs.
-    abstrCorpus<-Corpus(DirSource("data/Corpus/Pubmed/"), readerControl = list(language="english"))
-    metaData<-read.csv("data/Corpus/CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
-    for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
-        meta(abstrCorpus, x)<-metaData[,x]
-    }
-}
-
-if(!file.exists("data/Corpus/SP/SP_Goal1") || reset){
-    source("makeCorpus.R")
-    spCorpus<-makeSPCorpus("data/Strategic_goals/",
-                           stopwordList = "stopwords.txt", "Goal",30)
-} else {
-    spCorpus<-Corpus(DirSource("data/Corpus/SP/"), readerControl = list(language="english"))
+abstrCorpus<-Corpus(DirSource(paste0(my_opts$corpus, "/Corpus/")), readerControl = list(language="english"))
+metaData<-read.csv(paste0(my_opts$corpus,"/CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
+for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
+    meta(abstrCorpus, x)<-metaData[,x]
 }
 
 dtm<-DocumentTermMatrix(c(abstrCorpus, spCorpus))
@@ -44,7 +40,7 @@ dtm<-as.matrix(dtm)[,TermFreq>15]
 
 docRemove<-rowSums(dtm)==0
 meta(abstrCorpus, "InModel")<-!docRemove[1:length(metaData$PMID)]
-write.csv(meta(abstrCorpus), "data/Corpus/CorpusMetaData.txt",row.names=F)
+write.csv(meta(abstrCorpus)[meta(abstrCorpus)$InModel==TRUE,], "data/Corpus/ModelsMetaData.txt",row.names=F)
 dtm<-dtm[-docRemove,]
 rownames(dtm)<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
 
