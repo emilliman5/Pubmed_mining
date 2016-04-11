@@ -19,7 +19,9 @@ my_opts<-docopt(doc)
 print(my_opts)
 
 seq.k<-unlist(strsplit(my_opts$k, ","))
-seq.k<-seq.k[order(seq.k, decreasing=T)]    ##starts modeling on the large k first for slightly better efficiency
+seq.k<-seq.k[order(seq.k, decreasing=T)]    ##start modeling on the large k first for slightly better efficiency
+
+print(seq.k)
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
