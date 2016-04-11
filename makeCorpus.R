@@ -67,7 +67,7 @@ makeCorpus<-function(abstr.df, stopwordsList, cores){
   } else{ break }
   
   myStopwords<-stopwords('english')
-  if(stopwordsList){
+  if(!is.null(stopwordsList)){
       stopwordList<-read.table(stopwordsList)
       myStopwords<-c(myStopwords,stopwordList[,1])
   }
