@@ -90,9 +90,6 @@ makeCorpus<-function(abstr.df, stopwordsList, cores){
   abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords, mc.cores=cores)
   
   names(abstrCorpus)<-abstr.df[,"PMID"]
-  dir.create("data/Pubmed/Corpus")
-  writeCorpus(abstrCorpus,"data/Pubmed/Corpus/")
-  
   return(abstrCorpus)
 } 
 
