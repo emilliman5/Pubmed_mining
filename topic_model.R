@@ -6,7 +6,7 @@ suppressMessages(library(docopt))
 
 doc<-"  This script performs topic modeling on a Corpus of documents
 
-Usage:  topic_modeling.R --corpus=<corpus> -d=<dir> [-m=<k>] [-c=<cores>] [--Remodel]
+Usage:  topic_modeling.R --corpus=<corpus> [-m <k>] [-c=<cores>] [--Remodel]
 
 Options:
     --corpus=<corpus>           Path to corpus files [default: data/Corpus/]
@@ -18,7 +18,7 @@ Options:
 my_opts<-docopt(doc)
 print(my_opts)
 
-seq.k<-unlist(strsplit(my_opts$k, ","))
+seq.k<-as.integer(unlist(strsplit(my_opts$models, ",")))
 seq.k<-seq.k[order(seq.k, decreasing=T)]    ##start modeling on the large k first for slightly better efficiency
 
 print(seq.k)
@@ -31,6 +31,7 @@ if (file.exists(extraFunFile)) {
 dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
+dir.create(paste0(my_opts$corpus,"/models/TopicKeywords"), recursive=T)
 
 abstrCorpus<-Corpus(DirSource(paste0(my_opts$corpus, "/Corpus/")), 
                     readerControl = list(language="english"))
