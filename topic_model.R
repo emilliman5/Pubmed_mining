@@ -18,6 +18,9 @@ Options:
 my_opts<-docopt(doc)
 print(my_opts)
 
+seq.k<-unlist(strsplit(my_opts$k, ","))
+seq.k<-seq.k[order(seq.k, decreasing=T)]    ##starts modeling on the large k first for slightly better efficiency
+
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
     source(extraFunFile, keep.source=TRUE);
@@ -27,9 +30,17 @@ dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
-abstrCorpus<-Corpus(DirSource(paste0(my_opts$corpus, "/Corpus/")), readerControl = list(language="english"))
-metaData<-read.csv(paste0(my_opts$corpus,"/CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
-for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
+abstrCorpus<-Corpus(DirSource(paste0(my_opts$corpus, "/Corpus/")), 
+                    readerControl = list(language="english"))
+metaData<-read.csv(paste0(my_opts$corpus,"/CorpusMetaData.txt"),colClasses=c('character','character','Date','numeric','integer', 'character','character'))
+
+###Make sure that the Corpus and metaData are in the same order
+names(abstrCorpus)<-gsub(".txt", "", names(abstrCorpus))
+idx<-unlist(lapply(names(abstrCorpus), function(x) which(metaData$PMID==x)))
+metaData<-metaData[idx,]
+write.csv(paste0(my_opts$corpus,"/CorpusMetaData.txt"))
+
+for (x in colnames(metaData)) {
     meta(abstrCorpus, x)<-metaData[,x]
 }
 
@@ -43,8 +54,6 @@ meta(abstrCorpus, "InModel")<-!docRemove[1:length(metaData$PMID)]
 write.csv(meta(abstrCorpus)[meta(abstrCorpus)$InModel==TRUE,], "data/Corpus/ModelsMetaData.txt",row.names=F)
 dtm<-dtm[-docRemove,]
 rownames(dtm)<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
-
-seq.k<-c(25,50,100)
 
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
 if(file.exists("LDA_models_current.rda") & !model){
@@ -64,10 +73,6 @@ if(file.exists("CTM_LDA_models.rda") & !model){
     save(ctm.models, file = paste0("CTM_LDA_models_current.rda"))
     }
 
-#models[[2]]@documents<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
-#rownames(models[[2]]@gamma)<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
-
-seq.k.fy<-c(25,50,100,250)
 fy<-levels(as.factor(meta(abstrCorpus)[,"FY"]))
 
 if(file.exists("LDA_FY_models_current.rda") & !model){
@@ -76,7 +81,7 @@ if(file.exists("LDA_FY_models_current.rda") & !model){
     models.fy<-lapply(fy, function(y){
         pmid<-meta(abstrCorpus)[,"FY"]==y
         dtm.fy<-dtm[pmid,]
-        mclapply(mc.cores=2, seq.k.fy, function(k) LDA(dtm.fy,k))
+        mclapply(mc.cores=2, seq.k, function(k) LDA(dtm.fy,k))
     })
     names(models.fy)<-fy
     save(models.fy, file=paste0("LDA_FY_models", getDate(),".rda"))
