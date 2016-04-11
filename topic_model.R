@@ -51,18 +51,18 @@ dtm<-as.matrix(dtm)[,TermFreq>15]
 
 docRemove<-rowSums(dtm)==0
 meta(abstrCorpus, "InModel")<-!docRemove[1:length(metaData$PMID)]
-write.csv(meta(abstrCorpus)[meta(abstrCorpus)$InModel==TRUE,], "data/Corpus/ModelsMetaData.txt",row.names=F)
+write.csv(meta(abstrCorpus)[meta(abstrCorpus)$InModel==TRUE,], paste0(my_opts$corpus,"models/ModelsMetaData.txt"),row.names=F)
 dtm<-dtm[-docRemove,]
-rownames(dtm)<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
+rownames(dtm)<-c(meta(abstrCorpus)[-docRemove,1])
 
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
 if(file.exists("LDA_models_current.rda") & !model){
     load("LDA_models_current.rda")
 } else{
     models<-mclapply(seq.k, mc.cores=2, function(k) LDA(dtm, k) )
-    save(models, file = paste0("LDA_models",getDate(),".rda"))
-    save(models, file = paste0("LDA_models_current.rda"))
-    lapply(models, function(x) write.csv2(t(terms(x, 10)), file=paste0("Top10WordsperTopic_for_",x@k,"Topics_model.txt")))
+    save(models, file = paste0(my_opts$corpus,"models/LDA_models",getDate(),".rda"))
+    save(models, file = paste0("data/LDA_models_current.rda"))
+    lapply(models, function(x) write.csv2(t(terms(x, 10)), file=paste0(my_opts$corpus,"/models/TopicKeywords/Top10WordsperTopic_for_",x@k,"Topics_model.txt")))
 }
 
 if(file.exists("CTM_LDA_models.rda") & !model){
@@ -84,11 +84,11 @@ if(file.exists("LDA_FY_models_current.rda") & !model){
         mclapply(mc.cores=2, seq.k, function(k) LDA(dtm.fy,k))
     })
     names(models.fy)<-fy
-    save(models.fy, file=paste0("LDA_FY_models", getDate(),".rda"))
-    save(models.fy, file="LDA_FY_models_current.rda")
+    save(models.fy, file=paste0("data/LDA_FY_models", getDate(),".rda"))
+    save(models.fy, file=paste0(my_opts$corpus,"/models/LDA_FY_models_current.rda")
     lapply(1:length(models.fy), function(x) lapply(models.fy[[x]], 
                                                    function(y) write.csv2(t(terms(y, 10)),
-                                                                          file=paste0("Top10WordsperTopic_for_",y@k,"Topics_model_",names(models.fy)[x],".txt")))) 
+                                                                          file=paste0(my_opts$corpus,"/models/TopicKeywords/Top10WordsperTopic_for_",y@k,"Topics_model_",names(models.fy)[x],".txt")))) 
 }
 
 model.lglk<-as.data.frame(as.matrix(lapply(models, logLik)))
@@ -112,7 +112,7 @@ lapply(seq(length(models.fy)), function (z) {
 })
 
 model.fy.lglk<-do.call(cbind, lapply(models.fy, function(x) do.call(rbind,lapply(x, logLik))))
-rownames(model.fy.lglk)<-c(25,50,100,250)
+rownames(model.fy.lglk)<-seq.k
 colnames(model.fy.lglk)<-names(models.fy)
 model.fy.lglk<-melt(as.matrix(model.fy.lglk))[,1:3]
 colnames(model.fy.lglk)<-c("Topic Number","FY","LL")
