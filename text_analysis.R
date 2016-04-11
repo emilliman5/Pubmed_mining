@@ -19,7 +19,7 @@ Options:
     -x --xml=<pubmed>           Pubmed results in XML format
     -r --reporter=<nih>         NIH Reporter export in CSV format
     -s --stopwords=<stopwords>  Stop word list, one word per line, plain text [default: stopwords.txt]
-    -d --dir=<dir>                    Directory write Corpus outputs
+    -d --dir=<dir>              Directory to write Corpus and meta data outputs
     -c --cores=<cores>          Number of cores to use for Corpus processing [default: 16]
     --reset                     Force a reprocessing of the Corpus, the default is to not reprocess the corpus if one exists
     -h --help                   This helpful message"
@@ -32,7 +32,6 @@ if (file.exists(extraFunFile)) {
   source(extraFunFile, keep.source=TRUE);
 }
 source("makeCorpus.R")
-
 
 dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
