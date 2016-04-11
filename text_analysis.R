@@ -37,32 +37,29 @@ dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 corpusPath<-paste0("data/",my_opts$dir)
-dir.create(corpusPath, recursive = T)
+dir.create(corpusPath, recursive = T, showWarnings = F)
 
 file.copy(from=my_opts$xml,to=paste0("data/", corpusPath))
+print(c("XML file is null:",!is.null(my_opts$xml)))
 
-if(length("corpusPath")==0 || my_opts$reset){
-    
-    if(!is.null(my_opts$xml)){
-        pubmed.df<-pubmedParse(my_opts$xml)
-        metaData<-pubmed.df[,1:5]
-        metaData[,"FY.Q"]<-quarter(pubmed.df[,"pubdate.df"]+91, with_year=T)
-        metaData[,"FY"]<-floor(metaData[,"FY.Q"])
-    }
-#     if(!is.null(my_opts$reporter)){
-#         nihreporter<-NIHreporterParse(my_opts$nih)
-#     }
-  
+if(!is.null(my_opts$xml)){
+    print("Processing Corpus....")
+    pubmed.df<-pubmedParse(my_opts$xml)
+    metaData<-pubmed.df[,1:5]
+    metaData[,"FY.Q"]<-quarter(pubmed.df[,"pubdate.df"]+91, with_year=T)
+    metaData[,"FY"]<-floor(metaData[,"FY.Q"])
     abstrCorpus<-makeCorpus(abstr.df = pubmed.df,stopwordsList = my_opts$stopwords, cores = my_opts$cores)
     writeCorpus(abstrCorpus, paste0(corpusPath,"/Corpus"))
     write.csv(metaData, file=paste0(corpusPath,"/CorpusMetaData.txt"), header=T)
 } else {
   ##read in corpus docs.
-  abstrCorpus<-Corpus(DirSource(paste0(corpusPath,), readerControl = list(language="english"))
-  metaData<-read.csv(paste0(corpusPath, "CorpusMetaData.txt"),colClasses=c('character','character','Date','character','numeric'))
-  for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
-    meta(abstrCorpus, x)<-metaData[,x]
-  }
+    print("Loading previous corpus...")
+    abstrCorpus<-Corpus(DirSource(paste0(corpusPath,"/Corpus")), 
+                                readerControl = list(language="english"))
+    metaData<-read.csv(paste0(corpusPath, "CorpusMetaData.txt"),colClasses=c('character','character','Date','character','numeric'))
+    for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
+        meta(abstrCorpus, x)<-metaData[,x]
+    }
 }
 
 ####Extra Corpus cleaning
