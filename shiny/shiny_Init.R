@@ -1,21 +1,36 @@
 library(tm)
 library(topicmodels)
 library(proxy)
+library(parallel)
+library(slam)
 library(docopt)
-library(Matrix)
 
-load("data/LDA_FY_models_current.rda")
-load("data/LDA_models_current.rda")
+##This script is for ttesting new models and data for upload to the shiny web app
 
-abstrCorpus<-Corpus(DirSource("data/Corpus/"), readerControl = list(language="english"))
-tdm<-TermDocumentMatrix(abstrCorpus)
-write_stm_CLUTO(tdm, "data/Corpus_tdm.cluto")
+metaData<-read.csv("CorpusMetaData.txt")
+corpus<-Corpus(DirSource("Corpus/"),
+               readerControl = list(language="english"))
+
+names(corpus)<-gsub(".txt","", names(corpus))
+load("models/LDA_models_current.rda")
+
+z<-unlist(lapply(names(corpus), function(x) which(metaData$PMID==x)))
+modelMetaData<-metaData[z,]
+write.csv(modelMetaData,"modelMetaData.txt")
+
+dtm<-DocumentTermMatrix(corpus)
+term.assoc<-crossprod_simple_triplet_matrix(dtm)/
+    (sqrt(col_sums(dtm^2) %*% t(col_sums(dtm^2))))
+term.assoc<-as.simple_triplet_matrix(term.assoc)
+save(term.assoc,file = "termAssoc.rda")
+
+TopicTerms<-lapply(models, function(x) {
+    terms(x,4)
+})
 
 beta.tree<-lapply(models, function(x) lapply( c("cosine", "Hellinger"),function (z) hclust(dist(x@beta, z))))
-beta.tree<-lapply(models, function(x) hclust(dist(x@beta, "cosine")))
 save(beta.tree, file = "data/beta.tree.rda")
 
-metaData<-read.csv("data/CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
 grantIDs<-strsplit(metaData$GrantID, "\\|")
 grants.table<-data.frame(PMID=rep(metaData$PMID, 
                                    sapply(grantIDs, length)), 
