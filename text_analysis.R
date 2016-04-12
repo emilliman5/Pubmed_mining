@@ -38,6 +38,7 @@ resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 corpusPath<-paste0("data/",my_opts$dir)
 dir.create(corpusPath, recursive = T, showWarnings = F)
+dir.create(paste0(corpusPath,"/Corpus"), showWarnings = F)
 
 file.copy(from=my_opts$xml,to=paste0(corpusPath))
 print(c("XML file is null:",!is.null(my_opts$xml)))
@@ -86,7 +87,7 @@ tdm.monogram<-TermDocumentMatrix(abstrCorpus)
 ##Ngram Analysis
 #################
 
-tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
+#tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
 ##function(x) weightTfIdf(x,normalize=F)))
 
 ##Run one of the following commands before proceeding. 
