@@ -39,7 +39,7 @@ dir.create(resultsPath)
 corpusPath<-paste0("data/",my_opts$dir)
 dir.create(corpusPath, recursive = T, showWarnings = F)
 
-file.copy(from=my_opts$xml,to=paste0("data/", corpusPath))
+file.copy(from=my_opts$xml,to=paste0(corpusPath))
 print(c("XML file is null:",!is.null(my_opts$xml)))
 
 if(!is.null(my_opts$xml)){
