@@ -51,7 +51,8 @@ if(!is.null(my_opts$xml)){
     metaData[,"FY"]<-floor(metaData[,"FY.Q"])
     abstrCorpus<-makeCorpus(abstr.df = pubmed.df,stopwordsList = my_opts$stopwords, cores = my_opts$cores)
     writeCorpus(abstrCorpus, paste0(corpusPath,"/Corpus"))
-    write.csv(metaData, file=paste0(corpusPath,"/CorpusMetaData.txt"), header=T)
+    write.csv(metaData, file=paste0(corpusPath,"/CorpusMetaData.txt"), 
+              row.names=F)
 } else {
   ##read in corpus docs.
     print("Loading previous corpus...")
