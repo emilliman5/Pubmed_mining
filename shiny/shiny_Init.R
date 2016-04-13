@@ -5,7 +5,8 @@ library(parallel)
 library(slam)
 library(docopt)
 
-##This script is for ttesting new models and data for upload to the shiny web app
+##This script is for checking/preparing new models and data for upload to the shiny web app
+##This script should only be run from within the shiny directory.
 
 metaData<-read.csv("CorpusMetaData.txt")
 corpus<-Corpus(DirSource("Corpus/"),
@@ -28,7 +29,9 @@ TopicTerms<-lapply(models, function(x) {
     terms(x,4)
 })
 
-beta.tree<-lapply(models, function(x) lapply( c("cosine", "Hellinger"),function (z) hclust(dist(x@beta, z))))
+beta.tree<-lapply(models, 
+                  function(x) lapply(c("cosine", "Hellinger", "correlation", "Bhjattacharyya"),
+                                      function (z) hclust(dist(x@beta, z))))
 save(beta.tree, file = "data/beta.tree.rda")
 
 grantIDs<-strsplit(metaData$GrantID, "\\|")
