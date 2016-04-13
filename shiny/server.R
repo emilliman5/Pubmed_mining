@@ -5,7 +5,6 @@ library(rCharts)
 library(wordcloud)
 library(visNetwork)
 library(proxy)
-#library(ape, lib.loc="/ddn/gs1/home/millimanej/R/library/ape/libs")
 library(ape)
  
 dict<-rownames(tdm)
@@ -230,4 +229,18 @@ shinyServer(function(input,output, session) {
                       label = "Anchor Topic:", 
                       choices = topicChoices())
     })
+    
+    gammaDistRange<-reactive({
+      ids=currentIds()
+      topicGamma<-as.matrix(models[[as.integer(input$treeK)]]@gamma)
+      values<-unlist(lapply(ids, function(x) dist(x=t(topicGamma[x,-as.integer(input$topicN)]),y=t(topicGamma[x,as.integer(input$topicN)]) , method=input$proxy)))
+      return(c(range(values), as.numeric(quantile(values, 0.9))))
+      })
+
+    observe({
+      updateSliderInput(session, "treeDist",
+                      min=gammaDistRange()[1],
+                      max=gammaDistRange()[2],
+                      value=gammaDistRange()[3])
+      })
 })
