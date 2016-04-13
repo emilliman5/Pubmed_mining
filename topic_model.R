@@ -1,4 +1,5 @@
 suppressMessages(library(tm))
+suppressMessages(library(slam))
 suppressMessages(library(topicmodels))
 suppressMessages(library(parallel))
 suppressMessages(library(ggplot2))
@@ -43,27 +44,28 @@ names(abstrCorpus)<-gsub(".txt", "", names(abstrCorpus))
 idx<-unlist(lapply(names(abstrCorpus), function(x) which(metaData$PMID==x)))
 metaData<-metaData[idx,]
 
-for (x in colnames(metaData)) {
-    meta(abstrCorpus, x)<-metaData[,x]
-}
+# for (x in colnames(metaData)) {
+#     meta(abstrCorpus, x)<-metaData[,x]
+# }
 
 dtm<-DocumentTermMatrix(abstrCorpus)
-TermDocFreq<-colSums(as.matrix(dtm)>0)
-TermFreq<-colSums(as.matrix(dtm))
+TermDocFreq<-col_sums(dtm)>0
+TermFreq<-col_sums(dtm)
 dtm<-dtm[,TermFreq>15]
 
 docRemove<-row_sums(dtm)==0
 metaData$InModel<-!docRemove[1:length(metaData$PMID)]
 write.csv(metaData,paste0(my_opts$corpus,"/CorpusMetaData.txt"),row.names=F)
 write.csv(metaData[metaData$InModel==TRUE,], paste0(my_opts$corpus,"/models/ModelsMetaData.txt"),row.names=F)
-dtm<-dtm[-docRemove,]
-rownames(dtm)<-c(meta(abstrCorpus)[-docRemove,1])
+dtm<-dtm[!docRemove,]
+#rownames(dtm)<-c(meta(abstrCorpus)[!docRemove,1])
 
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
 if(file.exists("data/LDA_models_current.rda") & my_opts$Remodel){
     load("LDA_models_current.rda")
 } else{
-    models<-mclapply(seq.k, mc.cores=as.integer(my_opts$cores), function(k) LDA(dtm, k) )
+    print("Starting Topic modeling")
+    models<-mclapply(seq.k, mc.cores=my_opts$cores, function(k) LDA(dtm, k) )
     save(models, file = paste0(my_opts$corpus,"/models/LDA_models",getDate(),".rda"))
     save(models, file = paste0("data/LDA_models_current.rda"))
     lapply(models, function(x) write.csv2(t(terms(x, 10)), file=paste0(my_opts$corpus,"/models/TopicKeywords/Top10WordsperTopic_for_",x@k,"Topics_model.txt")))
