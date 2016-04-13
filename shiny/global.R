@@ -1,6 +1,8 @@
 library(tm)
 library(topicmodels)
 library(proxy)
+library(ape)
+library(arcdiagram)
 
 extraFunFile<-"shiny_textMine_funcs.R"
 if (file.exists(extraFunFile)) {
@@ -14,6 +16,7 @@ for (x in colnames(metaData)) {
     meta(abstrCorpus, x)<-metaData[,x]
 }
 rm(metaData)
+tdm<-TermDocumentMatrix(abstrCorpus)
 
 load("data/LDA_models_current.rda")
 load("data/beta.tree.rda")
