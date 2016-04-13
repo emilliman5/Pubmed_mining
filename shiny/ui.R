@@ -87,7 +87,7 @@ shinyUI(fluidPage(
             ),
             tabPanel("DendroArcs",
                         div(style="display:inline-block", sliderInput("treeDist",label="Minimum Distance for Topic-Topic Associations:", 
-                                 min=0.5, max=1, value=0.90)), 
+                                 min=0.5, max=1, value=0.90)),
                         div(style="display:inline-block", selectInput("proxy", label=p(br(),"Topic-topic distance calculation method:",br()), 
                                     selected="cosine", choices=list("cosine","hellinger","euclidean","bhjattacharyya"))),
                         p(""),
@@ -98,7 +98,6 @@ shinyUI(fluidPage(
                                   choices=list("Cosine"=1, "Hellinger"=2), inline=TRUE)),
                      selectInput("topicN", label=h4("Anchor Topic"),selected=1, choices=list(Topic1=1, Topic2=3)),
                      uiOutput("dendroArc.ui")
-                     
                      ),
             tabPanel("Word Assoc",
                 br(),
