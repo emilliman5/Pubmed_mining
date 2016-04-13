@@ -11,7 +11,7 @@ Usage:  topic_modeling.R --corpus=<corpus> [-m <k>] [-c=<cores>] [--Remodel]
 Options:
     --corpus=<corpus>           Path to corpus files [default: data/Corpus]
     -m --models=<k>             Number of topics to model on, separate values by a comma only [default: 50,100,250,500,1000]
-    -c --cores=<cores>          Number of cores to use for Corpus processing [default: 6] [default: 16]
+    -c --cores=<cores>          Number of cores to use for Corpus processing [default: 6]
     --Remodel                   Do not perform topic modeling the corpus (Useful if you have topic models and just want some)
     -h --help                   This helpful message"
 
@@ -31,17 +31,17 @@ if (file.exists(extraFunFile)) {
 dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
-dir.create(paste0(my_opts$corpus,"/models/TopicKeywords"), recursive=T)
+dir.create(paste0(my_opts$corpus,"/models/TopicKeywords"), recursive=T, showWarnings=F)
 
 abstrCorpus<-Corpus(DirSource(paste0(my_opts$corpus, "/Corpus/")), 
                     readerControl = list(language="english"))
-metaData<-read.csv(paste0(my_opts$corpus,"/CorpusMetaData.txt"),colClasses=c('character','character','Date','numeric','integer', 'character','character'))
+metaData<-read.csv(paste0(my_opts$corpus,"/CorpusMetaData.txt"),
+                   colClasses=c('character','character','Date','character', 'character','numeric','integer'))
 
 ###Make sure that the Corpus and metaData are in the same order
 names(abstrCorpus)<-gsub(".txt", "", names(abstrCorpus))
 idx<-unlist(lapply(names(abstrCorpus), function(x) which(metaData$PMID==x)))
 metaData<-metaData[idx,]
-write.csv(paste0(my_opts$corpus,"/CorpusMetaData.txt"),row.names=F)
 
 for (x in colnames(metaData)) {
     meta(abstrCorpus, x)<-metaData[,x]
@@ -53,13 +53,14 @@ TermFreq<-colSums(as.matrix(dtm))
 dtm<-as.matrix(dtm)[,TermFreq>15]
 
 docRemove<-rowSums(dtm)==0
-meta(abstrCorpus, "InModel")<-!docRemove[1:length(metaData$PMID)]
-write.csv(meta(abstrCorpus)[meta(abstrCorpus)$InModel==TRUE,], paste0(my_opts$corpus,"models/ModelsMetaData.txt"),row.names=F)
+metaData$InModel<-!docRemove[1:length(metaData$PMID)]
+write.csv(metaData,paste0(my_opts$corpus,"/CorpusMetaData.txt"),row.names=F)
+write.csv(metaData[metaData$InModel==TRUE,], paste0(my_opts$corpus,"models/ModelsMetaData.txt"),row.names=F)
 dtm<-dtm[-docRemove,]
 rownames(dtm)<-c(meta(abstrCorpus)[-docRemove,1])
 
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
-if(file.exists("LDA_models_current.rda") & !model){
+if(file.exists("data/LDA_models_current.rda") & my_opts$Remodel){
     load("LDA_models_current.rda")
 } else{
     models<-mclapply(seq.k, mc.cores=2, function(k) LDA(dtm, k) )
@@ -78,7 +79,7 @@ if(file.exists("LDA_models_current.rda") & !model){
 
 fy<-levels(as.factor(meta(abstrCorpus)[,"FY"]))
 
-if(file.exists("LDA_FY_models_current.rda") & !model){
+if(file.exists("data/LDA_FY_models_current.rda") & my_opts$Remodel){
     load("LDA_FY_models_current.rda")
 } else{
     models.fy<-lapply(fy, function(y){
