@@ -9,7 +9,7 @@ doc<-"  This script performs topic modeling on a Corpus of documents
 Usage:  topic_modeling.R --corpus=<corpus> [-m <k>] [-c=<cores>] [--Remodel]
 
 Options:
-    --corpus=<corpus>           Path to corpus files [default: data/Corpus/]
+    --corpus=<corpus>           Path to corpus files [default: data/Corpus]
     -m --models=<k>             Number of topics to model on, separate values by a comma only [default: 50,100,250,500,1000]
     -c --cores=<cores>          Number of cores to use for Corpus processing [default: 6] [default: 16]
     --Remodel                   Do not perform topic modeling the corpus (Useful if you have topic models and just want some)
@@ -41,7 +41,7 @@ metaData<-read.csv(paste0(my_opts$corpus,"/CorpusMetaData.txt"),colClasses=c('ch
 names(abstrCorpus)<-gsub(".txt", "", names(abstrCorpus))
 idx<-unlist(lapply(names(abstrCorpus), function(x) which(metaData$PMID==x)))
 metaData<-metaData[idx,]
-write.csv(paste0(my_opts$corpus,"/CorpusMetaData.txt"))
+write.csv(paste0(my_opts$corpus,"/CorpusMetaData.txt"),row.names=F)
 
 for (x in colnames(metaData)) {
     meta(abstrCorpus, x)<-metaData[,x]
@@ -63,18 +63,18 @@ if(file.exists("LDA_models_current.rda") & !model){
     load("LDA_models_current.rda")
 } else{
     models<-mclapply(seq.k, mc.cores=2, function(k) LDA(dtm, k) )
-    save(models, file = paste0(my_opts$corpus,"models/LDA_models",getDate(),".rda"))
+    save(models, file = paste0(my_opts$corpus,"/models/LDA_models",getDate(),".rda"))
     save(models, file = paste0("data/LDA_models_current.rda"))
     lapply(models, function(x) write.csv2(t(terms(x, 10)), file=paste0(my_opts$corpus,"/models/TopicKeywords/Top10WordsperTopic_for_",x@k,"Topics_model.txt")))
 }
 
-if(file.exists("CTM_LDA_models.rda") & !model){
-    load("CTM_LDA_models.rda")
-} else{
-    ctm.models<-mclapply(seq.k, mc.cores=4, function(k) CTM(dtm,k))
-    save(ctm.models, file = paste0("CTM_LDA_models",getDate(),".rda"))
-    save(ctm.models, file = paste0("CTM_LDA_models_current.rda"))
-    }
+# if(file.exists("CTM_LDA_models.rda") & !model){
+#     load("CTM_LDA_models.rda")
+# } else{
+#     ctm.models<-mclapply(seq.k, mc.cores=4, function(k) CTM(dtm,k))
+#     save(ctm.models, file = paste0("CTM_LDA_models",getDate(),".rda"))
+#     save(ctm.models, file = paste0("CTM_LDA_models_current.rda"))
+#     }
 
 fy<-levels(as.factor(meta(abstrCorpus)[,"FY"]))
 
@@ -87,8 +87,8 @@ if(file.exists("LDA_FY_models_current.rda") & !model){
         mclapply(mc.cores=2, seq.k, function(k) LDA(dtm.fy,k))
     })
     names(models.fy)<-fy
-    save(models.fy, file=paste0("data/LDA_FY_models", getDate(),".rda"))
-    save(models.fy, file=paste0(my_opts$corpus,"/models/LDA_FY_models_current.rda")
+    save(models.fy, file=paste0(my_opts$corpus,"/models/LDA_FY_models", getDate(),".rda"))
+    save(models.fy, file=paste0("data/LDA_FY_models_current.rda")
     lapply(1:length(models.fy), function(x) lapply(models.fy[[x]], 
                                                    function(y) write.csv2(t(terms(y, 10)),
                                                                           file=paste0(my_opts$corpus,"/models/TopicKeywords/Top10WordsperTopic_for_",y@k,"Topics_model_",names(models.fy)[x],".txt")))) 
