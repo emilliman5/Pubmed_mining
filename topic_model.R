@@ -47,15 +47,15 @@ for (x in colnames(metaData)) {
     meta(abstrCorpus, x)<-metaData[,x]
 }
 
-dtm<-DocumentTermMatrix(c(abstrCorpus, spCorpus))
+dtm<-DocumentTermMatrix(abstrCorpus)
 TermDocFreq<-colSums(as.matrix(dtm)>0)
 TermFreq<-colSums(as.matrix(dtm))
-dtm<-as.matrix(dtm)[,TermFreq>15]
+dtm<-dtm[,TermFreq>15]
 
-docRemove<-rowSums(dtm)==0
+docRemove<-row_sums(dtm)==0
 metaData$InModel<-!docRemove[1:length(metaData$PMID)]
 write.csv(metaData,paste0(my_opts$corpus,"/CorpusMetaData.txt"),row.names=F)
-write.csv(metaData[metaData$InModel==TRUE,], paste0(my_opts$corpus,"models/ModelsMetaData.txt"),row.names=F)
+write.csv(metaData[metaData$InModel==TRUE,], paste0(my_opts$corpus,"/models/ModelsMetaData.txt"),row.names=F)
 dtm<-dtm[-docRemove,]
 rownames(dtm)<-c(meta(abstrCorpus)[-docRemove,1])
 
@@ -63,7 +63,7 @@ rownames(dtm)<-c(meta(abstrCorpus)[-docRemove,1])
 if(file.exists("data/LDA_models_current.rda") & my_opts$Remodel){
     load("LDA_models_current.rda")
 } else{
-    models<-mclapply(seq.k, mc.cores=2, function(k) LDA(dtm, k) )
+    models<-mclapply(seq.k, mc.cores=as.integer(my_opts$cores), function(k) LDA(dtm, k) )
     save(models, file = paste0(my_opts$corpus,"/models/LDA_models",getDate(),".rda"))
     save(models, file = paste0("data/LDA_models_current.rda"))
     lapply(models, function(x) write.csv2(t(terms(x, 10)), file=paste0(my_opts$corpus,"/models/TopicKeywords/Top10WordsperTopic_for_",x@k,"Topics_model.txt")))
@@ -77,15 +77,15 @@ if(file.exists("data/LDA_models_current.rda") & my_opts$Remodel){
 #     save(ctm.models, file = paste0("CTM_LDA_models_current.rda"))
 #     }
 
-fy<-levels(as.factor(meta(abstrCorpus)[,"FY"]))
+fy<-levels(as.factor(metaData[,"FY"]))
 
 if(file.exists("data/LDA_FY_models_current.rda") & my_opts$Remodel){
     load("LDA_FY_models_current.rda")
 } else{
     models.fy<-lapply(fy, function(y){
-        pmid<-meta(abstrCorpus)[,"FY"]==y
+        pmid<-metaData[,"FY"]==y
         dtm.fy<-dtm[pmid,]
-        mclapply(mc.cores=2, seq.k, function(k) LDA(dtm.fy,k))
+        mclapply(mc.cores=as.integer(my_opts$cores), seq.k, function(k) LDA(dtm.fy,k))
     })
     names(models.fy)<-fy
     save(models.fy, file=paste0(my_opts$corpus,"/models/LDA_FY_models", getDate(),".rda"))
