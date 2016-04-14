@@ -126,9 +126,12 @@ shinyServer(function(input,output, session) {
     
     output$keywordTopic <-renderChart({
         betad<-data.frame(topic=rep(getTopicNames(input$K),length(words())), 
-                          beta=10**unlist(lapply(words(), 
-                            function(x) models[[as.integer(input$K)]]@beta[,models[[as.integer(input$K)]]@terms==x])), 
+                          beta=exp(unlist(lapply(words(), 
+                            function(x) models[[as.integer(input$K)]]@beta[,models[[as.integer(input$K)]]@terms==x]))), 
                           Term=rep(words(), each=models[[as.integer(input$K)]]@k))
+        betad<-dcast(betad, topic~Term, value.var="beta")
+        betad<-betad[order(apply(betad[,-1,],1,max), decreasing = T),]
+        betad<-melt(betad, variable.name="Term",value.name="beta")
         p1<-nPlot(beta~topic, group="Term", data=betad, type="multiBarChart")
         p1$addParams(dom="keywordTopic")
         p1$chart(reduceXTicks = FALSE)
@@ -239,8 +242,8 @@ shinyServer(function(input,output, session) {
 
     observe({
       updateSliderInput(session, "treeDist",
-                      min=gammaDistRange()[1],
-                      max=gammaDistRange()[2],
+                      min=format(gammaDistRange()[1], digits=3),
+                      max=format(gammaDistRange()[2], digits=3),
                       value=gammaDistRange()[3])
       })
 })
