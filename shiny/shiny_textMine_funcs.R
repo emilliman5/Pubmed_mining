@@ -62,16 +62,6 @@ getFactorIdx<-function(col, df){
     x
 }
 
-getTopicAssign<-function(ids, model, corpus){
-    idx<-do.call(c, lapply(ids, function(x){
-        which(meta(corpus)[-484,]$PMID==x)
-    }))
-    t<-as.data.frame(model@gamma[idx,])
-        colnames(t)<-apply(terms(model,4),2,function(z) paste(z,collapse=","))
-        rownames(t)<-ids
-    t
-}
-
 dendroArc<-function(FYs, modelK, topicN, ids, distFunc, gamma=0.15, distThresh, betaTree, y_lim)
 {
     ##FYs = the two fiscal years to compare
@@ -114,14 +104,4 @@ dist2Table<-function(x){
     library(reshape2)
     t<-melt(x[1:dim(x)[1],1:dim(x)[2]], varnames=c("col","row"))   
     t   
-}
-
-findTerms<-function(corpus,tdm, terms){
-    ###Finds terms and reports freq by FY
-    library(tm)
-    f<-getFactorIdx(5, meta(corpus))
-    x<-lapply(terms, function(x,z=as.matrix(tdm)[rownames(tdm)==x,]) 
-        lapply(f, function(y) sum(z[y])))
-    names(x)<-terms
-    x
 }
