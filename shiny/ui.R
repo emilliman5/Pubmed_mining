@@ -94,8 +94,8 @@ shinyUI(fluidPage(
                         div(style="display:inline-block", radioButtons("treeK",selected = 2,label = "Topic Model Selection",choices = 
                                                     list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
                                                          "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T)),
-                        div(style="display:inline-block", radioButtons("topicTree", selected=1, label="Beta-term Tree Method", 
-                                  choices=list("Cosine"=1, "Hellinger"=2), inline=TRUE)),
+                        div(style="display:inline-block", radioButtons("topicTree", selected=4, label="Beta-term Tree Method", 
+                                  choices=list("Cosine"=1, "Hellinger"=2, "Pearson's"=3, "Bhjattacharyya"=4), inline=TRUE)),
                      selectInput("topicN", label=h4("Anchor Topic"),selected=1, choices=list(Topic1=1, Topic2=3)),
                      uiOutput("dendroArc.ui")
                      ),
