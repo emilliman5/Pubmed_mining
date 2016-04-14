@@ -104,11 +104,11 @@ shinyServer(function(input,output, session) {
         })
     
     findassoc<-reactive({
-        assoc<-findAssocs(tdm, words(), 0.01)
+        terms<-which(rownames(termAssoc) %in% words())
         if(length(words())==1){
-          data.frame(Source=rep(words()), Target=names(assoc[[1]]), Correlation=assoc[[1]])
+          data.frame(Source=rep(words()), Target=colnames(termAssoc)[,terms[1,]>=input$corr], Correlation=termAsooc[,terms[1,]>=input$corr])
           } else{
-            do.call(rbind, lapply(words(), function(x) data.frame(Source=x, Target=names(assoc[[x]]), Correlation=assoc[[x]])))
+            do.call(rbind, lapply(terms, function(x) data.frame(Source=rownames(termAssoc)[x], Target=colnames(termAssoc)[termAssoc[,termAssoc[x,]>=input$corr]], Correlation=termAssoc[,termAssoc[x,]>=input$corr])))
             }
         })
     
