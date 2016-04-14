@@ -20,3 +20,4 @@ tdm<-TermDocumentMatrix(abstrCorpus)
 
 load("data/LDA_models_current.rda")
 load("data/beta.tree.rda")
+load("data/term.assoc.rda")
