@@ -3,6 +3,7 @@ library(proxy)
 library(ape)
 library(arcdiagram)
 library(slam)
+library(reshape2)
 
 extraFunFile<-"shiny_textMine_funcs.R"
 if (file.exists(extraFunFile)) {
