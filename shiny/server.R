@@ -33,7 +33,7 @@ shinyServer(function(input,output, session) {
     
     currentIds<-reactive({
         ids<-lapply(fys(input$fy), function(x)
-                which(meta(abstrCorpus)[,"FY"] == x))
+                which(metaData[,"FY"] == x))
         lapply(ids, function(x) x[x %in% fileIds()])
     })
     
@@ -46,10 +46,10 @@ shinyServer(function(input,output, session) {
         x<-read.table(inFile$datapath, header=F)
         if(grepl("ES", x[1,])){
             ids<-lapply(x[,1], function(z)
-               grep(z, meta(abstrCorpus)[,"GrantID"])) 
+               grep(z, metaData[,"GrantID"])) 
         } else{
             ids<-lapply(x[,1], function(x)
-                which(meta(abstrCorpus)[,"PMID"] == x)) 
+                which(metaData[,"PMID"] == x)) 
             }
         }
         unlist(ids)
@@ -65,7 +65,7 @@ shinyServer(function(input,output, session) {
     })
     
     output$pubs<-renderChart({
-        pub.Q<-tapply(meta(abstrCorpus)$FY.Q,meta(abstrCorpus)$FY.Q, length)
+        pub.Q<-tapply(metaData$FY.Q,metaData$FY.Q, length)
         pubs<-data.frame(FY=floor(as.numeric(names(pub.Q))), 
                          Quarter=paste0("Q",as.numeric(unlist(lapply(strsplit(as.character(names(pub.Q)), "\\."), 
                                                    function(x) x[2])))), 
@@ -169,7 +169,7 @@ shinyServer(function(input,output, session) {
     
     posterior.dist<-reactive({
       x<-dist(models[[as.integer(input$Ktopic)]]@gamma, matrix(posteriors()[["topics"]], nrow=1,byrow = T), method="cosine")
-      cbind(meta(abstrCorpus)[order(x),], Distance=x[order(x)])
+      cbind(metaData[order(x),], Distance=x[order(x)])
     })
     
     output$closestPubs<-renderDataTable({
@@ -195,7 +195,7 @@ shinyServer(function(input,output, session) {
     })
     
     output$papers<-renderDataTable({
-      df<-meta(abstrCorpus)[unlist(currentIds()),]
+      df<-metaData[unlist(currentIds()),]
       df$PMID<-createLink("http://www.ncbi.nlm.nih.gov/pubmed/",df$PMID)
       df$Journal<-createLink("http://www.issn.cc/",df$Journal)
       df
