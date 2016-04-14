@@ -60,7 +60,7 @@ shinyServer(function(input,output, session) {
                     })
     
     terms<-reactive({
-        terms<-rowSums(as.matrix(tdm[,unlist(currentIds())]))
+        terms<-row_sums(tdm[,unlist(currentIds())])
         terms[order(terms, decreasing = T)]
     })
     
