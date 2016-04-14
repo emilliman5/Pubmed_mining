@@ -18,7 +18,7 @@ shinyUI(fluidPage(
                      checkboxGroupInput("fy",selected = 2010,
                                         label=p(h3("Fiscal Years"),"Selection of FYs will select the data used to make plots 
                                                 in the \"Topic Plots\" tab."),
-                                        choices=list("ALL"="ALL","FY2009"=2009, "FY2010"=2010,
+                                        choices=list("FY2009"=2009, "FY2010"=2010,
                                                      "FY2011"=2011,"FY2012"=2012,
                                                      "FY2013"=2013,"FY2014"=2014,
                                                      "FY2015"=2015)),
