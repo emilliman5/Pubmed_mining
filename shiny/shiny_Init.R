@@ -8,37 +8,45 @@ library(docopt)
 ##This script is for checking/preparing new models and data for upload to the shiny web app
 ##This script should only be run from within the shiny directory.
 
-metaData<-read.csv("CorpusMetaData.txt")
-corpus<-Corpus(DirSource("Corpus/"),
+metaData<-read.csv("data/CorpusMetaData.txt",
+                   colClasses=c('character','character','Date','numeric','integer','character',
+                                'character'))
+
+corpus<-Corpus(DirSource("data/Corpus/"),
                readerControl = list(language="english"))
 
 names(corpus)<-gsub(".txt","", names(corpus))
-load("models/LDA_models_current.rda")
+load("data/models/LDA_models_current.rda")
 
 z<-unlist(lapply(names(corpus), function(x) which(metaData$PMID==x)))
 modelMetaData<-metaData[z,]
-write.csv(modelMetaData,"modelMetaData.txt")
+write.csv(modelMetaData,"data/models/modelMetaData.txt", row.names=F)
 
 dtm<-DocumentTermMatrix(corpus)
 term.assoc<-crossprod_simple_triplet_matrix(dtm)/
     (sqrt(col_sums(dtm^2) %*% t(col_sums(dtm^2))))
 term.assoc<-as.simple_triplet_matrix(term.assoc)
 save(term.assoc,file = "data/termAssoc.rda")
-
+tdm<-TermDocumentMatrix(corpus)
+save(tdm, file="data/Corpus_TDM.rda")
 TopicTerms<-lapply(models, function(x) {
     terms(x,4)
 })
 
 beta.tree<-lapply(models, 
                   function(x) lapply(c("cosine", "Hellinger", "correlation", "Bhjattacharyya"),
-                                      function (z) hclust(dist(x@beta, z))))
+                                      function (z) hclust(dist(exp(x@beta), z))))
 save(beta.tree, file = "data/beta.tree.rda")
 
 grantIDs<-strsplit(metaData$GrantID, "\\|")
+gi<-as.character(unlist(grantIDs))
+gi1<-gsub("-\\d{1,2}$","",gi)
+
 grants.table<-data.frame(PMID=rep(metaData$PMID, 
                                    sapply(grantIDs, length)), 
-                                   grantID=unlist(grantIDs))
-write.table(grants.table, "data/PMIDs_to_grants.txt",col.names = T,sep="\t",quote=T)
+                                   grantID=gi,
+                                    year=rep(metaData$FY,sapply(grantIDs, length)))
+write.table(grants.table, "data/PMIDs_to_grants.txt",col.names = T,sep="\t",quote=T, row.names=F)
 
 
 
