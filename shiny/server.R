@@ -39,7 +39,7 @@ shinyServer(function(input,output, session) {
     
     fileIds<-reactive({
         inFile<-input$file
-        ids<-1:length(abstrCorpus)
+        ids<-1:length(metaData$PMID)
         if(is.null(inFile)){
             return(ids)
         } else {
@@ -104,11 +104,11 @@ shinyServer(function(input,output, session) {
         })
     
     findassoc<-reactive({
-        terms<-which(rownames(termAssoc) %in% words())
+        terms<-which(rownames(term.assoc) %in% words())
         if(length(words())==1){
-          data.frame(Source=rep(words()), Target=colnames(termAssoc)[,terms[1,]>=input$corr], Correlation=termAsooc[,terms[1,]>=input$corr])
+          data.frame(Source=rep(words()), Target=colnames(term.assoc)[,terms[1,]>=input$corr], Correlation=termAsooc[,terms[1,]>=input$corr])
           } else{
-            do.call(rbind, lapply(terms, function(x) data.frame(Source=rownames(termAssoc)[x], Target=colnames(termAssoc)[termAssoc[,termAssoc[x,]>=input$corr]], Correlation=termAssoc[,termAssoc[x,]>=input$corr])))
+            do.call(rbind, lapply(terms, function(x) data.frame(Source=rownames(term.assoc)[x], Target=colnames(term.assoc)[term.assoc[,term.assoc[x,]>=input$corr]], Correlation=term.assoc[,term.assoc[x,]>=input$corr])))
             }
         })
     
