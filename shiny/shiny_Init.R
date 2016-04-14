@@ -23,7 +23,7 @@ dtm<-DocumentTermMatrix(corpus)
 term.assoc<-crossprod_simple_triplet_matrix(dtm)/
     (sqrt(col_sums(dtm^2) %*% t(col_sums(dtm^2))))
 term.assoc<-as.simple_triplet_matrix(term.assoc)
-save(term.assoc,file = "termAssoc.rda")
+save(term.assoc,file = "data/termAssoc.rda")
 
 TopicTerms<-lapply(models, function(x) {
     terms(x,4)
@@ -40,9 +40,6 @@ grants.table<-data.frame(PMID=rep(metaData$PMID,
                                    grantID=unlist(grantIDs))
 write.table(grants.table, "data/PMIDs_to_grants.txt",col.names = T,sep="\t",quote=T)
 
-
-wordAssoc<-mclapply(split(rownames(tdm), cut(seq_along(rownames(tdm)[1:5000]), 50)),
-                                           function(x) findAssocs(tdm,x, 0.01), mc.cores=4)
 
 
 
