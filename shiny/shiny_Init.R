@@ -8,6 +8,21 @@ library(docopt)
 ##This script is for checking/preparing new models and data for upload to the shiny web app
 ##This script should only be run from within the shiny directory.
 
+ICs<-c("NCI","NICHD","NIMHD","NCCIH",
+       "NEI","NIDID","NINDS","NCATS",
+       "NHLBI","NIDCR","NINR",
+       "NHGRI","NIDDK","NLM",
+       "NIAID","NIEHS","CIT",
+       "NIAMS","NIGMS","CSR",
+       "NIBIB","NIMH","FIC")
+tlc<-list(AHRG="HS",NIH=c("AA","AG","AI","AR","AT","CA","CL","DA","DC","DE","DK","EB","ES","EY",
+       "GM","HD","HG","HL","LM","MD","MH","NR","NS","RM","RR","TR","TW" "OD","WH"),
+       CDC=c("CC","CD","CE","CH","CI","CK","DD","DP","EH","EP","GD","GH","HK","HM","HY","IP","LS",
+             "LS","MN","ND","OE","OH","OW","PH","PR","PS","SE","SH","SO","TP","TS","WC"),
+       FDA=c("FD","BI","BJ","BK","BL","BM","BN","BO","BP","BQ","BR","BS","BT","BU"),
+       SAMHA=c("SU","OA","SM","SP","SU","TI"),
+       VA=c("BX","CU","CX","HX","RD","RX"))
+
 metaData<-read.csv("data/CorpusMetaData.txt",
                    colClasses=c('character','character','Date','numeric','integer','character',
                                 'character'))
@@ -40,7 +55,14 @@ save(beta.tree, file = "data/beta.tree.rda")
 
 grantIDs<-strsplit(metaData$GrantID, "\\|")
 gi<-as.character(unlist(grantIDs))
-gi1<-gsub("-\\d{1,2}$","",gi)
+gi1<-gsub("-|\\s|\\\\|/","",gi)
+
+gi2<-gsub("\\d", "0",gi)
+gi2<-gsub("[A-Za-z]", "A",gi2,perl = T)
+summary(as.factor(gi2))
+gi3<-gsub(".*([A-Z]{2}\\d{6}).*", "\\1", gi)
+gi4<-gsub("\\d", "0",gi3)
+gi4<-gsub("[A-Za-z]", "A",gi4,perl = T)
 
 grants.table<-data.frame(PMID=rep(metaData$PMID, 
                                    sapply(grantIDs, length)), 
