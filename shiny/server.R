@@ -106,22 +106,20 @@ shinyServer(function(input,output, session) {
     findassoc<-reactive({
         terms<-which(rownames(term.assoc) %in% words())
         if(length(words())==1){
-          data.frame(Source=rep(words()), Target=colnames(term.assoc)[,terms[1,]>=input$corr], Correlation=termAsooc[,terms[1,]>=input$corr])
+          data.frame(Source=rep(words()), 
+                     Target=colnames(term.assoc)[as.vector(term.assoc[terms,]>=input$corr)], 
+                     Correlation=as.vector(term.assoc[terms,as.vector(term.assoc[terms,]>=input$corr)]))
           } else{
-            do.call(rbind, lapply(terms, function(x) data.frame(Source=rownames(term.assoc)[x], Target=colnames(term.assoc)[term.assoc[,term.assoc[x,]>=input$corr]], Correlation=term.assoc[,term.assoc[x,]>=input$corr])))
+            do.call(rbind, lapply(terms, function(x) data.frame(
+                Source=rownames(term.assoc)[x], 
+                Target=colnames(term.assoc)[as.vector(term.assoc[x,]>=input$corr)], 
+                Correlation=as.vector(term.assoc[x,as.vector(term.assoc[x,]>=input$corr)]))))
+                
             }
         })
     
-    wordAssoc<-reactive({
-      x<-findassoc()[findassoc()$Correlation>input$corr,]
-      if(length(words())>1){
-        rbind(x, do.call(rbind, lapply(words(), function(z) findassoc()[(findassoc()$Target==z && findassoc()$Source!=z), ])))
-      }
-      return(x)
-      })
-    
     output$assoc<-renderDataTable({    
-        wordAssoc()
+        findassoc()
         },escape=F)
     
     output$keywordTopic <-renderChart({
