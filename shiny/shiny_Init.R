@@ -10,18 +10,27 @@ library(docopt)
 
 ICs<-c("NCI","NICHD","NIMHD","NCCIH",
        "NEI","NIDID","NINDS","NCATS",
-       "NHLBI","NIDCR","NINR",
-       "NHGRI","NIDDK","NLM",
-       "NIAID","NIEHS","CIT",
-       "NIAMS","NIGMS","CSR",
-       "NIBIB","NIMH","FIC")
-tlc<-list(AHRG="HS",NIH=c("AA","AG","AI","AR","AT","CA","CL","DA","DC","DE","DK","EB","ES","EY",
-       "GM","HD","HG","HL","LM","MD","MH","NR","NS","RM","RR","TR","TW" "OD","WH"),
-       CDC=c("CC","CD","CE","CH","CI","CK","DD","DP","EH","EP","GD","GH","HK","HM","HY","IP","LS",
-             "LS","MN","ND","OE","OH","OW","PH","PR","PS","SE","SH","SO","TP","TS","WC"),
-       FDA=c("FD","BI","BJ","BK","BL","BM","BN","BO","BP","BQ","BR","BS","BT","BU"),
+       "NHLBI","NIDCR","NINR","NHGRI",
+       "NIDDK","NLM","NIAID","NIEHS",
+       "CIT","NIAMS","NIGMS","CSR",
+       "FDA","NCTR","NIBIB","NIMH",
+       "FIC","NIH", "HHS","EPA","HHS",
+       "PHS","RFA","FOA")
+tlc<-list(AHRG="HS",
+          NIH=c("AA","AG","AI","AR","AT","CA","CL","DA","DC",
+                "DE","DK","EB","ES","EY","GM","HD","HG","HL",
+                "LM","MD","MH","NR","NS","RM","RR","TR","TW",
+                "OD","WH"),
+       CDC=c("CC","CD","CE","CH","CI","CK","DD","DP","EH","EP","GD","GH",
+             "HK","HM","HY","IP","LS","LS","MN","ND","OE","OH","OW","PH",
+             "PR","PS","SE","SH","SO","TP","TS","WC"),
+       FDA=c("FD","BI","BJ","BK","BL","BM","BN","BO","BP","BQ","BR","BS",
+             "BT","BU"),
        SAMHA=c("SU","OA","SM","SP","SU","TI"),
        VA=c("BX","CU","CX","HX","RD","RX"))
+
+activityCodes<-scan("data/NIH_activity_codes.txt",what = "character")
+activityCodes<-c(activityCodes,"Z01","ZIA")
 
 metaData<-read.csv("data/CorpusMetaData.txt",
                    colClasses=c('character','character','Date','numeric','integer','character',
@@ -53,20 +62,26 @@ beta.tree<-lapply(models,
                                       function (z) hclust(dist(exp(x@beta), z))))
 save(beta.tree, file = "data/beta.tree.rda")
 
+
+###GrantID-PMID co-occurency network
 grantIDs<-strsplit(metaData$GrantID, "\\|")
 gi<-as.character(unlist(grantIDs))
-gi1<-gsub("-|\\s|\\\\|/","",gi)
+gi<-gsub("/|\\\\|:|#|:|\\.$|\\(|\\)|,", "", gi)
+gi<-gsub(paste(ICs,collapse="|"), "",gi)
+gi<-gsub("[A-Z]{4,}[\\s|-]","",gi, perl=T)
 
 gi2<-gsub("\\d", "0",gi)
 gi2<-gsub("[A-Za-z]", "A",gi2,perl = T)
+levels(as.factor(gi2))
 summary(as.factor(gi2))
-gi3<-gsub(".*([A-Z]{2}\\d{6}).*", "\\1", gi)
+gi3<-gsub(paste0("^",paste(activityCodes,collapse="|^")),"", gi)
+gi3<-gsub("\\s|-", "",gi3)
+gi3<-gsub(".*([A-Z]{2}\\d{6}).*", "\\1", gi3)
 gi4<-gsub("\\d", "0",gi3)
 gi4<-gsub("[A-Za-z]", "A",gi4,perl = T)
 
-grants.table<-data.frame(PMID=rep(metaData$PMID, 
-                                   sapply(grantIDs, length)), 
-                                   grantID=gi,
+grants.table<-data.frame(PMID=rep(metaData$PMID,sapply(grantIDs, length)), 
+                                    grantID=gi3,
                                     year=rep(metaData$FY,sapply(grantIDs, length)))
 write.table(grants.table, "data/PMIDs_to_grants.txt",col.names = T,sep="\t",quote=T, row.names=F)
 
