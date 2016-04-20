@@ -66,19 +66,27 @@ save(beta.tree, file = "data/beta.tree.rda")
 ###GrantID-PMID co-occurency network
 grantIDs<-strsplit(metaData$GrantID, "\\|")
 gi<-as.character(unlist(grantIDs))
-gi<-gsub("/|\\\\|:|#|:|\\.$|\\(|\\)|,", "", gi)
+gi1<-gsub("\\d","0", gi)
+gi1<-gsub("[A-Za-z]","A",gi1)
+levels(as.factor(gi1))
+
+gi<-gsub("/|\\\\|:|#|\\.$|\\(|\\)|,", "", gi)
 gi<-gsub(paste(ICs,collapse="|"), "",gi)
 gi<-gsub("[A-Z]{4,}[\\s|-]","",gi, perl=T)
+gi<-gsub("^[^A-Za-z0-9]\\s*","",gi)
+gi<-gsub("^-","", gi, perl=T)
+
 
 gi2<-gsub("\\d", "0",gi)
 gi2<-gsub("[A-Za-z]", "A",gi2,perl = T)
 levels(as.factor(gi2))
 summary(as.factor(gi2))
-gi3<-gsub(paste0("^",paste(activityCodes,collapse="|^")),"", gi)
-gi3<-gsub("\\s|-", "",gi3)
-gi3<-gsub(".*([A-Z]{2}\\d{6}).*", "\\1", gi3)
+gi3<-gsub(paste0("^[\\d]",paste(activityCodes,collapse="|^")),"", gi, perl=T)
+gi3<-gsub("\\s|-|\\.|\\*|_", "",gi3, perl=T)
+gi3<-gsub(".*([A-Z]{2}\\d{6}).*", "\\1", gi3, perl=T)
 gi4<-gsub("\\d", "0",gi3)
 gi4<-gsub("[A-Za-z]", "A",gi4,perl = T)
+levels(as.factor(gi4))
 
 grants.table<-data.frame(PMID=rep(metaData$PMID,sapply(grantIDs, length)), 
                                     grantID=gi3,
