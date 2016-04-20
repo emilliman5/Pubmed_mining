@@ -123,7 +123,7 @@ shinyServer(function(input,output, session) {
         },escape=F)
     
     output$keywordTopic <-renderChart({
-        terms<-words()[words() %in% models[[as.integer@K]]@terms]
+        terms<-words()[words() %in% models[[as.integer(input$K)]]@terms]
         betad<-data.frame(topic=rep(getTopicNames(input$K),length(terms)), 
                           beta=exp(unlist(lapply(terms, 
                             function(x) models[[as.integer(input$K)]]@beta[,models[[as.integer(input$K)]]@terms==x]))), 
