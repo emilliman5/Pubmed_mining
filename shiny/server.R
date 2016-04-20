@@ -107,13 +107,13 @@ shinyServer(function(input,output, session) {
         terms<-which(rownames(term.assoc) %in% words())
         if(length(words())==1){
           data.frame(Source=rep(words()), 
-                     Target=colnames(term.assoc)[as.vector(term.assoc[terms,]>=input$corr)], 
-                     Correlation=as.vector(term.assoc[terms,as.vector(term.assoc[terms,]>=input$corr)]))
+                     Target=colnames(term.assoc)[term.assoc$j[term.assoc$i==terms & term.assoc$v>=input$corr]], 
+                     Correlation=term.assoc$v[term.assoc$i==terms & term.assoc$v>=input$corr])
           } else{
             do.call(rbind, lapply(terms, function(x) data.frame(
                 Source=rownames(term.assoc)[x], 
-                Target=colnames(term.assoc)[as.vector(term.assoc[x,]>=input$corr)], 
-                Correlation=as.vector(term.assoc[x,as.vector(term.assoc[x,]>=input$corr)]))))
+                Target=colnames(term.assoc)[term.assoc$j[term.assoc$i==x & term.assoc$v>=input$corr]], 
+                Correlation=term.assoc$v[term.assoc$i==x & term.assoc$v>=input$corr])))
                 
             }
         })
@@ -123,10 +123,11 @@ shinyServer(function(input,output, session) {
         },escape=F)
     
     output$keywordTopic <-renderChart({
-        betad<-data.frame(topic=rep(getTopicNames(input$K),length(words())), 
-                          beta=exp(unlist(lapply(words(), 
+        terms<-words()[words() %in% models[[as.integer@K]]@terms]
+        betad<-data.frame(topic=rep(getTopicNames(input$K),length(terms)), 
+                          beta=exp(unlist(lapply(terms, 
                             function(x) models[[as.integer(input$K)]]@beta[,models[[as.integer(input$K)]]@terms==x]))), 
-                          Term=rep(words(), each=models[[as.integer(input$K)]]@k))
+                          Term=rep(terms, each=models[[as.integer(input$K)]]@k))
         betad<-betad[order(betad$beta, decreasing=T),]
         if(length(words())>1){
             betad<-dcast(betad, topic~Term, value.var="beta")
