@@ -71,14 +71,6 @@ if(file.exists("data/LDA_models_current.rda") & my_opts$Remodel){
     lapply(models, function(x) write.csv2(t(terms(x, 10)), file=paste0(my_opts$corpus,"/models/TopicKeywords/Top10WordsperTopic_for_",x@k,"Topics_model.txt")))
 }
 
-# if(file.exists("CTM_LDA_models.rda") & !model){
-#     load("CTM_LDA_models.rda")
-# } else{
-#     ctm.models<-mclapply(seq.k, mc.cores=4, function(k) CTM(dtm,k))
-#     save(ctm.models, file = paste0("CTM_LDA_models",getDate(),".rda"))
-#     save(ctm.models, file = paste0("CTM_LDA_models_current.rda"))
-#     }
-
 fy<-levels(as.factor(metaData[,"FY"]))
 
 if(file.exists("data/LDA_FY_models_current.rda") & my_opts$Remodel){
@@ -96,6 +88,14 @@ if(file.exists("data/LDA_FY_models_current.rda") & my_opts$Remodel){
                                                    function(y) write.csv2(t(terms(y, 10)),
                                                                           file=paste0(my_opts$corpus,"/models/TopicKeywords/Top10WordsperTopic_for_",y@k,"Topics_model_",names(models.fy)[x],".txt")))) 
 }
+
+if(file.exists("data/CTM_LDA_models.rda") & my_opts$Remodel){
+    load("data/CTM_LDA_models.rda")
+} else{
+    models.ctm<-mclapply(seq.k, mc.cores=as.integer(my_opts$cores), function(k) CTM(dtm,k))
+    save(ctm.models, file = paste0(my_opt$corpus,"/models/CTM_LDA_models",getDate(),".rda"))
+    save(ctm.models, file = paste0("data/CTM_LDA_models_current.rda"))
+    }
 
 model.lglk<-as.data.frame(as.matrix(lapply(models, logLik)))
 LogLik.df<-data.frame("topics"=seq.k, 
