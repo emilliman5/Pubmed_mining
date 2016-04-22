@@ -91,7 +91,7 @@ if(file.exists("data/LDA_FY_models_current.rda") & my_opts$Remodel){
     })
     names(models.fy)<-fy
     save(models.fy, file=paste0(my_opts$corpus,"/models/LDA_FY_models", getDate(),".rda"))
-    save(models.fy, file=paste0("data/LDA_FY_models_current.rda")
+    save(models.fy, file=paste0("data/LDA_FY_models_current.rda"))
     lapply(1:length(models.fy), function(x) lapply(models.fy[[x]], 
                                                    function(y) write.csv2(t(terms(y, 10)),
                                                                           file=paste0(my_opts$corpus,"/models/TopicKeywords/Top10WordsperTopic_for_",y@k,"Topics_model_",names(models.fy)[x],".txt")))) 
