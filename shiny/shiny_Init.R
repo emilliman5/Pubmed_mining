@@ -5,8 +5,18 @@ library(parallel)
 library(slam)
 library(docopt)
 
-##This script is for checking/preparing new models and data for upload to the shiny web app
-##This script should only be run from within the shiny directory.
+doc<-"This script takes the topic models, corpus and metadata and creates the files/data necessary for deployment to the shiny app.
+
+Usage:  shiny_Init.R --corpus=<corpusDir> --shiny=<shinydir>
+
+
+Options:
+    --corpus=<corpusDir>        Directory where corpus and models are stored
+    --shiny=<shinyDir>          Directory where shiny app is located [default:shiny/]
+    -h --help                   This helpful message"
+
+my_opts<-docopt(doc)
+print(my_opts)    ##This is for testing purposes
 
 ICs<-c("NCI","NICHD","NIMHD","NCCIH",
        "NEI","NIDID","NINDS","NCATS",
@@ -32,25 +42,33 @@ tlc<-list(AHRG="HS",
 activityCodes<-scan("data/NIH_activity_codes.txt",what = "character")
 activityCodes<-c(activityCodes,"Z01","ZIA")
 
-metaData<-read.csv("data/CorpusMetaData.txt",
-                   colClasses=c('character','character','Date','numeric','integer','character',
-                                'character'))
 
-corpus<-Corpus(DirSource("data/Corpus/"),
+corpus<-Corpus(DirSource(paste0(my_opts$corpusDir,"/Corpus/")),
                readerControl = list(language="english"))
 
 names(corpus)<-gsub(".txt","", names(corpus))
-load("data/models/LDA_models_current.rda")
+load(paste0(my_opts$corpusDir,"/models/LDA_models_current.rda"))
 
-z<-unlist(lapply(names(corpus), function(x) which(metaData$PMID==x)))
-modelMetaData<-metaData[z,]
-write.csv(modelMetaData,"data/models/modelMetaData.txt", row.names=F)
+if(file.exists(paste0(my_opts$corpusDir,"/models/ModelsMetaData.txt"))){
+    modelData<-read.csv(paste0(my_opts$corpusDir,"/models/ModelsMetaData.txt",
+                              colClasses=c('character','character','Date','character',
+                                           'character','numeric','integer'))
+} else{
+    metaData<-read.csv(paste0(my_opts$corpusDir,"/CorpusMetaData.txt",
+                              colClasses=c('character','character','Date','numeric','integer','character',
+                                           'character'))
+    z<-unlist(lapply(names(corpus), function(x) which(metaData$PMID==x)))
+    modelMetaData<-metaData[z,]
+    write.csv(modelMetaData,paste0(my_opts$corpusDir,"/models/ModelsMetaData.txt", row.names=F)                       
+}
+
+
 
 dtm<-DocumentTermMatrix(corpus)
 term.assoc<-crossprod_simple_triplet_matrix(dtm)/
     (sqrt(col_sums(dtm^2) %*% t(col_sums(dtm^2))))
 term.assoc<-as.simple_triplet_matrix(term.assoc)
-save(term.assoc,file = "data/termAssoc.rda")
+save(term.assoc,file = paste0(my_opts$corpusDir,"/models/termAssoc.rda"))
 tdm<-TermDocumentMatrix(corpus)
 save(tdm, file="data/Corpus_TDM.rda")
 TopicTerms<-lapply(models, function(x) {
@@ -60,7 +78,7 @@ TopicTerms<-lapply(models, function(x) {
 beta.tree<-lapply(models, 
                   function(x) lapply(c("cosine", "Hellinger", "correlation", "Bhjattacharyya"),
                                       function (z) hclust(dist(exp(x@beta), z))))
-save(beta.tree, file = "data/beta.tree.rda")
+save(beta.tree, file = paste0(my_opts$corpusDir,"/models/beta.tree.rda"))
 
 
 ###GrantID-PMID co-occurency network
@@ -91,7 +109,7 @@ levels(as.factor(gi4))
 grants.table<-data.frame(PMID=rep(metaData$PMID,sapply(grantIDs, length)), 
                                     grantID=gi3,
                                     year=rep(metaData$FY,sapply(grantIDs, length)))
-write.table(grants.table, "data/PMIDs_to_grants.txt",col.names = T,sep="\t",quote=T, row.names=F)
+write.table(grants.table, paste0(my_opts$corpusDir,"/PMIDs_to_grants.txt"),col.names = T,sep="\t",quote=T, row.names=F)
 
 
 
