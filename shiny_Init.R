@@ -9,7 +9,6 @@ doc<-"This script takes the topic models, corpus and metadata and creates the fi
 
 Usage:  shiny_Init.R --corpus=<corpusDir> --shiny=<shinydir>
 
-
 Options:
     --corpus=<corpusDir>        Directory where corpus and models are stored
     --shiny=<shinyDir>          Directory where shiny app is located [default:shiny/]
@@ -50,9 +49,10 @@ names(corpus)<-gsub(".txt","", names(corpus))
 load(paste0(my_opts$corpusDir,"/models/LDA_models_current.rda"))
 
 if(file.exists(paste0(my_opts$corpusDir,"/models/ModelsMetaData.txt"))){
-    modelData<-read.csv(paste0(my_opts$corpusDir,"/models/ModelsMetaData.txt",
+    modelMetaData<-read.csv(paste0(my_opts$corpusDir,"/models/ModelsMetaData.txt",
                               colClasses=c('character','character','Date','character',
                                            'character','numeric','integer'))
+    write.csv(modelMetaData, file=paste0(my_opts$shinyDir,"/data/ModelsMetaData.txt"), row.names=F)
 } else{
     metaData<-read.csv(paste0(my_opts$corpusDir,"/CorpusMetaData.txt",
                               colClasses=c('character','character','Date','numeric','integer','character',
@@ -60,6 +60,7 @@ if(file.exists(paste0(my_opts$corpusDir,"/models/ModelsMetaData.txt"))){
     z<-unlist(lapply(names(corpus), function(x) which(metaData$PMID==x)))
     modelMetaData<-metaData[z,]
     write.csv(modelMetaData,paste0(my_opts$corpusDir,"/models/ModelsMetaData.txt", row.names=F)                       
+    write.csv(modelMetaData, file=paste0(my_opts$shinyDir,"/data/ModelsMetaData.txt"), row.names=F)
 }
 
 
@@ -69,17 +70,16 @@ term.assoc<-crossprod_simple_triplet_matrix(dtm)/
     (sqrt(col_sums(dtm^2) %*% t(col_sums(dtm^2))))
 term.assoc<-as.simple_triplet_matrix(term.assoc)
 save(term.assoc,file = paste0(my_opts$corpusDir,"/models/termAssoc.rda"))
+save(term.assoc,file = paste0(my_opts$shinyDir,"/models/termAssoc.rda"))
 tdm<-TermDocumentMatrix(corpus)
-save(tdm, file="data/Corpus_TDM.rda")
-TopicTerms<-lapply(models, function(x) {
-    terms(x,4)
-})
+save(tdm, file=paste0(my_opts$corpusDir,"/Corpus_TDM.rda"))
+save(tdm, file=paste0(my_opts$shinyDir,"/Corpus_TDM.rda"))
 
 beta.tree<-lapply(models, 
                   function(x) lapply(c("cosine", "Hellinger", "correlation", "Bhjattacharyya"),
                                       function (z) hclust(dist(exp(x@beta), z))))
 save(beta.tree, file = paste0(my_opts$corpusDir,"/models/beta.tree.rda"))
-
+save(beta.tree, file = paste0(my_opts$shinyDir,"/models/beta.tree.rda"))
 
 ###GrantID-PMID co-occurency network
 grantIDs<-strsplit(metaData$GrantID, "\\|")
@@ -110,6 +110,7 @@ grants.table<-data.frame(PMID=rep(metaData$PMID,sapply(grantIDs, length)),
                                     grantID=gi3,
                                     year=rep(metaData$FY,sapply(grantIDs, length)))
 write.table(grants.table, paste0(my_opts$corpusDir,"/PMIDs_to_grants.txt"),col.names = T,sep="\t",quote=T, row.names=F)
+write.table(grants.table, paste0(my_opts$shinyDir,"/PMIDs_to_grants.txt"),col.names = T,sep="\t",quote=T, row.names=F)
 
 
 
