@@ -1,9 +1,9 @@
-library(tm)
-library(topicmodels)
-library(proxy)
-library(parallel)
-library(slam)
-library(docopt)
+suppressPackageStartupMessages(library(tm))
+suppressPackageStartupMessages(library(topicmodels))
+suppressPackageStartupMessages(library(proxy))
+suppressPackageStartupMessages(library(parallel))
+suppressPackageStartupMessages(library(slam))
+suppressPackageStartupMessages(library(docopt))
 
 doc<-"This script takes the topic models, corpus and metadata and creates the files/data necessary for deployment to the shiny app.
 
