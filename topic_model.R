@@ -7,13 +7,13 @@ suppressMessages(library(docopt))
 
 doc<-"  This script performs topic modeling on a Corpus of documents
 
-Usage:  topic_modeling.R --corpus=<corpus> [-m <k>] [-c=<cores>] [--Remodel]
+Usage:  topic_modeling.R --corpus=<corpus> [-m <k>] [-c=<cores>] [--nomodel]
 
 Options:
     --corpus=<corpus>           Path to corpus files [default: data/Corpus]
     -m --models=<k>             Number of topics to model on, separate values by a comma only [default: 50,100,250,500,1000]
     -c --cores=<cores>          Number of cores to use for Corpus processing [default: 6]
-    --Remodel                   Do not perform topic modeling the corpus (Useful if you have topic models and just want some)
+    --nomodel                   Do not perform topic modeling the corpus (Useful if you have topic models and just want some)
     -h --help                   This helpful message"
 
 my_opts<-docopt(doc)
@@ -61,7 +61,7 @@ dtm<-dtm[!docRemove,]
 #rownames(dtm)<-c(meta(abstrCorpus)[!docRemove,1])
 
 #models<-mclapply(seq.k, mc.cores = 4, function(k) LDA(dtm, k) )
-if(file.exists("data/LDA_models_current.rda") & my_opts$Remodel){
+if(file.exists("data/LDA_models_current.rda") & my_opts$nomodel){
     load("LDA_models_current.rda")
 } else{
     print("Starting Topic modeling")
@@ -73,7 +73,7 @@ if(file.exists("data/LDA_models_current.rda") & my_opts$Remodel){
 
 fy<-levels(as.factor(metaData[,"FY"]))
 
-if(file.exists("data/LDA_FY_models_current.rda") & my_opts$Remodel){
+if(file.exists("data/LDA_FY_models_current.rda") & my_opts$nomodel){
     load("LDA_FY_models_current.rda")
 } else{
     models.fy<-lapply(fy, function(y){
@@ -89,7 +89,7 @@ if(file.exists("data/LDA_FY_models_current.rda") & my_opts$Remodel){
                                                                           file=paste0(my_opts$corpus,"/models/TopicKeywords/Top10WordsperTopic_for_",y@k,"Topics_model_",names(models.fy)[x],".txt")))) 
 }
 
-if(file.exists("data/CTM_LDA_models.rda") & my_opts$Remodel){
+if(file.exists("data/CTM_LDA_models.rda") & my_opts$nomodel){
     load("data/CTM_LDA_models.rda")
 } else{
     models.ctm<-mclapply(seq.k, mc.cores=as.integer(my_opts$cores), function(k) CTM(dtm,k))
@@ -107,13 +107,16 @@ dev.off()
 
 png(paste0(resultsPath, "/GammaDistbyTopic.png"), height=2400, width=1600, units="px")
 par(mar=c(22,4,4,2), mfrow=c(3,1))
-lapply(models, function(x) boxplot(x@gamma,names = apply(terms(x,3),2,function(z) paste(z,collapse=",")), range = 0, las=2, main="Distribution of Gammas by Topic", ylab="Gamma", cex.axis=1.5))
+lapply(models, function(x) boxplot(x@gamma,names = apply(terms(x,3),2,function(z) paste(z,collapse=",")), 
+                                   range = 0, las=2, main="Distribution of Gammas by Topic", ylab="Gamma", cex.axis=1.5))
 dev.off()
 
 lapply(seq(length(models.fy)), function (z) {   
     png(paste0(resultsPath, "/GammaDistbyTopic_FY", names(models.fy)[z],".png"), height=3200, width=1600, units="px")
     par(mar=c(22,4,4,2), mfrow=c(4,1))
-    lapply(models.fy[[z]], function(x) boxplot(x@gamma,names = apply(terms(x,3),2,function(z) paste(z,collapse=",")), range = 0, las=2, main="Distribution of Gammas by Topic", ylab="Gamma", cex.axis=1.5))
+    lapply(models.fy[[z]], function(x) boxplot(x@gamma,names = apply(terms(x,3),2,function(z) paste(z,collapse=",")), 
+                                               range = 0, las=2, main="Distribution of Gammas by Topic", ylab="Gamma", 
+                                               cex.axis=1.5))
     dev.off()
 })
 
