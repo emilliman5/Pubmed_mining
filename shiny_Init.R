@@ -52,7 +52,7 @@ corpus<-Corpus(DirSource(paste0(my_opts$corpus,"/Corpus/")),
                readerControl = list(language="english"))
 
 names(corpus)<-gsub(".txt","", names(corpus))
-writeCorpus(corpus, paste0(my_opts$shiny,"/Corpus"))
+writeCorpus(corpus, paste0(my_opts$shiny,"/data/Corpus"))
 
 load(paste0(my_opts$corpus,"/models/LDA_models_current.rda"))
 save(models,paste0(my_opts$shiny,"/data/models/LDA_models_current.rda"))
