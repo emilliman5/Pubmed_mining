@@ -7,15 +7,19 @@ suppressPackageStartupMessages(library(docopt))
 
 doc<-"This script takes the topic models, corpus and metadata and creates the files/data necessary for deployment to the shiny app.
 
-Usage:  shiny_Init.R --corpus=<corpusDir> --shiny=<shinydir>
+Usage:  shiny_Init.R --corpus=<corpus> --shiny=<shiny>
 
 Options:
-    --corpus=<corpusDir>        Directory where corpus and models are stored
-    --shiny=<shinyDir>          Directory where shiny app is located [default:shiny/]
+    --corpus=<corpus>        Directory where corpus and models are stored
+    --shiny=<shiny>          Directory where shiny app is located [default:current directory]
     -h --help                   This helpful message"
 
 my_opts<-docopt(doc)
 print(my_opts)    ##This is for testing purposes
+
+if(is.null(my_opts$shiny)){
+    my_opts$shiny<-getwd()
+}
 
 ICs<-c("NCI","NICHD","NIMHD","NCCIH",
        "NEI","NIDID","NINDS","NCATS",
@@ -42,44 +46,43 @@ activityCodes<-scan("data/NIH_activity_codes.txt",what = "character")
 activityCodes<-c(activityCodes,"Z01","ZIA")
 
 
-corpus<-Corpus(DirSource(paste0(my_opts$corpusDir,"/Corpus/")),
+corpus<-Corpus(DirSource(paste0(my_opts$corpus,"/Corpus/")),
                readerControl = list(language="english"))
 
 names(corpus)<-gsub(".txt","", names(corpus))
-load(paste0(my_opts$corpusDir,"/models/LDA_models_current.rda"))
+load(paste0(my_opts$corpus,"/models/LDA_models_current.rda"))
 
-if(file.exists(paste0(my_opts$corpusDir,"/models/ModelsMetaData.txt"))){
-    modelMetaData<-read.csv(paste0(my_opts$corpusDir,"/models/ModelsMetaData.txt",
-                              colClasses=c('character','character','Date','character',
-                                           'character','numeric','integer'))
-    write.csv(modelMetaData, file=paste0(my_opts$shinyDir,"/data/ModelsMetaData.txt"), row.names=F)
-} else{
-    metaData<-read.csv(paste0(my_opts$corpusDir,"/CorpusMetaData.txt",
+metaData<-read.csv(paste0(my_opts$corpus,"/CorpusMetaData.txt"),
                               colClasses=c('character','character','Date','numeric','integer','character',
                                            'character'))
+
+if(file.exists(paste0(my_opts$corpus,"/models/ModelsMetaData.txt"))){
+    modelMetaData<-read.csv(paste0(my_opts$corpus,"/models/ModelsMetaData.txt"),
+                              colClasses=c('character','character','Date','character',
+                                           'character','numeric','integer'))
+    write.csv(modelMetaData, file=paste0(my_opts$shiny,"/data/ModelsMetaData.txt"), row.names=F)
+} else{
     z<-unlist(lapply(names(corpus), function(x) which(metaData$PMID==x)))
     modelMetaData<-metaData[z,]
-    write.csv(modelMetaData,paste0(my_opts$corpusDir,"/models/ModelsMetaData.txt", row.names=F)                       
-    write.csv(modelMetaData, file=paste0(my_opts$shinyDir,"/data/ModelsMetaData.txt"), row.names=F)
+    write.csv(modelMetaData,paste0(my_opts$corpus,"/models/ModelsMetaData.txt"), row.names=F)                       
+    write.csv(modelMetaData, file=paste0(my_opts$shiny,"/data/ModelsMetaData.txt"), row.names=F)
 }
-
-
 
 dtm<-DocumentTermMatrix(corpus)
 term.assoc<-crossprod_simple_triplet_matrix(dtm)/
     (sqrt(col_sums(dtm^2) %*% t(col_sums(dtm^2))))
 term.assoc<-as.simple_triplet_matrix(term.assoc)
-save(term.assoc,file = paste0(my_opts$corpusDir,"/models/termAssoc.rda"))
-save(term.assoc,file = paste0(my_opts$shinyDir,"/models/termAssoc.rda"))
+save(term.assoc,file = paste0(my_opts$corpus,"/models/termAssoc.rda"))
+save(term.assoc,file = paste0(my_opts$shiny,"/data/models/termAssoc.rda"))
 tdm<-TermDocumentMatrix(corpus)
-save(tdm, file=paste0(my_opts$corpusDir,"/Corpus_TDM.rda"))
-save(tdm, file=paste0(my_opts$shinyDir,"/Corpus_TDM.rda"))
+save(tdm, file=paste0(my_opts$corpus,"/Corpus_TDM.rda"))
+save(tdm, file=paste0(my_opts$shiny,"/data/Corpus_TDM.rda"))
 
 beta.tree<-lapply(models, 
                   function(x) lapply(c("cosine", "Hellinger", "correlation", "Bhjattacharyya"),
                                       function (z) hclust(dist(exp(x@beta), z))))
-save(beta.tree, file = paste0(my_opts$corpusDir,"/models/beta.tree.rda"))
-save(beta.tree, file = paste0(my_opts$shinyDir,"/models/beta.tree.rda"))
+save(beta.tree, file = paste0(my_opts$corpus,"/models/beta.tree.rda"))
+save(beta.tree, file = paste0(my_opts$shiny,"/data/models/beta.tree.rda"))
 
 ###GrantID-PMID co-occurency network
 grantIDs<-strsplit(metaData$GrantID, "\\|")
@@ -109,10 +112,8 @@ levels(as.factor(gi4))
 grants.table<-data.frame(PMID=rep(metaData$PMID,sapply(grantIDs, length)), 
                                     grantID=gi3,
                                     year=rep(metaData$FY,sapply(grantIDs, length)))
-write.table(grants.table, paste0(my_opts$corpusDir,"/PMIDs_to_grants.txt"),col.names = T,sep="\t",quote=T, row.names=F)
-write.table(grants.table, paste0(my_opts$shinyDir,"/PMIDs_to_grants.txt"),col.names = T,sep="\t",quote=T, row.names=F)
-
-
+write.table(grants.table, paste0(my_opts$corpus,"/PMIDs_to_grants.txt"),col.names = T,sep="\t",quote=T, row.names=F)
+write.table(grants.table, paste0(my_opts$shiny,"/data/PMIDs_to_grants.txt"),col.names = T,sep="\t",quote=T, row.names=F)
 
 
 ##FY model-model distance measures.
