@@ -21,6 +21,9 @@ if(is.null(my_opts$shiny)){
     my_opts$shiny<-getwd()
 }
 
+my_opts$shiny<-gsub("/$", "", my_opts$shiny)
+my_opts$corpus<-gsub("/$","",my_opts$corpus)
+
 ICs<-c("NCI","NICHD","NIMHD","NCCIH",
        "NEI","NIDID","NINDS","NCATS",
        "NHLBI","NIDCR","NINR","NHGRI",
