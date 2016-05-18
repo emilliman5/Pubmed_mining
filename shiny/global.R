@@ -11,9 +11,10 @@ if (file.exists(extraFunFile)) {
     source("arcplot.r", keep.source=TRUE)
 }
 
-metaData<-read.csv("data/models/modelMetaData.txt", colClasses=c('character','character','Date','character','numeric'))
+metaData<-read.csv("data/models/modelMetaData.txt", colClasses=c('character','character','Date','character',
+                                           'character','numeric','integer'))
 
 load("data/models/LDA_models_current.rda")
-load("data/beta.tree.rda")
-load("data/termAssoc.rda")
+load("data/models/beta.tree.rda")
+load("data/models/termAssoc.rda")
 load("data/Corpus_TDM.rda")
