@@ -78,12 +78,12 @@ if(file.exists(paste0(my_opts$corpus,"/models/ModelsMetaData.txt"))){
     modelMetaData<-read.csv(paste0(my_opts$corpus,"/models/ModelsMetaData.txt"),
                               colClasses=c('character','character','Date','character',
                                            'character','numeric','integer'))
-    write.csv(modelMetaData, file=paste0(my_opts$shiny,"/data/ModelsMetaData.txt"), row.names=F)
+    write.csv(modelMetaData, file=paste0(my_opts$shiny,"/data/models/modelMetaData.txt"), row.names=F)
 } else{
     z<-unlist(lapply(names(corpus), function(x) which(metaData$PMID==x)))
     modelMetaData<-metaData[z,]
-    write.csv(modelMetaData,paste0(my_opts$corpus,"/models/ModelsMetaData.txt"), row.names=F)                       
-    write.csv(modelMetaData, file=paste0(my_opts$shiny,"/data/ModelsMetaData.txt"), row.names=F)
+    write.csv(modelMetaData,paste0(my_opts$corpus,"/models/modelMetaData.txt"), row.names=F)                       
+    write.csv(modelMetaData, file=paste0(my_opts$shiny,"/data/modelMetaData.txt"), row.names=F)
 }
 
 dtm<-DocumentTermMatrix(corpus)
