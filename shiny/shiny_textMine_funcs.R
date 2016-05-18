@@ -10,7 +10,7 @@ fys<-function(z)
   if("ALL" %in% z){
     x<-c(2009,2010,2011,2012,2013,2014,2015)   
   } else{
-    x<-z
+    x<-unique(z)
   }
   x
 }
