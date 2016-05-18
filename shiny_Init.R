@@ -4,6 +4,7 @@ suppressPackageStartupMessages(library(proxy))
 suppressPackageStartupMessages(library(parallel))
 suppressPackageStartupMessages(library(slam))
 suppressPackageStartupMessages(library(docopt))
+suppressPackageStartupMessages(library(reshape2))
 
 doc<-"This script takes the topic models, corpus and metadata and creates the files/data necessary for deployment to the shiny app.
 
@@ -19,6 +20,11 @@ print(my_opts)    ##This is for testing purposes
 
 if(is.null(my_opts$shiny)){
     my_opts$shiny<-getwd()
+}
+
+dist2Table<-function(x){
+    t<-melt(x[1:dim(x)[1],1:dim(x)[2]], varnames=c("col","row"))   
+    t   
 }
 
 my_opts$shiny<-gsub("/$", "", my_opts$shiny)
@@ -51,15 +57,22 @@ activityCodes<-c(unlist(strsplit(activityCodes,",")),"Z01","ZIA")
 corpus<-Corpus(DirSource(paste0(my_opts$corpus,"/Corpus/")),
                readerControl = list(language="english"))
 
+###Need to create shiny data directory structure
+dir.create(paste0(my_opts$shiny,"/data"))
+dir.create(paste0(my_opts$shiny,"/data/Corpus"))
+dir.create(paste0(my_opts$shiny,"/data/models"))
+
 names(corpus)<-gsub(".txt","", names(corpus))
 writeCorpus(corpus, paste0(my_opts$shiny,"/data/Corpus"))
 
 load(paste0(my_opts$corpus,"/models/LDA_models_current.rda"))
-save(models,paste0(my_opts$shiny,"/data/models/LDA_models_current.rda"))
+save(models,file=paste0(my_opts$shiny,"/data/models/LDA_models_current.rda"))
+load(paste0(my_opts$corpus,"/models/LDA_FY_models_current.rda"))
+save(models.fy,file=paste0(my_opts$shiny,"/data/models/LDA_FY_models_current.rda"))
 
 metaData<-read.csv(paste0(my_opts$corpus,"/CorpusMetaData.txt"),
-                              colClasses=c('character','character','Date','numeric','integer','character',
-                                           'character'))
+                              colClasses=c('character','character','Date','character','character','numeric','integer',
+                                           'logical'))
 
 if(file.exists(paste0(my_opts$corpus,"/models/ModelsMetaData.txt"))){
     modelMetaData<-read.csv(paste0(my_opts$corpus,"/models/ModelsMetaData.txt"),
@@ -94,7 +107,7 @@ grantIDs<-strsplit(metaData$GrantID, "\\|")
 gi<-as.character(unlist(grantIDs))
 gi1<-gsub("\\d","0", gi)
 gi1<-gsub("[A-Za-z]","A",gi1)
-levels(as.factor(gi1))
+#levels(as.factor(gi1))
 
 gi<-gsub("/|\\\\|:|#|\\.$|\\(|\\)|,", "", gi)
 gi<-gsub(paste(ICs,collapse="|"), "",gi)
@@ -105,14 +118,14 @@ gi<-gsub("^-","", gi, perl=T)
 
 gi2<-gsub("\\d", "0",gi)
 gi2<-gsub("[A-Za-z]", "A",gi2,perl = T)
-levels(as.factor(gi2))
-summary(as.factor(gi2))
+#levels(as.factor(gi2))
+#summary(as.factor(gi2))
 gi3<-gsub(paste0("^[\\d]",paste(activityCodes,collapse="|^")),"", gi, perl=T)
 gi3<-gsub("\\s|-|\\.|\\*|_", "",gi3, perl=T)
 gi3<-gsub(".*([A-Z]{2}\\d{6}).*", "\\1", gi3, perl=T)
 gi4<-gsub("\\d", "0",gi3)
 gi4<-gsub("[A-Za-z]", "A",gi4,perl = T)
-levels(as.factor(gi4))
+#levels(as.factor(gi4))
 
 grants.table<-data.frame(PMID=rep(metaData$PMID,sapply(grantIDs, length)), 
                                     grantID=gi3,
