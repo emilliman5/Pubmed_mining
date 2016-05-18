@@ -31,7 +31,7 @@ shinyServer(function(input,output, session) {
         isolate(posterior(models[[as.integer(input$Ktopic)]], newdata=text()))
     })
     
-    currentIds<-reactive({
+    currentIds<-reactive({ ##returns duplicate IDs...
         ids<-lapply(fys(input$fy), function(x)
                 which(metaData[,"FY"] == x))
         lapply(ids, function(x) x[x %in% fileIds()])
@@ -202,7 +202,7 @@ shinyServer(function(input,output, session) {
     output$papers<-renderDataTable({
       df<-metaData[unlist(currentIds()),]
       df$PMID<-createLink("http://www.ncbi.nlm.nih.gov/pubmed/",df$PMID)
-      df$Journal<-createLink("http://www.issn.cc/",df$Journal)
+      df$Journal<-createLink("http://www.issn.cc/",df$journal)
       df
     },options = list(autoWidth = FALSE,
                 columnDefs = list(list(width = '25px', targets = "_all")
