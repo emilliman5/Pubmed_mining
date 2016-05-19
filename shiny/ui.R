@@ -52,7 +52,7 @@ shinyUI(fluidPage(
                       This includes: gene, environment, cell, expression, control, chemical, etc. These words are 
                       removed because thy do not provide any classification power because they show up in so many 
 		              publications. 3) Words that show up in less than 10% of the documents were also 
-			          removed because they are too sparse.", br(),br(), "The corpus was then explored using 
+			          rEMOved because they are too sparse.", br(),br(), "The corpus was then explored using 
 			                word clouds and various plots of vocabulary complexiety to assess cleanliness and processing.", br(), 
 			                "Topics were modeled across the corpus in two ways. 1) Using the entire corpus various numbers 
 			                of topics were modeled (25, 50, 10, 250 ,500, and 1000). 2) For each fiscal year represented 
@@ -131,7 +131,7 @@ shinyUI(fluidPage(
                      radioButtons("Ktopic",selected = 5,label = "Topic Model Selection",choices = 
                                                     list("25 Topics"=6,"50 Topics"=5,"100 Topics"=5,
                                                          "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
-                     checkboxGroupInput("fy",selected = 2010,
+                     checkboxGroupInput("fy2",selected = 2010,
                                         label=p(h3("Fiscal Years"),"Selection of FYs will select the data used to make plots 
                                                 in the \"Topic Plots\" tab."),
                                         choices=list("FY2009"=2009, "FY2010"=2010,
