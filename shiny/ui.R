@@ -105,7 +105,7 @@ shinyUI(fluidPage(
                    of a given model (known as the beta value)."),
                 radioButtons("K",selected = 5,label = "Topic Model Selection",choices = 
                                                     list("25 Topics"=6,"50 Topics"=5,"100 Topics"=5,
-                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T)),
+                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
                 showOutput("keywordTopic","nvd3"),
                 sliderInput("corr",label=h3("Minimum Correlation for Term associations"), 
                             min=0, max=1, value=0.25),
@@ -117,7 +117,7 @@ shinyUI(fluidPage(
                                 h3("Classify a document based on our exisiting topic models"),
                                 radioButtons("Ktopic",selected = 5,label = "Topic Model Selection",choices = 
                                                     list("25 Topics"=6,"50 Topics"=5,"100 Topics"=5,
-                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T)),
+                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
                                 h4("Copy and paste document text and press submit. This will likely work best with abstracts or abstract-length texts."),
                                 tags$textarea(id="abstract",value = "", cols=150, rows=5),
                                 actionButton("submit", "Submit"),
@@ -130,7 +130,7 @@ shinyUI(fluidPage(
                      h4("Topic Models, modeled by FY"),
                      radioButtons("Ktopic",selected = 5,label = "Topic Model Selection",choices = 
                                                     list("25 Topics"=6,"50 Topics"=5,"100 Topics"=5,
-                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T)),
+                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
                      checkboxGroupInput("fy",selected = 2010,
                                         label=p(h3("Fiscal Years"),"Selection of FYs will select the data used to make plots 
                                                 in the \"Topic Plots\" tab."),
