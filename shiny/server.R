@@ -8,12 +8,12 @@ library(proxy)
 library(ape)
  
 dict<-rownames(tdm)
-limits<-list(c(0.02,0.99),
+limits<-rev(list(c(0.02,0.99),
              c(0.01,0.99),
              c(0.005,0.995),
              c(0.0025,0.9975),
              c(0.00125,0.99875),
-             c(0.0006,0.9994))
+             c(0.0006,0.9994)))
 
 shinyServer(function(input,output, session) {
          
