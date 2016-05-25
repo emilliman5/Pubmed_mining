@@ -92,7 +92,7 @@ shinyUI(fluidPage(
                                     selected="cosine", choices=list("cosine","hellinger","euclidean","bhjattacharyya"))),
                         p(""),
                         div(style="display:inline-block", radioButtons("treeK",selected = 5,label = "Topic Model Selection",choices = 
-                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=5,
+                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=4,
                                                          "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T)),
                         div(style="display:inline-block", radioButtons("topicTree", selected=4, label="Beta-term Tree Method", 
                                   choices=list("Cosine"=1, "Hellinger"=2, "Pearson's"=3, "Bhjattacharyya"=4), inline=TRUE)),
@@ -104,7 +104,7 @@ shinyUI(fluidPage(
                 h4("This chart shows the importance (or weight/probability) a term has for each topic
                    of a given model (known as the beta value)."),
                 radioButtons("K",selected = 5,label = "Topic Model Selection",choices = 
-                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=5,
+                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=4,
                                                          "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
                 showOutput("keywordTopic","nvd3"),
                 sliderInput("corr",label=h3("Minimum Correlation for Term associations"), 
@@ -116,7 +116,7 @@ shinyUI(fluidPage(
                          tabPanel("Topic Assignment",
                                 h3("Classify a document based on our exisiting topic models"),
                                 radioButtons("Ktopic",selected = 5,label = "Topic Model Selection",choices = 
-                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=5,
+                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=4,
                                                          "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
                                 h4("Copy and paste document text and press submit. This will likely work best with abstracts or abstract-length texts."),
                                 tags$textarea(id="abstract",value = "", cols=150, rows=5),
@@ -129,7 +129,7 @@ shinyUI(fluidPage(
             tabPanel("Topic Evolution",
                      h4("Topic Models, modeled by FY"),
                      radioButtons("Ktopic",selected = 5,label = "Topic Model Selection",choices = 
-                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=5,
+                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=4,
                                                          "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
                      checkboxGroupInput("fy2",selected = 2010,
                                         label=p(h3("Fiscal Years"),"Selection of FYs will select the data used to make plots 
