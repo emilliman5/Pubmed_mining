@@ -62,6 +62,7 @@ getFactorIdx<-function(col, df){
     x
 }
 
+palette<-rainbow(7, alpha=0.75)[c(1,6,2,7,3,5,4)]
 dendroArc<-function(FYs, modelK, topicN, ids, distFunc, gamma=0.15, distThresh, betaTree, y_lim)
 {
     ##FYs = the two fiscal years to compare
@@ -86,7 +87,8 @@ dendroArc<-function(FYs, modelK, topicN, ids, distFunc, gamma=0.15, distThresh, 
     
     order<-getTopicNames(modelK)[betaTree$order]
     sizes<-as.numeric(cut(rowSums(do.call(cbind, degrees)),10))[betaTree$order]
-    pal<-rainbow(7)[1:length(FYs)]
+    
+    pal<-palette[1:length(FYs)]
     edge.col<-do.call(c, lapply(seq_along(edges), function(x) rep(pal[x], length(edges[[x]][,1]))))
     edge.weight<-do.call(c, lapply(rev(seq_along(edges)), function(x) rep(x/2+.5, length(edges[[x]][,1]))))
     edges<-do.call(rbind, edges)
