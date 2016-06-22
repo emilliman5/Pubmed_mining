@@ -13,9 +13,14 @@ Usage:  shiny_Init.R --corpus=<corpus> --shiny=<shiny>
 Options:
     --corpus=<corpus>        Directory where corpus and models are stored
     --shiny=<shiny>          Directory where shiny app is located [default:current directory]
-    -h --help                   This helpful message"
+    -h --help                This helpful message"
 
 my_opts<-docopt(doc)
+
+##Run this when working interactively
+#my_opts<-list(corpus=".", shiny="../../shiny/data")
+
+
 print(my_opts)    ##This is for testing purposes
 
 if(is.null(my_opts$shiny)){
@@ -134,7 +139,15 @@ write.table(grants.table, paste0(my_opts$corpus,"/PMIDs_to_grants.txt"),col.name
 write.table(grants.table, paste0(my_opts$shiny,"/data/PMIDs_to_grants.txt"),col.names = T,sep="\t",quote=T, row.names=F)
 
 
+
 ##FY model-model distance measures.
+
+betaTreeFY<-lapply(c("cosine","correlation","hellinger"), function(x) {
+    for i (1:(length(models.fy)-1)){
+        dist(models.fy[[x]],models.fy[[x+1]], method=x)
+    }
+})
+
 edges<-lapply(2:(length(models.fy)-1), function(x){
     d<-dist(exp(models.fy[[x]][[2]]@beta), exp(models.fy[[(x+1)]][[2]]@beta), method="bhjattacharyya")
     e<-dist2Table(d)
