@@ -20,16 +20,16 @@ my_opts<-docopt(doc)
 ##Run this when working interactively
 #my_opts<-list(corpus=".", shiny="../../shiny/data")
 
+dist2Table<-function(x){
+    library(reshape2)
+    t<-melt(x[1:dim(x)[1],1:dim(x)[2]], varnames=c("source","target"))   
+    t[t$target>t$source,]   
+}
 
 print(my_opts)    ##This is for testing purposes
 
 if(is.null(my_opts$shiny)){
     my_opts$shiny<-getwd()
-}
-
-dist2Table<-function(x){
-    t<-melt(x[1:dim(x)[1],1:dim(x)[2]], varnames=c("col","row"))   
-    t   
 }
 
 my_opts$shiny<-gsub("/$", "", my_opts$shiny)
@@ -141,21 +141,39 @@ write.table(grants.table, paste0(my_opts$shiny,"/data/PMIDs_to_grants.txt"),col.
 
 
 ##FY model-model distance measures.
+betaTreeFY<-list()
 
 betaTreeFY<-lapply(c("cosine","correlation","hellinger"), function(x) {
-    for i (1:(length(models.fy)-1)){
-        dist(models.fy[[x]],models.fy[[x+1]], method=x)
-    }
+    lapply(3:(length(models.fy)-2), function(i) {
+            lapply(1:(length(models.fy[[i]])-1), function(j){
+                dist(models.fy[[i]][[j]]@beta,models.fy[[i+1]][[j]]@beta, method=x)
+            })
+    })
 })
 
-edges<-lapply(2:(length(models.fy)-1), function(x){
-    d<-dist(exp(models.fy[[x]][[2]]@beta), exp(models.fy[[(x+1)]][[2]]@beta), method="bhjattacharyya")
-    e<-dist2Table(d)
-    e$col<-paste0("FY",substr(names(models.fy)[x],3,4),"_",e$col)
-    e$row<-paste0("FY",substr(names(models.fy)[(x+1)],3,4),"_",e$row)
-    colnames(e)<-c("N1","N2","Value")
-    e
+betaTreeFY_2<-rep(list(rep(list(rep(list(),6)),5)),3)
+
+for (m in seq_along(betaTreeFY)){
+    for (k in seq_along(betaTreeFY[[1]][[1]])){
+        for (y in seq_along(betaTreeFY[[1]]))
+            betaTreeFY_2[[m]][[k]][[y]]<-betaTreeFY[[m]][[y]][[k]]
+    }
+}
+names(betaTreeFY_2)<-c("cosine","correlation","hellinger")
+fys<-c(2009,2010,2011,2012,2013,2014,2015)
+
+betaTreeEdgeList<-lapply(betaTreeFY_2, function(m){
+    lapply(m, function(k){
+        do.call(rbind, lapply(seq_along(k), function(y){
+            el<-dist2Table(k[[y]])
+            el$source<-paste0("FY",fys[y],"_Topic",el$source)
+            el$target<-paste0("FY",fys[y+1],"_Topic",el$target)
+            el
+        }))
+    })
 })
+
+save(betaTreeEdgeList, file=paste0(my_opts$shiny,"/models/betaTreeEdgeList.rda"))
 
 nodes<-do.call(rbind, lapply(seq_along(edges), function(x) {
     n<-data.frame(ID=unique(edges[[x]]$N1), x=x, y=seq_along(unique(edges[[x]]$N1)))
