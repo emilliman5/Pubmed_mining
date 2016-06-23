@@ -168,6 +168,8 @@ betaTreeEdgeList<-lapply(betaTreeFY_2, function(m){
             el<-dist2Table(k[[y]])
             el$source<-paste0("FY",fys[y],"_Topic",el$source)
             el$target<-paste0("FY",fys[y+1],"_Topic",el$target)
+            el[,"FYsource"]<-fys[y]
+            el[,"FYtarget"]<-fys[y]
             el
         }))
     })
