@@ -14,6 +14,7 @@ limits<-rev(list(c(0.02,0.99),
              c(0.0025,0.9975),
              c(0.00125,0.99875),
              c(0.0006,0.9994)))
+k<-c(1000,500,250,100,50)
 
 shinyServer(function(input,output, session) {
          
@@ -248,4 +249,27 @@ shinyServer(function(input,output, session) {
                       max=format(gammaDistRange()[2], digits=3),
                       value=gammaDistRange()[3])
       })
+    
+    riverEdges<-reactive({
+        e<-betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]]
+        colnames(e)<-c("source","target","value")
+        e[e$value<=input$riverThresh,]
+    })
+    
+    output$river<-renderChart2({
+        sankeyPlot<-rCharts$new()
+        sankeyPlot$setLib("d3/rCharts_d3_sankey")
+        #sankeyPlot$setTemplate(script = 'd3/rCharts_d3_sankey/layouts/chart.html')
+        
+        sankeyPlot$set(
+                data=riverEdges(),
+                nodeWidth = 15,
+                nodePadding = 10,
+                layout = 32,
+                width = 4500,
+                height = 30 * k[as.integer(input$Ktopic2)])
+        #sankeyPlot$addParams(dom="river")
+        return(sankeyPlot)
+        #sankeyPlot$print(chartId='sankey1')
+    })
 })
