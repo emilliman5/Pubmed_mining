@@ -42,7 +42,7 @@ shinyUI(fluidPage(
                        not trying to visualize all the data (do not select \"ALL\") without first 
                        restricting the data by grant or PMIDs."),
                     h2("The Corpus"),
-                    p("Publications were reteived from Pubmed (accessed on:2015-10-02) using their
+                    p("Publications were reteived from Pubmed (accessed on:2015-12-28) using their
                       advanced search. Publications with a grant ID beginning with \"ES\" and published 
                       between 2008-10-01 and 2015-09-30 were downloaded in XML format. This has resulted 
 			          in ~25,000 publications incorporated into our text collection (the corpus)."),
@@ -52,7 +52,7 @@ shinyUI(fluidPage(
                       This includes: gene, environment, cell, expression, control, chemical, etc. These words are 
                       removed because thy do not provide any classification power because they show up in so many 
 		              publications. 3) Words that show up in less than 10% of the documents were also 
-			          rEMOved because they are too sparse.", br(),br(), "The corpus was then explored using 
+			          removed because they are too sparse.", br(),br(), "The corpus was then explored using 
 			                word clouds and various plots of vocabulary complexiety to assess cleanliness and processing.", br(), 
 			                "Topics were modeled across the corpus in two ways. 1) Using the entire corpus various numbers 
 			                of topics were modeled (25, 50, 10, 250 ,500, and 1000). 2) For each fiscal year represented 
@@ -128,18 +128,15 @@ shinyUI(fluidPage(
                 ),
             tabPanel("Topic Evolution",
                      h4("Topic Models, modeled by FY"),
-                     radioButtons("Ktopic",selected = 5,label = "Topic Model Selection",choices = 
-                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=4,
+                     radioButtons("Ktopic2",selected = 5,label = "Topic Model Selection",choices = 
+                                                    list("50 Topics"=5,"100 Topics"=4,
                                                          "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
-                     checkboxGroupInput("fy2",selected = 2010,
-                                        label=p(h3("Fiscal Years"),"Selection of FYs will select the data used to make plots 
-                                                in the \"Topic Plots\" tab."),
-                                        choices=list("FY2009"=2009, "FY2010"=2010,
-                                                     "FY2011"=2011,"FY2012"=2012,
-                                                     "FY2013"=2013,"FY2014"=2014,
-                                                     "FY2015"=2015),inline = T),
-                     selectInput("topicN", label=h4("Anchor Topic"),selected=1, choices=list(Topic1=1, Topic2=3))
-                     )
+                     sliderInput("riverThresh", label="Distance Threshold",min=0, max=1, value=0.5),
+                     sliderInput("dateRange",label="FY Range", min=2009,max=2015, value=c(2010,2012)),
+                     radioButtons("riverDist", selected=3, label="Distance Measure Calculation", choices=list("Cosine"=1,"Correlation"=2,"Hellinger"=3), inline=T),
+                     chartOutput("river", "d3/rCharts_d3_sankey"),
+                     br(),br(),br()
+                     ) #Close Topic Evolution tabPanel
             )#tabset panel
         ) #Main Panel
     ) #sidebar Layout
