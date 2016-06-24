@@ -252,16 +252,15 @@ shinyServer(function(input,output, session) {
     
     observe({
       updateSliderInput(session, "riverThresh",
-        min=min(betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]][,3])
-        max=max(betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]][,3])
-        value=quantile(betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]][,3],0.20)
+        min=format(min(betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]][,3]),digits=4),
+        max=format(max(betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]][,3]),digits=4),
+        value=quantile(betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]][,3],0.30)
         )
       })
 
     riverEdges<-reactive({
         e<-betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]]
-        colnames(e)<-c("source","target","value")
-        e[e$FYsource>=as.integer(input$dateRange[1]) & e$FYtarget<=as.integer(input$dateRange[2]),]
+        e<-e[(e$FYsource>=as.integer(input$dateRange[1]) & e$FYtarget<=as.integer(input$dateRange[2])),]
         e[e$value<=input$riverThresh,1:3]
     })
     
