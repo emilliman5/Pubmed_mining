@@ -131,8 +131,8 @@ shinyUI(fluidPage(
                      radioButtons("Ktopic2",selected = 5,label = "Topic Model Selection",choices = 
                                                     list("50 Topics"=5,"100 Topics"=4,
                                                          "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
-                     sliderInput("riverThresh", label="Distance Threshold",min=0, max=1, value=0.5),
-                     sliderInput("dateRange",label="FY Range", min=2009,max=2015,step=1, value=c(2010,2012)),
+                     sliderInput("riverThresh", label="Distance Threshold",min=0, max=1, value=0.5, sep=""),
+                     sliderInput("dateRange",label="FY Range", min=2009,max=2015,step=1, value=c(2010,2012), sep=""),
                      radioButtons("riverDist", selected=3, label="Distance Measure Calculation", choices=list("Cosine"=1,"Correlation"=2,"Hellinger"=3), inline=T),
                      chartOutput("river", "d3/rCharts_d3_sankey"),
                      br(),br(),br()
