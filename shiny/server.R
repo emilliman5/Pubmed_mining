@@ -179,8 +179,11 @@ shinyServer(function(input,output, session) {
     })
     
     output$closestPubs<-renderDataTable({
-      posterior.dist()
-    })
+      df<-posterior.dist()
+      df$PMID<-createLink("http://www.ncbi.nlm.nih.gov/pubmed/",df$PMID)
+      df$journal<-createLink("http://www.issn.cc/",df$journal)
+      df
+    }, escape=FALSE)
     
     output$classify<-renderChart({
         p<-data.frame(topicProb=as.vector(posteriors()[["topics"]]), topics=getTopicNames(input$Ktopic), color=1)
@@ -203,7 +206,7 @@ shinyServer(function(input,output, session) {
     output$papers<-renderDataTable({
       df<-metaData[unlist(currentIds()),]
       df$PMID<-createLink("http://www.ncbi.nlm.nih.gov/pubmed/",df$PMID)
-      df$Journal<-createLink("http://www.issn.cc/",df$journal)
+      df$journal<-createLink("http://www.issn.cc/",df$journal)
       df
     },options = list(autoWidth = FALSE,
                 columnDefs = list(list(width = '25px', targets = "_all")
