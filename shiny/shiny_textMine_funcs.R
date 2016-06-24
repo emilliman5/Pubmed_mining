@@ -21,7 +21,11 @@ getTopicNames<-function(K){ apply(terms(models[[as.integer(K)]],4),2,
                                   function(z) paste(z,collapse=","))}   
 
 makeCorpus<-function(text, cores=4){
-           
+    if(is.null(get0("abstrCorpus"))){
+    abstrCorpus<-Corpus(DirSource("data/Corpus"), 
+                        readerControl = list(language="english"))                
+    } 
+    
     df.Corpus<-Corpus(VectorSource(text))
     
     df.Corpus<-tm_map(df.Corpus, content_transformer(tolower), mc.cores=cores)
