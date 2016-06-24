@@ -250,6 +250,14 @@ shinyServer(function(input,output, session) {
                       value=gammaDistRange()[3])
       })
     
+    observe({
+      updateSliderInput(session, "riverThresh",
+        min=min(betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]][,3])
+        max=max(betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]][,3])
+        value=quantile(betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]][,3],0.20)
+        )
+      })
+
     riverEdges<-reactive({
         e<-betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]]
         colnames(e)<-c("source","target","value")
@@ -267,8 +275,8 @@ shinyServer(function(input,output, session) {
                 nodeWidth = 15,
                 nodePadding = 10,
                 layout = 32,
-                width = 4500,
-                height = 30 * k[as.integer(input$Ktopic2)])
+                width = 1500,
+                height = 20 * k[as.integer(input$Ktopic2)])
         #sankeyPlot$addParams(dom="river")
         return(sankeyPlot)
         #sankeyPlot$print(chartId='sankey1')
