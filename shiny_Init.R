@@ -160,7 +160,7 @@ for (m in seq_along(betaTreeFY)){
     }
 }
 names(betaTreeFY_2)<-c("cosine","correlation","hellinger")
-fys<-c(2009,2010,2011,2012,2013,2014,2015)
+fys<-c(2009,2010,2011,2012,2013,2014,2015) ##This should be dynamically set from input data source.
 
 betaTreeEdgeList<-lapply(betaTreeFY_2, function(m){
     lapply(m, function(k){
@@ -169,7 +169,7 @@ betaTreeEdgeList<-lapply(betaTreeFY_2, function(m){
             el$source<-paste0("FY",fys[y],"_Topic",el$source)
             el$target<-paste0("FY",fys[y+1],"_Topic",el$target)
             el[,"FYsource"]<-fys[y]
-            el[,"FYtarget"]<-fys[y]
+            el[,"FYtarget"]<-fys[y+1]
             el
         }))
     })
