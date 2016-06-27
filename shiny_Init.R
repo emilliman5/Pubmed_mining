@@ -18,7 +18,7 @@ Options:
 my_opts<-docopt(doc)
 
 ##Run this when working interactively
-#my_opts<-list(corpus=".", shiny="../../shiny/data")
+#my_opts<-list(corpus="data/Pubmed_2016-04-11", shiny="shiny/data")
 
 dist2Table<-function(x){
     library(reshape2)
@@ -83,7 +83,7 @@ if(file.exists(paste0(my_opts$corpus,"/models/ModelsMetaData.txt"))){
     modelMetaData<-read.csv(paste0(my_opts$corpus,"/models/ModelsMetaData.txt"),
                               colClasses=c('character','character','Date','character',
                                            'character','numeric','integer'))
-    write.csv(modelMetaData, file=paste0(my_opts$shiny,"/data/models/modelMetaData.txt"), row.names=F)
+    write.csv(modelMetaData, file=paste0(my_opts$shiny,"/models/modelMetaData.txt"), row.names=F)
 } else{
     z<-unlist(lapply(names(corpus), function(x) which(metaData$PMID==x)))
     modelMetaData<-metaData[z,]
@@ -177,8 +177,7 @@ betaTreeEdgeList<-lapply(betaTreeFY_2, function(m){
 
 save(betaTreeEdgeList, file=paste0(my_opts$shiny,"/models/betaTreeEdgeList.rda"))
 
-nodes<-do.call(rbind, lapply(seq_along(edges), function(x) {
-    n<-data.frame(ID=unique(edges[[x]]$N1), x=x, y=seq_along(unique(edges[[x]]$N1)))
-}))
-
-nodes<-rbind(nodes, data.frame(data.frame(ID=unique(edges[[6]]$N2), x=7, y=seq_along(unique(edges[[6]]$N2)))))
+topicTerms<-lapply(models.fy, function(y) {
+    lapply(y, function (k) 
+        apply(terms(k,4), 2, function(z) paste(z, collapse=",")))
+})
