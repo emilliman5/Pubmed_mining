@@ -127,7 +127,9 @@ shinyUI(fluidPage(
                      )
                 ),
             tabPanel("Topic Evolution",
-                     h4("Topic Models, modeled by FY"),
+                     h4("Topic Models, modeled by FY"),p("Represented here is the change in topic structure over time. An independent topic model was trained
+                      on publications from each fiscal year of our corpus (2009-2015). We then calculated the similarity between each topic of adjacent 
+                      fiscal years to link latent topics through time. "),
                      radioButtons("Ktopic2",selected = 5,label = "Topic Model Selection",choices = 
                                                     list("50 Topics"=5,"100 Topics"=4,
                                                          "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
