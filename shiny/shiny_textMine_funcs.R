@@ -10,7 +10,7 @@ fys<-function(z)
   if("ALL" %in% z){
     x<-c(2009,2010,2011,2012,2013,2014,2015)   
   } else{
-    x<-z
+    x<-unique(z)
   }
   x
 }
@@ -21,7 +21,11 @@ getTopicNames<-function(K){ apply(terms(models[[as.integer(K)]],4),2,
                                   function(z) paste(z,collapse=","))}   
 
 makeCorpus<-function(text, cores=4){
-           
+    if(is.null(get0("abstrCorpus"))){
+    abstrCorpus<-Corpus(DirSource("data/Corpus"), 
+                        readerControl = list(language="english"))                
+    } 
+    
     df.Corpus<-Corpus(VectorSource(text))
     
     df.Corpus<-tm_map(df.Corpus, content_transformer(tolower), mc.cores=cores)
@@ -62,16 +66,7 @@ getFactorIdx<-function(col, df){
     x
 }
 
-getTopicAssign<-function(ids, model, corpus){
-    idx<-do.call(c, lapply(ids, function(x){
-        which(meta(corpus)[-484,]$PMID==x)
-    }))
-    t<-as.data.frame(model@gamma[idx,])
-        colnames(t)<-apply(terms(model,4),2,function(z) paste(z,collapse=","))
-        rownames(t)<-ids
-    t
-}
-
+palette<-rainbow(7, alpha=0.75)[c(1,6,2,7,3,5,4)]
 dendroArc<-function(FYs, modelK, topicN, ids, distFunc, gamma=0.15, distThresh, betaTree, y_lim)
 {
     ##FYs = the two fiscal years to compare
@@ -96,7 +91,8 @@ dendroArc<-function(FYs, modelK, topicN, ids, distFunc, gamma=0.15, distThresh, 
     
     order<-getTopicNames(modelK)[betaTree$order]
     sizes<-as.numeric(cut(rowSums(do.call(cbind, degrees)),10))[betaTree$order]
-    pal<-rainbow(7)[1:length(FYs)]
+    
+    pal<-palette[1:length(FYs)]
     edge.col<-do.call(c, lapply(seq_along(edges), function(x) rep(pal[x], length(edges[[x]][,1]))))
     edge.weight<-do.call(c, lapply(rev(seq_along(edges)), function(x) rep(x/2+.5, length(edges[[x]][,1]))))
     edges<-do.call(rbind, edges)
@@ -114,14 +110,4 @@ dist2Table<-function(x){
     library(reshape2)
     t<-melt(x[1:dim(x)[1],1:dim(x)[2]], varnames=c("col","row"))   
     t   
-}
-
-findTerms<-function(corpus,tdm, terms){
-    ###Finds terms and reports freq by FY
-    library(tm)
-    f<-getFactorIdx(5, meta(corpus))
-    x<-lapply(terms, function(x,z=as.matrix(tdm)[rownames(tdm)==x,]) 
-        lapply(f, function(y) sum(z[y])))
-    names(x)<-terms
-    x
 }

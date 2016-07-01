@@ -17,3 +17,4 @@ sankey/*
 data/*
 TopicModel_Keywords/*
 *.csv
+shiny/d3/*

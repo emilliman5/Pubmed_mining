@@ -8,12 +8,13 @@ library(proxy)
 library(ape)
  
 dict<-rownames(tdm)
-limits<-list(c(0.02,0.99),
+limits<-rev(list(c(0.02,0.99),
              c(0.01,0.99),
              c(0.005,0.995),
              c(0.0025,0.9975),
              c(0.00125,0.99875),
-             c(0.0006,0.9994))
+             c(0.0006,0.9994)))
+k<-c(1000,500,250,100,50)
 
 shinyServer(function(input,output, session) {
          
@@ -31,25 +32,25 @@ shinyServer(function(input,output, session) {
         isolate(posterior(models[[as.integer(input$Ktopic)]], newdata=text()))
     })
     
-    currentIds<-reactive({
+    currentIds<-reactive({ ##returns duplicate IDs...
         ids<-lapply(fys(input$fy), function(x)
-                which(meta(abstrCorpus)[,"FY"] == x))
+                which(metaData[,"FY"] == x))
         lapply(ids, function(x) x[x %in% fileIds()])
     })
     
     fileIds<-reactive({
         inFile<-input$file
-        ids<-1:length(abstrCorpus)
+        ids<-1:length(metaData$PMID)
         if(is.null(inFile)){
             return(ids)
         } else {
         x<-read.table(inFile$datapath, header=F)
         if(grepl("ES", x[1,])){
             ids<-lapply(x[,1], function(z)
-               grep(z, meta(abstrCorpus)[,"GrantID"])) 
+               grep(z, metaData[,"GrantID"])) 
         } else{
             ids<-lapply(x[,1], function(x)
-                which(meta(abstrCorpus)[,"PMID"] == x)) 
+                which(metaData[,"PMID"] == x)) 
             }
         }
         unlist(ids)
@@ -60,12 +61,12 @@ shinyServer(function(input,output, session) {
                     })
     
     terms<-reactive({
-        terms<-rowSums(as.matrix(tdm[,unlist(currentIds())]))
+        terms<-row_sums(tdm[,unlist(currentIds())])
         terms[order(terms, decreasing = T)]
     })
     
     output$pubs<-renderChart({
-        pub.Q<-tapply(meta(abstrCorpus)$FY.Q,meta(abstrCorpus)$FY.Q, length)
+        pub.Q<-tapply(metaData$FY.Q,metaData$FY.Q, length)
         pubs<-data.frame(FY=floor(as.numeric(names(pub.Q))), 
                          Quarter=paste0("Q",as.numeric(unlist(lapply(strsplit(as.character(names(pub.Q)), "\\."), 
                                                    function(x) x[2])))), 
@@ -104,31 +105,36 @@ shinyServer(function(input,output, session) {
         })
     
     findassoc<-reactive({
-        assoc<-findAssocs(tdm, words(), 0.01)
+        terms<-which(rownames(term.assoc) %in% words())
         if(length(words())==1){
-          data.frame(Source=rep(words()), Target=names(assoc[[1]]), Correlation=assoc[[1]])
+          data.frame(Source=rep(words()), 
+                     Target=colnames(term.assoc)[term.assoc$j[term.assoc$i==terms & term.assoc$v>=input$corr]], 
+                     Correlation=term.assoc$v[term.assoc$i==terms & term.assoc$v>=input$corr])
           } else{
-            do.call(rbind, lapply(words(), function(x) data.frame(Source=x, Target=names(assoc[[x]]), Correlation=assoc[[x]])))
+            do.call(rbind, lapply(terms, function(x) data.frame(
+                Source=rownames(term.assoc)[x], 
+                Target=colnames(term.assoc)[term.assoc$j[term.assoc$i==x & term.assoc$v>=input$corr]], 
+                Correlation=term.assoc$v[term.assoc$i==x & term.assoc$v>=input$corr])))
+                
             }
         })
     
-    wordAssoc<-reactive({
-      x<-findassoc()[findassoc()$Correlation>input$corr,]
-      if(length(words())>1){
-        rbind(x, do.call(rbind, lapply(words(), function(z) findassoc()[(findassoc()$Target==z && findassoc()$Source!=z), ])))
-      }
-      return(x)
-      })
-    
     output$assoc<-renderDataTable({    
-        wordAssoc()
+        findassoc()
         },escape=F)
     
     output$keywordTopic <-renderChart({
-        betad<-data.frame(topic=rep(getTopicNames(input$K),length(words())), 
-                          beta=10**unlist(lapply(words(), 
-                            function(x) models[[as.integer(input$K)]]@beta[,models[[as.integer(input$K)]]@terms==x])), 
-                          Term=rep(words(), each=models[[as.integer(input$K)]]@k))
+        terms<-words()[words() %in% models[[as.integer(input$K)]]@terms]
+        betad<-data.frame(topic=rep(getTopicNames(input$K),length(terms)), 
+                          beta=exp(unlist(lapply(terms, 
+                            function(x) models[[as.integer(input$K)]]@beta[,models[[as.integer(input$K)]]@terms==x]))), 
+                          Term=rep(terms, each=models[[as.integer(input$K)]]@k))
+        betad<-betad[order(betad$beta, decreasing=T),]
+        if(length(words())>1){
+            betad<-dcast(betad, topic~Term, value.var="beta")
+            betad<-betad[order(apply(betad[,-1,],1,max), decreasing = T),]
+            betad<-melt(betad,id.vars = "topic", variable.name="Term",value.name="beta")
+        }
         p1<-nPlot(beta~topic, group="Term", data=betad, type="multiBarChart")
         p1$addParams(dom="keywordTopic")
         p1$chart(reduceXTicks = FALSE)
@@ -169,12 +175,15 @@ shinyServer(function(input,output, session) {
     
     posterior.dist<-reactive({
       x<-dist(models[[as.integer(input$Ktopic)]]@gamma, matrix(posteriors()[["topics"]], nrow=1,byrow = T), method="cosine")
-      cbind(meta(abstrCorpus)[order(x),], Distance=x[order(x)])
+      cbind(metaData[order(x),], Distance=x[order(x)])
     })
     
     output$closestPubs<-renderDataTable({
-      posterior.dist()
-    })
+      df<-posterior.dist()
+      df$PMID<-createLink("http://www.ncbi.nlm.nih.gov/pubmed/",df$PMID)
+      df$journal<-createLink("http://www.issn.cc/",df$journal)
+      df
+    }, escape=FALSE)
     
     output$classify<-renderChart({
         p<-data.frame(topicProb=as.vector(posteriors()[["topics"]]), topics=getTopicNames(input$Ktopic), color=1)
@@ -195,9 +204,9 @@ shinyServer(function(input,output, session) {
     })
     
     output$papers<-renderDataTable({
-      df<-meta(abstrCorpus)[unlist(currentIds()),]
+      df<-metaData[unlist(currentIds()),]
       df$PMID<-createLink("http://www.ncbi.nlm.nih.gov/pubmed/",df$PMID)
-      df$Journal<-createLink("http://www.issn.cc/",df$Journal)
+      df$journal<-createLink("http://www.issn.cc/",df$journal)
       df
     },options = list(autoWidth = FALSE,
                 columnDefs = list(list(width = '25px', targets = "_all")
@@ -239,8 +248,39 @@ shinyServer(function(input,output, session) {
 
     observe({
       updateSliderInput(session, "treeDist",
-                      min=gammaDistRange()[1],
-                      max=gammaDistRange()[2],
+                      min=format(gammaDistRange()[1], digits=3),
+                      max=format(gammaDistRange()[2], digits=3),
                       value=gammaDistRange()[3])
       })
+    
+    observe({
+      updateSliderInput(session, "riverThresh",
+        min=format(min(betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]][,3]),digits=4),
+        max=format(max(betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]][,3]),digits=4),
+        value=quantile(betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]][,3],0.30)
+        )
+      })
+
+    riverEdges<-reactive({
+        e<-betaTreeEdgeList[[as.integer(input$riverDist)]][[as.integer(input$Ktopic2)]]
+        e<-e[(e$FYsource>=as.integer(input$dateRange[1]) & e$FYtarget<=as.integer(input$dateRange[2])),]
+        e[e$value<=input$riverThresh,1:3]
+    })
+    
+    output$river<-renderChart2({
+        sankeyPlot<-rCharts$new()
+        sankeyPlot$setLib("d3/rCharts_d3_sankey")
+        #sankeyPlot$setTemplate(script = 'd3/rCharts_d3_sankey/layouts/chart.html')
+        
+        sankeyPlot$set(
+                data=riverEdges(),
+                nodeWidth = 15,
+                nodePadding = 10,
+                layout = 32,
+                width = 1500,
+                height = 20 * k[as.integer(input$Ktopic2)])
+        #sankeyPlot$addParams(dom="river")
+        return(sankeyPlot)
+        #sankeyPlot$print(chartId='sankey1')
+    })
 })

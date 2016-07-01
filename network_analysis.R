@@ -372,3 +372,15 @@ lapply(topTermsDist, function(x){
     write.table(t,paste0(p,"/TopicTopicbyTermSimilarity.csv"), sep=",", row.names=F, quote=F, col.names=T)        
 })
 
+##########
+##Grant-Grant Co-occurence
+##########
+
+library(igraph)
+
+co.occ<-table(grants.table[grants.table$year==2015,1:2])
+co.occ<-co.occ[rowSums(co.occ)>0, colSums(co.occ)>0]
+
+adj<-t(co.occ) %*% co.occ
+
+g<-graph.adjacency(adj, mode="Undirected")

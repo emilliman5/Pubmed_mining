@@ -22,12 +22,12 @@ shinyUI(fluidPage(
                                                      "FY2011"=2011,"FY2012"=2012,
                                                      "FY2013"=2013,"FY2014"=2014,
                                                      "FY2015"=2015)),
-                     radioButtons("topicK",selected = 2,label = p(h3("Topic Model Selection"),"This will select the 
+                     radioButtons("topicK",selected = 5,label = p(h3("Topic Model Selection"),"This will select the 
                                                                   topic model for viewing topic usage and topic-topic 
                                                                   connections in the network, both on the \"Topic Plots\"
                                                                   tab."), choices = 
-                                      list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
-                                           "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6)),
+                                      list("25 Topics"=6,"50 Topics"=5,"100 Topics"=4,
+                                           "250 Topics"=1,"500 Topics"=2,"1000 Topics"=3)),
                      textInput("words",label = "Enter keywords here:",value = ""),
                      width=3),
         mainPanel(
@@ -42,7 +42,7 @@ shinyUI(fluidPage(
                        not trying to visualize all the data (do not select \"ALL\") without first 
                        restricting the data by grant or PMIDs."),
                     h2("The Corpus"),
-                    p("Publications were reteived from Pubmed (accessed on:2015-10-02) using their
+                    p("Publications were reteived from Pubmed (accessed on:2015-12-28) using their
                       advanced search. Publications with a grant ID beginning with \"ES\" and published 
                       between 2008-10-01 and 2015-09-30 were downloaded in XML format. This has resulted 
 			          in ~25,000 publications incorporated into our text collection (the corpus)."),
@@ -91,11 +91,11 @@ shinyUI(fluidPage(
                         div(style="display:inline-block", selectInput("proxy", label=p(br(),"Topic-topic distance calculation method:",br()), 
                                     selected="cosine", choices=list("cosine","hellinger","euclidean","bhjattacharyya"))),
                         p(""),
-                        div(style="display:inline-block", radioButtons("treeK",selected = 2,label = "Topic Model Selection",choices = 
-                                                    list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
-                                                         "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T)),
-                        div(style="display:inline-block", radioButtons("topicTree", selected=1, label="Beta-term Tree Method", 
-                                  choices=list("Cosine"=1, "Hellinger"=2), inline=TRUE)),
+                        div(style="display:inline-block", radioButtons("treeK",selected = 5,label = "Topic Model Selection",choices = 
+                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=4,
+                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T)),
+                        div(style="display:inline-block", radioButtons("topicTree", selected=4, label="Beta-term Tree Method", 
+                                  choices=list("Cosine"=1, "Hellinger"=2, "Pearson's"=3, "Bhjattacharyya"=4), inline=TRUE)),
                      selectInput("topicN", label=h4("Anchor Topic"),selected=1, choices=list(Topic1=1, Topic2=3)),
                      uiOutput("dendroArc.ui")
                      ),
@@ -103,9 +103,9 @@ shinyUI(fluidPage(
                 br(),
                 h4("This chart shows the importance (or weight/probability) a term has for each topic
                    of a given model (known as the beta value)."),
-                radioButtons("K",selected = 2,label = "Topic Model Selection",choices = 
-                               list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
-                                    "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T),
+                radioButtons("K",selected = 5,label = "Topic Model Selection",choices = 
+                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=4,
+                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
                 showOutput("keywordTopic","nvd3"),
                 sliderInput("corr",label=h3("Minimum Correlation for Term associations"), 
                             min=0, max=1, value=0.25),
@@ -115,9 +115,9 @@ shinyUI(fluidPage(
                      tabsetPanel(
                          tabPanel("Topic Assignment",
                                 h3("Classify a document based on our exisiting topic models"),
-                                radioButtons("Ktopic",selected = 2,label = "Topic Model Selection",choices = 
-                                      list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
-                                           "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T),
+                                radioButtons("Ktopic",selected = 5,label = "Topic Model Selection",choices = 
+                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=4,
+                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
                                 h4("Copy and paste document text and press submit. This will likely work best with abstracts or abstract-length texts."),
                                 tags$textarea(id="abstract",value = "", cols=150, rows=5),
                                 actionButton("submit", "Submit"),
@@ -127,19 +127,18 @@ shinyUI(fluidPage(
                      )
                 ),
             tabPanel("Topic Evolution",
-                     h4("Topic Models, modeled by FY"),
-                     radioButtons("Ktopic",selected = 2,label = "Topic Model Selection",choices = 
-                                    list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
-                                         "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T),
-                     checkboxGroupInput("fy",selected = 2010,
-                                        label=p(h3("Fiscal Years"),"Selection of FYs will select the data used to make plots 
-                                                in the \"Topic Plots\" tab."),
-                                        choices=list("FY2009"=2009, "FY2010"=2010,
-                                                     "FY2011"=2011,"FY2012"=2012,
-                                                     "FY2013"=2013,"FY2014"=2014,
-                                                     "FY2015"=2015),inline = T),
-                     selectInput("topicN", label=h4("Anchor Topic"),selected=1, choices=list(Topic1=1, Topic2=3))
-                     )
+                     h4("Topic Models, modeled by FY"),p("Represented here is the change in topic structure over time. An independent topic model was trained
+                      on publications from each fiscal year of our corpus (2009-2015). We then calculated the similarity between each topic of adjacent 
+                      fiscal years to link latent topics through time. "),
+                     radioButtons("Ktopic2",selected = 5,label = "Topic Model Selection",choices = 
+                                                    list("50 Topics"=5,"100 Topics"=4,
+                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
+                     sliderInput("riverThresh", label="Distance Threshold",min=0, max=1, value=0.5, sep=""),
+                     sliderInput("dateRange",label="FY Range", min=2009,max=2015,step=1, value=c(2010,2012), sep=""),
+                     radioButtons("riverDist", selected=3, label="Distance Measure Calculation", choices=list("Cosine"=1,"Correlation"=2,"Hellinger"=3), inline=T),
+                     chartOutput("river", "d3/rCharts_d3_sankey"),
+                     br(),br(),br()
+                     ) #Close Topic Evolution tabPanel
             )#tabset panel
         ) #Main Panel
     ) #sidebar Layout
