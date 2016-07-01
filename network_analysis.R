@@ -1,10 +1,26 @@
+library(proxy)
 library(reshape2)
 library(igraph)
 library(ape)
 library(arcdiagram)
 library(RColorBrewer)
 library(riverplot)
-library(rCharts)
+
+extraFunFile<-"textMine_funcs.R"
+if (file.exists(extraFunFile)) {
+    source(extraFunFile, keep.source=TRUE);
+}
+
+abstrCorpus<-Corpus(DirSource("data/Corpus/"), readerControl = list(language="english"))
+metaData<-read.csv("data/CorpusMetaData.txt",colClasses=c('character','character','Date','numeric','integer','character', 'factor'))
+for (x in colnames(metaData)) {
+        meta(abstrCorpus, x)<-metaData[,x]
+}
+
+load("data/LDA_models_current.rda")
+dir.create("results/",showWarnings = F)
+resultsPath<-paste0("results/",getDate())
+dir.create(resultsPath)
 
 ###############
 ##EDA of LDA assignments and data reduction methods
@@ -26,7 +42,7 @@ boxplot(log10(as.vector(topDocGamma[[1]])),range=0 ,
 
 
 ####Riverplots using FY-LDA models.
-
+load("data/LDA_FY_models_current.rda")
 edges<-lapply(2:(length(models.fy)-1), function(x){
     d<-dist(exp(models.fy[[x]][[2]]@beta), exp(models.fy[[(x+1)]][[2]]@beta), method="bhjattacharyya")
     e<-dist2Table(d)
@@ -73,10 +89,79 @@ par(cex.lab = 0.25)
 plot(rp1, plot_area=0.95, yscale=0.06, srt=T)
 dev.off()
 
+#############
+##Riverplot 2009->2012->2015
+#############
+library(topicmodels)
+library(proxy)
+load("data/LDA_FY_models_current.rda")
+fy.topics<-lapply(seq_along(models.fy), function(f) apply(terms(models.fy[[f]][[2]],4),2,
+                                                          function(z) paste(z,collapse=",")))
+
+edges<-lapply(list(c(3,6),c(6,9)), function(x){
+    d<-dist(exp(models.fy[[x[1]]][[2]]@beta), exp(models.fy[[x[2]]][[2]]@beta), method="bhjattacharyya")
+    e<-dist2Table(d)
+    e$col<-fy.topics[[x[1]]][e$col]
+    e$row<-fy.topics[[x[2]]][e$row]
+    colnames(e)<-c("N1","N2","Value")
+    e
+})
+
+nodes<-do.call(rbind, lapply(seq_along(edges), function(x) {
+    n<-data.frame(ID=unique(edges[[x]]$N1), x=x, y=seq_along(unique(edges[[x]]$N1)), stringsAsFactors=FALSE)
+}))
+
+nodes<-rbind(nodes, data.frame(data.frame(ID=unique(edges[[2]]$N2), x=3, y=seq_along(unique(edges[[2]]$N2))), stringsAsFactors=FALSE))
+
+edges<-do.call(rbind, edges)
+topEdges<-do.call(rbind, by(edges,edges$N1, function(x) head(x[order(x$Value),],n=3)))
+edges.1<-edges
+edges.1[[1]]<-edges.1[[1]][grep(nodes[46,1],edges.1[[1]]$N1),]
+edges.1[[1]]<-edges.1[[1]][edges.1[[1]]$Value<1.2,]
+edges.1[[2]]<-do.call(rbind, lapply(edges.1[[1]]$N2, function(x) 
+    edges.1[[2]][grep(x,edges.1[[2]]$N1),]
+    ))
+edges.1[[2]]<-edges.1[[2]][edges.1[[2]]$Value<1.1,]
+edges.1<-do.call(rbind, edges.1)
+
+png(paste0(resultsPath, "/FY_LDA_modeldist_score_distr.png"), height=600, width=800, units="px")
+hist(edges$Value, breaks=1000)
+dev.off()
+
+edges<-edges[edges$Value<1.1,]
+
+# edges$Value<-edges$Value/1000
+
+palette<-paste0(brewer.pal(12, "Paired"), "80")
+styles<-lapply(nodes$y, function(n){
+    list(col=palette[ceiling(n/6)+1], lty=0, textcol="black")
+})
+names(styles)<-nodes$ID
 
 
+rp<-list(nodes=nodes, edges=edges, styles=styles)
+class(rp)<-c(class(rp), "riverplot")
+png(paste0(resultsPath,"/RiverPlot_",timeStamp(),".png"), height=1600, width=2100, units="px")
+op<-par(cex=1.5)
+plot(rp, plot_area=0.95, srt=T)
+par(op)
+dev.off()
 
+rp1<-list(nodes=nodes, edges=topEdges, styles=styles)
+class(rp1)<-c(class(rp1), "riverplot")
+png(paste0(resultsPath,"/RiverPlot_top5edges_perNode",timeStamp(),".png"), height=1600, width=2100, units="px")
+op<-par(cex=1.5)
+plot(rp1, plot_area=0.95, srt=T)
+par(op)
+dev.off()
 
+rp2<-list(nodes=nodes, edges=edges.1, styles=styles)
+class(rp2)<-c(class(rp2), "riverplot")
+png(paste0(resultsPath,"/RiverPlot_Topic46_evo",timeStamp(),".png"), height=1600, width=2100, units="px")
+op<-par(cex=1.5)
+plot(rp2, plot_area=0.95, srt=T)
+par(op)
+dev.off()
 
 
 ############
@@ -133,6 +218,49 @@ lapply(fyqs, function(x){
 #############
 ##Topic-Topic Distance by FY
 ##############
+
+topDocDist<-lapply(c(2009,2010,2011,2012,2013,2014,2015), function(x){
+        ids<-meta(abstrCorpus)[,"FY"]==x
+        d<-dist(t(models[[2]]@gamma[ids,]), method="cosine")
+        t<-melt(as.matrix(d), varnames=c("col","row"))   
+        t<-t[t$row>t$col,]
+        t
+})
+
+plot(density(do.call(rbind, topDocDist)$value), main="Topic-Topic Distance Distributions", bty="n")
+lines(density(topDocDist[[1]]$value), col="red")
+lines(density(topDocDist[[7]]$value), col="blue")
+legend("topleft",bty="n", lty=c(1,1,1), lwd=c(2,2,2), col=c("black","red","blue"), legend=c("All FYs","FY 2009","FY 2015"))
+
+connections<-lapply(topDocDist, function(z) {
+        x<-z[z$value<=0.9,]
+        tapply(x$col, x$col, length)
+        })
+plot(density(unlist(connections)), main="Number of Connections per Topic", bty="n")
+lines(density(connections[[1]]), col="red")
+lines(density(connections[[7]]), col="blue")
+legend("topright",bty="n", lty=c(1,1,1), lwd=c(2,2,2), col=c("black","red","blue"), legend=c("All FYs","FY 2009","FY 2015"))
+
+png(paste0(resultsPath,"/Topic-Topic_connections.png"),height=800, width=900, units="px")
+par(mfrow=c(2,1))
+plot(density(do.call(rbind, topDocDist)$value), main="Topic-Topic Distance Distributions", bty="n")
+lines(density(topDocDist[[1]]$value), col="red")
+lines(density(topDocDist[[7]]$value), col="blue")
+abline(v=0.9)
+legend("topleft",bty="n", lty=c(1,1,1), lwd=c(2,2,2), col=c("black","red","blue"), legend=c("All FYs","FY 2009","FY 2015"))
+
+plot(density(unlist(connections)), main="Number of Connections per Topic", bty="n")
+lines(density(connections[[1]]), col="red")
+lines(density(connections[[7]]), col="blue")
+legend("topright",bty="n", lty=c(1,1,1), lwd=c(2,2,2), col=c("black","red","blue"), legend=c("All FYs","FY 2009","FY 2015"))
+dev.off()
+
+connections.1<-do.call(c, connections)
+connec<-lapply(1:10000, function(x) {
+        mean(sample(connections.1, 37, replace = T))
+        })
+hist(unlist(connec))
+sum(unlist(connec)>4.027)/10000
 
 topDocDistFYtable<-do.call(cbind, lapply(topDocDist.fy[[2]], function(x){
   x<-as.matrix(x)
@@ -244,3 +372,15 @@ lapply(topTermsDist, function(x){
     write.table(t,paste0(p,"/TopicTopicbyTermSimilarity.csv"), sep=",", row.names=F, quote=F, col.names=T)        
 })
 
+##########
+##Grant-Grant Co-occurence
+##########
+
+library(igraph)
+
+co.occ<-table(grants.table[grants.table$year==2015,1:2])
+co.occ<-co.occ[rowSums(co.occ)>0, colSums(co.occ)>0]
+
+adj<-t(co.occ) %*% co.occ
+
+g<-graph.adjacency(adj, mode="Undirected")

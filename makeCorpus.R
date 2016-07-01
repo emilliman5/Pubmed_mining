@@ -1,20 +1,37 @@
-makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
+library(XML)
+library(tm)
+library(SnowballC)
+library(lubridate)
+library(parallel)
 
-  library(XML)
-  library(tm)
-  library(SnowballC)
-  library(lubridate)
-  library(parallel)
+NIHreporterParse<-function(file){
   
-  extraFunFile<-"textMine_funcs.R"
-  if (file.exists(extraFunFile)) {
-    source(extraFunFile, keep.source=TRUE);
-  } else{ break }
+  table<-readHTMLTable(file, stringsAsFactors=F)
+  table<-as.data.frame(table)
+  table<-table[,c(2,3,4,5,6,9,10,18,19,20,37,38,39,42,46,47)]
+  table<-table[!is.na(table[,2]),]
+  table[table[,11]=="",11]<-"NO"
+  table[table[,16]=="",16]<-0
+  table[,16]<-as.numeric(table[,16])
+  table[,1]<-gsub("DESCRIPTION \\(provided by applicant\\):","", table[,1])
+  table[,1]<-gsub("Public Health Relevance:","", table[,1],ignore.case = T)
+  table[,4]<-gsub("Project Narrative","", table[,4],ignore.case = T)
+
+  return(table)
   
-  stopWords<-read.table(stopwordList, colClasses = c("character"))
-  myStopwords<-c(stopwords('english'), stopWords$V1)
-  myStopwords<-tolower(myStopwords)
-  
+}
+
+PMCParse<-function(pmc.file){
+    pub.file<-"data/pmc_result.xml"
+    pubmed<-xmlParse(pub.file,useInternalNodes = T)
+    top<-xmlRoot(pubmed)
+    pmids.2<-getNodeSet(top, "//front/article-meta/article-id[@pub-id-type='pmid']")
+    pmids<-xmlSApply(pmids.2, xmlValue)
+
+}
+
+pubmedParse<-function(pub.file){
+
   pubmed<-xmlParse(pub.file,useInternalNodes = T)
   top<-xmlRoot(pubmed)
   
@@ -39,6 +56,23 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
   abstr.df<-cbind(as.data.frame(pmid),as.data.frame(grantID),pubdate.df,journal, abstr.df)
   abstr.df[,"pubdate.df"]<-as.Date(abstr.df[,"pubdate.df"], format = "%Y-%m-%d")
   colnames(abstr.df)[1:2]<-c("PMID","GrantID")
+  return(abstr.df)
+}
+
+makeCorpus<-function(abstr.df, stopwordsList, cores){
+  
+  extraFunFile<-"textMine_funcs.R"
+  if (file.exists(extraFunFile)) {
+    source(extraFunFile, keep.source=TRUE);
+  } else{ break }
+  
+  myStopwords<-stopwords('english')
+  if(!is.null(stopwordsList)){
+      stopwordList<-read.table(stopwordsList)
+      myStopwords<-c(myStopwords,stopwordList[,1])
+  }
+  myStopwords<-tolower(myStopwords)
+  
   abstrCorpus<-Corpus(DataframeSource(abstr.df[,c("Title","Abstract")]))
   
   abstrCorpus<-tm_map(abstrCorpus, content_transformer(tolower), mc.cores=cores)
@@ -54,19 +88,9 @@ makeCorpus<-function(pub.file, stopwordList="stopwords.txt", cores=4){
   abstrCorpus<-mclapply(abstrCorpus, stemCompletion2, dictionary=dictCorpus, mc.cores=cores)
   abstrCorpus<-Corpus(VectorSource(abstrCorpus))
   abstrCorpus<-tm_map(abstrCorpus, removeWords, myStopwords, mc.cores=cores)
-  meta(abstrCorpus, "PMID")<-abstr.df[,"PMID"]
-  meta(abstrCorpus, "GrantID")<-abstr.df[,"GrantID"]
-  meta(abstrCorpus, "Date")<-abstr.df[,"pubdate.df"]
-  meta(abstrCorpus, "FY.Q")<-quarter(abstr.df[,"pubdate.df"]+91, with_year=T)
-  meta(abstrCorpus, "FY")<-floor(meta(abstrCorpus)[,"FY.Q"])
-  meta(abstrCorpus, "Journal")<-abstr.df[,"journal"]
-  meta(abstrCorpus, "Title")<-abstr.df[,"Title"]
-  names(abstrCorpus)<-abstr.df[,"PMID"]
-  dir.create("data/Corpus")
-  writeCorpus(abstrCorpus,"data/Corpus/")
-  write.csv(meta(abstrCorpus), "data/CorpusMetaData.txt",row.names=F)
   
-  abstrCorpus
+  names(abstrCorpus)<-abstr.df[,"PMID"]
+  return(abstrCorpus)
 } 
 
 makeSPCorpus<-function(SP_path="data/Strategic_goals",

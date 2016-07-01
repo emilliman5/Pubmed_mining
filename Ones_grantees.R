@@ -17,26 +17,26 @@ resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
 
 ##load Corpus.
-abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
-metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
-for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
+abstrCorpus<-Corpus(DirSource("data/Corpus/"), readerControl = list(language="english"))
+metaData<-read.csv("data/CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric','character','character','logical'))
+for (x in c("PMID","GrantID","Date","FY.Q","FY","Journal","Title", "InModel")) {
     meta(abstrCorpus, x)<-metaData[,x]
 }
 
-spCorpus<-Corpus(DirSource("Corpus/SP/"), readerControl = list(language="english"))
+spCorpus<-Corpus(DirSource("data/Corpus/SP/"), readerControl = list(language="english"))
 
 ##load Topic Models
-load("LDA_models_current.rda")
-load("LDA_FY_models_current.rda")
+load("data/LDA_models_current.rda")
+load("data/LDA_FY_models_current.rda")
 
-ones<-read.table("data/ONES_grants_2012_present.txt")
+ones<-read.table("data/ONES_grants_ALL_from_RFAs.txt")
 ones$V2<-substr(ones$V1, 5,12)
 
-pmids<-lapply(ones$V2, function(x) grep(x,meta(abstrCorpus)[,"GrantID"]))
-names(pmids)<-ones$V2
+pmids<-lapply(unique(ones$V2), function(x) grep(x,meta(abstrCorpus)[,"GrantID"]))
+names(pmids)<-unique(ones$V2)
 
 ##this is a workaround until new models are made
-docRemove<-1377
+docRemove<-which(meta(abstrCorpus)$InModel)
 models[[2]]@documents<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
 rownames(models[[2]]@gamma)<-c(meta(abstrCorpus)[-docRemove,1], names(spCorpus))
 
@@ -59,7 +59,7 @@ lapply(seq_along(pmids), function(x){
 x<-do.call(rbind, lapply(seq_along(pmids), function(x){
     colSums(models[[2]]@gamma[which(models[[2]]@documents %in% meta(abstrCorpus)[pmids[[x]],1]),])
 }))
-rownames(x)<-ones$V2
+rownames(x)<-unique(ones$V2)
 colnames(x)<-apply(terms(models[[2]],3),2, function(z) paste(z, collapse=","))
 
 
@@ -78,7 +78,8 @@ dev.off()
 
 edges<-melt(x)
 edges<-edges[edges$value>0.01,]
-nodes<-as.data.frame(c(unlist(lapply(pmids, length))/3, colSums(x)))
+nodes<-data.frame(c(unlist(lapply(pmids, length))/3, colSums(x)))
+#rownames(nodes)<-c(names(pmids),colnames(x))
 colnames(nodes)<-"size"
 nodes$color<-"green"
 nodes[grep("ES",rownames(nodes)),]$color<-"red"
@@ -100,16 +101,17 @@ colnames(edgelist)<-c("source","target","value")
 edgelist[,"source"]<-as.character(edgelist[,"source"])
 edgelist[,"target"]<-as.character(edgelist[,"target"])
 
-sankeyPlot<-rCharts$new()
-sankeyPlot$setLib("./d3/rCharts_d3_sankey-gh-pages/")
-sankeyPlot$setTemplate(script="./d3/rCharts_d3_sankey-gh-pages/layouts/chart.html")
+sankeyPlot <- rCharts$new()
+sankeyPlot$setLib('http://timelyportfolio.github.io/rCharts_d3_sankey')
 sankeyPlot$set(
-    data=edgelist,
-    nodewidth=10,
-    nodePadding=10,
-    layout=32,
-    width=1200,
-    height=1200)
+    data = edgelist,
+    nodeWidth = 15,
+    nodePadding = 10,
+    layout = 32,
+    width = 1500,
+    height = 1000
+    #labelFormat = ".1%"
+)
 
-sankeyPlot$print(chartId="sankey1")
-sankeyPlots
+#sankeyPlot$print(chartId="sankey1")
+sankeyPlot

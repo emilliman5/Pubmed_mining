@@ -1,41 +1,67 @@
-library(tm)
-library(wordcloud)
-library(slam)
-library(lubridate)
-library(parallel)
-library(proxy)
+#!/usr/bin/Rscript
+suppressMessages(library(tm))
+suppressMessages(library(wordcloud))
+suppressMessages(library(slam))
+suppressMessages(library(lubridate))
+suppressMessages(library(parallel))
+suppressMessages(library(proxy))
+suppressMessages(library(docopt))
 
-#library(networktools)
-#If you want to force a reprocessing of the documents into a Corpus set this value to "TRUE"
-reset<-FALSE
+doc<-"This script does an initial cleaning and analysis of a set of 
+        documents (the corpus). It will ouptut a series of plots to 
+        describe the vocabulary as well as a create corpus that can be used by 
+        for topicmodeling by the topic_modeling.R
+
+Usage:  text_analysis.R -x=<pubmed> [-r=<nih>] -d=<dir> [-s=<stopwords>] [-c=<cores>] [--reset]
+        text_analysis.R [-x=<pubmed>] -r=<nih> -d=<dir> [-s=<stopwords>] [-c=<cores>] [--reset]
+
+Options:
+    -x --xml=<pubmed>           Pubmed results in XML format
+    -r --reporter=<nih>         NIH Reporter export in CSV format
+    -s --stopwords=<stopwords>  Stop word list, one word per line, plain text [default: stopwords.txt]
+    -d --dir=<dir>              Directory to write Corpus and meta data outputs
+    -c --cores=<cores>          Number of cores to use for Corpus processing [default: 16]
+    --reset                     Force a reprocessing of the Corpus, the default is to not reprocess the corpus if one exists
+    -h --help                   This helpful message"
+
+my_opts<-docopt(doc)
+print(my_opts)    ##This is for testing purposes
 
 extraFunFile<-"textMine_funcs.R"
 if (file.exists(extraFunFile)) {
   source(extraFunFile, keep.source=TRUE);
 }
+source("makeCorpus.R")
 
 dir.create("results/",showWarnings = F)
 resultsPath<-paste0("results/",getDate())
 dir.create(resultsPath)
+corpusPath<-paste0("data/",my_opts$dir)
+dir.create(corpusPath, recursive = T, showWarnings = F)
+dir.create(paste0(corpusPath,"/Corpus"), showWarnings = F)
 
-if(!file.exists("Corpus/1.txt") || reset){
-  source("makeCorpus.R")
-  abstrCorpus<-makeCorpus("ESlit.xml","stopwords.txt", 30)
+file.copy(from=my_opts$xml,to=paste0(corpusPath))
+print(c("XML file is null:",!is.null(my_opts$xml)))
+
+if(!is.null(my_opts$xml)){
+    print("Processing Corpus....")
+    pubmed.df<-pubmedParse(my_opts$xml)
+    metaData<-pubmed.df[,1:5]
+    metaData[,"FY.Q"]<-quarter(pubmed.df[,"pubdate.df"]+91, with_year=T)
+    metaData[,"FY"]<-floor(metaData[,"FY.Q"])
+    abstrCorpus<-makeCorpus(abstr.df = pubmed.df,stopwordsList = my_opts$stopwords, cores = my_opts$cores)
+    writeCorpus(abstrCorpus, paste0(corpusPath,"/Corpus"))
+    write.csv(metaData, file=paste0(corpusPath,"/CorpusMetaData.txt"), 
+              row.names=F)
 } else {
   ##read in corpus docs.
-  abstrCorpus<-Corpus(DirSource("Corpus/"), readerControl = list(language="english"))
-  metaData<-read.csv("CorpusMetaData.txt",colClasses=c('character','character','Date','character','numeric'))
-  for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
-    meta(abstrCorpus, x)<-metaData[,x]
-  }
-}
-
-if(!file.exists("Corpus/SP/SP_Goal1") || reset){
-  source("makeCorpus.R")
-  spCorpus<-makeSPCorpus("data/Strategic_goals/",
-                         stopwordList = "stopwords.txt", "Goal",30)
-} else {
-  spCorpus<-Corpus(DirSource("Corpus/SP/"), readerControl = list(language="english"))
+    print("Loading previous corpus...")
+    abstrCorpus<-Corpus(DirSource(paste0(corpusPath,"/Corpus")), 
+                                readerControl = list(language="english"))
+    metaData<-read.csv(paste0(corpusPath, "CorpusMetaData.txt"),colClasses=c('character','character','Date','character','numeric'))
+    for (x in c("PMID","GrantID","Date", "FY", "FY.Q")) {
+        meta(abstrCorpus, x)<-metaData[,x]
+    }
 }
 
 ####Extra Corpus cleaning
@@ -62,7 +88,7 @@ tdm.monogram<-TermDocumentMatrix(abstrCorpus)
 ##Ngram Analysis
 #################
 
-tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
+#tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
 ##function(x) weightTfIdf(x,normalize=F)))
 
 ##Run one of the following commands before proceeding. 
@@ -74,7 +100,6 @@ tdm<-tdm.monogram
 #tdm<-tdm.bigram
 
 tdm.sp<-TermDocumentMatrix(spCorpus)
-tdm.sp.tfidf<-TermDocumentMatrix(spCorpus, control=list(weighting=weightTfIdf))
 
 ###########
 ##TermFreq exploration and visualization
@@ -85,10 +110,6 @@ tfHisto(tdm,"FY")
 
 tf<-rowSums(as.matrix(tdm))
 tf<-tf[order(-tf)]
-
-#tf.bi<-do.call(rbind, mclapply(seq(1,dim(tdm.bigram)[1]), mc.cores=16, function(x){
-#    rowSums(as.matrix(tdm.bigram[x,]))
-#}))
 
 tf.bi<-row_sums(tdm.bigram)
 

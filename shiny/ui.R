@@ -22,12 +22,12 @@ shinyUI(fluidPage(
                                                      "FY2011"=2011,"FY2012"=2012,
                                                      "FY2013"=2013,"FY2014"=2014,
                                                      "FY2015"=2015)),
-                     radioButtons("topicK",selected = 2,label = p(h3("Topic Model Selection"),"This will select the 
+                     radioButtons("topicK",selected = 5,label = p(h3("Topic Model Selection"),"This will select the 
                                                                   topic model for viewing topic usage and topic-topic 
                                                                   connections in the network, both on the \"Topic Plots\"
                                                                   tab."), choices = 
-                                      list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
-                                           "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6)),
+                                      list("25 Topics"=6,"50 Topics"=5,"100 Topics"=4,
+                                           "250 Topics"=1,"500 Topics"=2,"1000 Topics"=3)),
                      textInput("words",label = "Enter keywords here:",value = ""),
                      width=3),
         mainPanel(
@@ -39,10 +39,10 @@ shinyUI(fluidPage(
                       contain a description of methods and the data."),
                     h3("Please be gentle with the site. There is a lot of data behind the scenes that
                        needs to be operated on when parameters are changed. I suggest
-                       not trying to viusalize all the data (do not select \"ALL\") without first 
+                       not trying to visualize all the data (do not select \"ALL\") without first 
                        restricting the data by grant or PMIDs."),
                     h2("The Corpus"),
-                    p("Publications were reteived from Pubmed (accessed on:2015-10-02) using their
+                    p("Publications were reteived from Pubmed (accessed on:2015-12-28) using their
                       advanced search. Publications with a grant ID beginning with \"ES\" and published 
                       between 2008-10-01 and 2015-09-30 were downloaded in XML format. This has resulted 
 			          in ~25,000 publications incorporated into our text collection (the corpus)."),
@@ -54,7 +54,7 @@ shinyUI(fluidPage(
 		              publications. 3) Words that show up in less than 10% of the documents were also 
 			          removed because they are too sparse.", br(),br(), "The corpus was then explored using 
 			                word clouds and various plots of vocabulary complexiety to assess cleanliness and processing.", br(), 
-			                "Topics were modeled across the corpus in tow ways. 1) Using the entire corpus various numbers 
+			                "Topics were modeled across the corpus in two ways. 1) Using the entire corpus various numbers 
 			                of topics were modeled (25, 50, 10, 250 ,500, and 1000). 2) For each fiscal year represented 
 			                topics were modeled at various levels (25, 50, 100, 250, 250, 500, 1000).", br(),br(), "Topics were 
 			                modeled using Latent Dirichlet Allocation. (Blei", tags$i("et al")," 2003) This machine learning algorithm 
@@ -71,34 +71,76 @@ shinyUI(fluidPage(
 			                for 50 topics may have generally higher values than for 1000 topics, because the pie has to be distributed 
 			                more with 1000 topics. Generally we set the gamma threshold such that each document is assigned 2-3 topics 
 			                with few documents being assigened up to 7. This seems intuitive for scientific literature, but is arbitrary."),
-                    plotOutput("pubs", width="100%"),                
-                    plotOutput("pubs.q", width="100%"),
-                    sliderInput("slider",label=h3("Max Number of Words"),min=10, max=500, value=50),
+                    showOutput("pubs", "nvd3"),                
+                    sliderInput("slider",label=h3("Number of Words to Display"),min=10, max=500, value=100),
                     plotOutput("wordcloud",height = "100%")),
             tabPanel("Topic Plots",
               h3("Topic Usage"),
               p("This plot shows how much a topic was discussed in the dataset selected. This was 
-                calculated by summing each documents topic probability (gamma value) for a given topic and then divided by 
-                the number documents in the corpus group (number of publications in the FY)."),
+                calculated by summing the topic probabilities (gamma value) for a given topic. Only the top 5 topics per document were used, in an effort to capture only the significant topic assigents. This plot may still be sensitive to the number of documents in the the selected corpus"),
               showOutput("topics", "nvd3"),
-              sliderInput("dist",label=p(h4("Distance Measure Threshold"), "The slider represents the top x % of connections to retain"),min=0, max=0.5, value=0.15),
+              sliderInput("dist",label=p(h4("Distance Measure Threshold"), "The slider represents the top x % of connections to retain"),min=0, max=0.25, value=0.1),
               h4(textOutput("text")),
-              visNetworkOutput("force",height="800px")),
+              visNetworkOutput("force",height="1600px", width="1600px")),
             tabPanel("Publications Table",
                      dataTableOutput("papers")
             ),
+            tabPanel("DendroArcs",
+                        div(style="display:inline-block", sliderInput("treeDist",label="Minimum Distance for Topic-Topic Associations:", 
+                                 min=0.5, max=1, value=0.90)),
+                        div(style="display:inline-block", selectInput("proxy", label=p(br(),"Topic-topic distance calculation method:",br()), 
+                                    selected="cosine", choices=list("cosine","hellinger","euclidean","bhjattacharyya"))),
+                        p(""),
+                        div(style="display:inline-block", radioButtons("treeK",selected = 5,label = "Topic Model Selection",choices = 
+                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=4,
+                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T)),
+                        div(style="display:inline-block", radioButtons("topicTree", selected=4, label="Beta-term Tree Method", 
+                                  choices=list("Cosine"=1, "Hellinger"=2, "Pearson's"=3, "Bhjattacharyya"=4), inline=TRUE)),
+                     selectInput("topicN", label=h4("Anchor Topic"),selected=1, choices=list(Topic1=1, Topic2=3)),
+                     uiOutput("dendroArc.ui")
+                     ),
             tabPanel("Word Assoc",
                 br(),
                 h4("This chart shows the importance (or weight/probability) a term has for each topic
                    of a given model (known as the beta value)."),
-                radioButtons("K",selected = 2,label = "Topic Model Selection",choices = 
-                               list("25 Topics"=1,"50 Topics"=2,"100 Topics"=3,
-                                    "250 Topics"=4,"500 Topics"=5,"1000 Topics"=6), inline=T),
+                radioButtons("K",selected = 5,label = "Topic Model Selection",choices = 
+                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=4,
+                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
                 showOutput("keywordTopic","nvd3"),
                 sliderInput("corr",label=h3("Minimum Correlation for Term associations"), 
                             min=0, max=1, value=0.25),
                 dataTableOutput("assoc")
-            )
-          )            
-        ))
-))
+            ),
+            tabPanel("Classifications",
+                     tabsetPanel(
+                         tabPanel("Topic Assignment",
+                                h3("Classify a document based on our exisiting topic models"),
+                                radioButtons("Ktopic",selected = 5,label = "Topic Model Selection",choices = 
+                                                    list("25 Topics"=6,"50 Topics"=5,"100 Topics"=4,
+                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
+                                h4("Copy and paste document text and press submit. This will likely work best with abstracts or abstract-length texts."),
+                                tags$textarea(id="abstract",value = "", cols=150, rows=5),
+                                actionButton("submit", "Submit"),
+                                showOutput("classify", "polycharts")),
+                     tabPanel("Closest Pubs",
+                              dataTableOutput("closestPubs"))
+                     )
+                ),
+            tabPanel("Topic Evolution",
+                     h4("Topic Models, modeled by FY"),p("Represented here is the change in topic structure over time. An independent topic model was trained
+                      on publications from each fiscal year of our corpus (2009-2015). We then calculated the similarity between each topic of adjacent 
+                      fiscal years to link latent topics through time. "),
+                     radioButtons("Ktopic2",selected = 5,label = "Topic Model Selection",choices = 
+                                                    list("50 Topics"=5,"100 Topics"=4,
+                                                         "250 Topics"=3,"500 Topics"=2,"1000 Topics"=1), inline=T),
+                     sliderInput("riverThresh", label="Distance Threshold",min=0, max=1, value=0.5, sep=""),
+                     sliderInput("dateRange",label="FY Range", min=2009,max=2015,step=1, value=c(2010,2012), sep=""),
+                     radioButtons("riverDist", selected=3, label="Distance Measure Calculation", choices=list("Cosine"=1,"Correlation"=2,"Hellinger"=3), inline=T),
+                     chartOutput("river", "d3/rCharts_d3_sankey"),
+                     br(),br(),br()
+                     ) #Close Topic Evolution tabPanel
+            )#tabset panel
+        ) #Main Panel
+    ) #sidebar Layout
+    ) #Fluid Page
+)#ShinyUI
