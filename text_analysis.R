@@ -7,6 +7,12 @@ suppressMessages(library(parallel))
 suppressMessages(library(proxy))
 suppressMessages(library(docopt))
 
+##Uncomment and run if using R interactively
+my_opts<-list(xml="../pubmed_result_dioxin.xml",
+              dir=".",
+              cores=24,
+              stopwords=NULL)
+
 doc<-"This script does an initial cleaning and analysis of a set of 
         documents (the corpus). It will ouptut a series of plots to 
         describe the vocabulary as well as a create corpus that can be used by 
@@ -33,15 +39,17 @@ if (file.exists(extraFunFile)) {
 }
 source("makeCorpus.R")
 
-dir.create("results/",showWarnings = F)
-resultsPath<-paste0("results/",getDate())
-dir.create(resultsPath)
-corpusPath<-paste0("data/",my_opts$dir)
+my_opts$dir<-gsub("/$","",my_opts$dir)
+
+corpusPath<-paste0(my_opts$dir,"/data/")
 dir.create(corpusPath, recursive = T, showWarnings = F)
 dir.create(paste0(corpusPath,"/Corpus"), showWarnings = F)
+dir.create(paste0(my_opts$dir,"/results/"),showWarnings = F)
+resultsPath<-paste0("results/",getDate())
+dir.create(resultsPath)
 
 file.copy(from=my_opts$xml,to=paste0(corpusPath))
-print(c("XML file is null:",!is.null(my_opts$xml)))
+print(c("XML file is null:",is.null(my_opts$xml)))
 
 if(!is.null(my_opts$xml)){
     print("Processing Corpus....")
@@ -70,8 +78,8 @@ if(!is.null(my_opts$xml)){
 ###Descriptives of Corpus
 png(paste0(resultsPath, "/Abstracts_per_FY.png"), height=1000, width=1200, units="px")
     par(mfrow=c(2,1), cex=2)
-    barplot(tapply(meta(abstrCorpus)[,"FY"], meta(abstrCorpus)[,"FY.Q"],length), main="Abstracts per FY.Q", las=2)
-    barplot(tapply(meta(abstrCorpus)[,"FY"], meta(abstrCorpus)[,"FY"],length ), main="Abstracts per FY", las=2)
+    barplot(tapply(metaData[,"FY"], metaData[,"FY.Q"],length), main="Abstracts per FY.Q", las=2)
+    barplot(tapply(metaData[,"FY"], metaData[,"FY"],length ), main="Abstracts per FY", las=2)
 dev.off()
 
 ################
@@ -88,18 +96,19 @@ tdm.monogram<-TermDocumentMatrix(abstrCorpus)
 ##Ngram Analysis
 #################
 
-#tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
-##function(x) weightTfIdf(x,normalize=F)))
+tdm.bigram <- TermDocumentMatrix(abstrCorpus, control = list(tokenize = NgramTokenizer))
+#             function(x) weightTfIdf(x,normalize=F)))
 
 ##Run one of the following commands before proceeding. 
 ##tdm.monogram are single term frequencies.
 ##tdm.bigram are two term frequencies
 
 tdm<-tdm.monogram
+save(tdm, file=paste0(corpusPath,"/tdm.rda"))
 #tdm<-tdm.monogram.tfidf
 #tdm<-tdm.bigram
 
-tdm.sp<-TermDocumentMatrix(spCorpus)
+#tdm.sp<-TermDocumentMatrix(spCorpus)
 
 ###########
 ##TermFreq exploration and visualization
@@ -108,11 +117,10 @@ tdm.sp<-TermDocumentMatrix(spCorpus)
 tfidfHisto(tdm.monogram.tfidf ,fact = "FY", "mean")
 tfHisto(tdm,"FY")
 
-tf<-rowSums(as.matrix(tdm))
+tf<-row_sums(as.matrix(tdm))
 tf<-tf[order(-tf)]
 
 tf.bi<-row_sums(tdm.bigram)
-
 tf.bi<-tf.bi[order(-tf.bi)]
 
 png(paste0(resultsPath,"/Zipfs_plots.png"), height=3000, width=3000, units="px")
@@ -131,7 +139,7 @@ dev.off()
 #wordCloud(tdm.monogram.tfidf,fact="FY.Q", 75, "mean","tfidf")
 
 wordCloud(tdm,fact="FY", 75, pre="tf")
-wordCloud(tdm,fact="FY.Q", 75, pre="tf")
+wordCloud(tdm,fact="FY.Q", 75, pre="tf") ## need to account for 
 
-wordCloudMontage(tdm = tdm.sp,file = "SP_TF_wordcloud.png", path = resultsPath)
+#wordCloudMontage(tdm = tdm.sp,file = "SP_TF_wordcloud.png", path = resultsPath)
 #wordCloudMontage(tdm = tdm.sp.tfidf,f=0.001,file = "SP_TfIdf_wordcloud.png", path = resultsPath)
