@@ -61,11 +61,6 @@ pubmedParse<-function(pub.file){
 
 makeCorpus<-function(abstr.df, stopwordsList, cores){
   
-  extraFunFile<-"textMine_funcs.R"
-  if (file.exists(extraFunFile)) {
-    source(extraFunFile, keep.source=TRUE);
-  } else{ break }
-  
   myStopwords<-stopwords('english')
   if(!is.null(stopwordsList)){
       stopwordList<-read.table(stopwordsList)
