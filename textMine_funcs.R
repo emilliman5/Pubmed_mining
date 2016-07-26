@@ -151,11 +151,11 @@ getFactorIdx<-function(col, df){
 wordCloud<-function(tdm, fact, maxWords, fun="sum", pre="", scale=c(10,0.5))
 {
   fun<-tolower(fun)
-  f<-unique(meta(abstrCorpus)[,fact])
-  x<-lapply(f, function(x) which(meta(abstrCorpus)[,fact]==x) )
+  f<-unique(metaData[,fact])
+  x<-lapply(f, function(x) which(metaData[,fact]==x) )
   
   lapply(x, function(y) {
-    f<-meta(abstrCorpus)[y[1],fact]
+    f<-metaData[y[1],fact]
     tdm.df<-data.frame(word=rownames(tdm), freq=apply(as.matrix(tdm)[,y], 1, fun))
     tdm.df<-tdm.df[order(tdm.df$freq,decreasing = T),]
     if(tdm.df[maxWords,"freq"]==0){
