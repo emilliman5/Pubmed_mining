@@ -4,6 +4,8 @@ suppressMessages(library(topicmodels))
 suppressMessages(library(parallel))
 suppressMessages(library(ggplot2))
 suppressMessages(library(docopt))
+suppressMessages(library(reshape2))
+
 
 doc<-"  This script performs topic modeling on a Corpus of documents
 
